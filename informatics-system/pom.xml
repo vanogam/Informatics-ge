@@ -10,17 +10,27 @@
     <modelVersion>4.0.0</modelVersion>
     <dependencies>
         <dependency>
-            <groupId>ge.freeuni</groupId>
-            <artifactId>controller</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
         <dependency>
             <groupId>ge.freeuni</groupId>
-            <artifactId>server</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <artifactId>informatics-server</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ge.freeuni</groupId>
+            <artifactId>informatics-controller</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ge.freeuni</groupId>
+            <artifactId>informatics-model</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
-    <artifactId>main</artifactId>
+    <artifactId>informatics-system</artifactId>
 
     <build>
         <finalName>Informatics</finalName>
@@ -40,7 +50,7 @@
                             <goal>repackage</goal>
                         </goals>
                         <configuration>
-                            <mainClass>ge.freeuni.informatics.InformaticsApplication</mainClass>
+                            <mainClass>ge.freeuni.informatics.system.InformaticsApplication</mainClass>
                         </configuration>
                     </execution>
                 </executions>

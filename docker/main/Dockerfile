@@ -6,5 +6,5 @@ WORKDIR /opt/app
 
 COPY ${JAR_FILE} Informatics.jar
 COPY docker/run.sh run.sh
-
+RUN ["chmod", "+x", "/opt/app/run.sh"]
 ENTRYPOINT ["/opt/app/run.sh"]

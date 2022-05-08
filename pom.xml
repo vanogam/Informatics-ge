@@ -6,6 +6,9 @@
         <module>informatics-controller</module>
         <module>informatics-server</module>
         <module>informatics-system</module>
+        <module>informatics-model</module>
+        <module>informatics-utils</module>
+        <module>informatics-repository</module>
     </modules>
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -20,7 +23,8 @@
     <name>Informatics</name>
     <description>Informatics</description>
     <properties>
-        <java.version>8</java.version>
+        <java.version>1.8</java.version>
+        <project.version>0.0.1-SNAPSHOT</project.version>
     </properties>
     <dependencies>
         <dependency>

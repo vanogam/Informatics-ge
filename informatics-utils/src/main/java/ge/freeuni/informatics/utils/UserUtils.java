@@ -1,5 +1,7 @@
 package ge.freeuni.informatics.utils;
 
+import org.apache.tomcat.util.codec.binary.Base64;
+
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -14,7 +16,7 @@ public class UserUtils {
 
         new Random().nextBytes(saltBytes);
 
-        return new String(saltBytes, StandardCharsets.UTF_8);
+        return Base64.encodeBase64String(saltBytes);
     }
 
     public static String getHash(String password, String salt) {
@@ -23,7 +25,7 @@ public class UserUtils {
             String saltedPassword = salt + password;
 
             byte[] hashBytes = digest.digest(saltedPassword.getBytes(StandardCharsets.UTF_8));
-            return new String(hashBytes, StandardCharsets.UTF_8);
+            return Base64.encodeBase64String(hashBytes);
         } catch (NoSuchAlgorithmException ignored) {
             return "";
         }

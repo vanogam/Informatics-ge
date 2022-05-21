@@ -21,6 +21,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             .antMatchers(GLOBAL_ADDRESSES)
                 .permitAll()
                 .antMatchers(ALL_ACCOUNT_ADDRESSES)
-                .hasAnyAuthority(UserRole.ADMIN.name(), UserRole.TEACHER.name(), UserRole.STUDENT.name());
+                .hasAnyAuthority(UserRole.ADMIN.name(), UserRole.TEACHER.name(), UserRole.STUDENT.name())
+                .and().csrf().disable();
     }
 }

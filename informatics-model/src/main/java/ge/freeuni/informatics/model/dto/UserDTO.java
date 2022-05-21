@@ -59,6 +59,7 @@ public class UserDTO {
         UserDTO userDTO = new UserDTO();
 
         userDTO.setId(user.getId());
+        userDTO.setUsername(userDTO.getUsername());
         userDTO.setFirstName(user.getFirstName());
         userDTO.setLastName(user.getLastName());
 
@@ -69,6 +70,7 @@ public class UserDTO {
         User user = new User();
 
         user.setId(userDTO.getId());
+        user.setUsername(userDTO.getUsername());
         user.setFirstName(userDTO.getFirstName());
         user.setLastName(userDTO.getLastName());
         user.setPassword(userDTO.getPassword());

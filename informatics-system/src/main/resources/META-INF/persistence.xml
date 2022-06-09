@@ -4,7 +4,12 @@
              xmlns="http://java.sun.com/xml/ns/persistence"
              xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_1_0.xsd">
     <persistence-unit name="default">
-        <class>ge.freeuni.informatics.model.entity.User</class>
+        <class>ge.freeuni.informatics.model.entity.user.User</class>
+        <class>ge.freeuni.informatics.model.entity.contestroom.ContestRoom</class>
+        <class>ge.freeuni.informatics.model.entity.contest.Contest</class>
+        <class>ge.freeuni.informatics.model.entity.task.Task</class>
+        <class>ge.freeuni.informatics.model.entity.post.Post</class>
+        <class>ge.freeuni.informatics.model.entity.submission.Submission</class>
         <properties>
 
         </properties>

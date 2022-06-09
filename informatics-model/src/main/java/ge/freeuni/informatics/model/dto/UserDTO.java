@@ -1,7 +1,7 @@
 package ge.freeuni.informatics.model.dto;
 
 
-import ge.freeuni.informatics.model.entity.User;
+import ge.freeuni.informatics.model.entity.user.User;
 
 public class UserDTO {
 
@@ -14,6 +14,8 @@ public class UserDTO {
     private String firstName;
 
     String lastName;
+
+    Integer version;
 
     public Long getId() {
         return id;
@@ -55,13 +57,22 @@ public class UserDTO {
         this.lastName = lastName;
     }
 
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
+    }
+
     public static UserDTO toDTO(User user) {
         UserDTO userDTO = new UserDTO();
 
         userDTO.setId(user.getId());
-        userDTO.setUsername(userDTO.getUsername());
+        userDTO.setUsername(user.getUsername());
         userDTO.setFirstName(user.getFirstName());
         userDTO.setLastName(user.getLastName());
+        userDTO.setVersion(userDTO.getVersion());
 
         return userDTO;
     }
@@ -74,6 +85,7 @@ public class UserDTO {
         user.setFirstName(userDTO.getFirstName());
         user.setLastName(userDTO.getLastName());
         user.setPassword(userDTO.getPassword());
+        user.setVersion(userDTO.getVersion());
 
         return user;
     }

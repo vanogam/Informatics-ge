@@ -1,4 +1,4 @@
-package ge.freeuni.informatics.model;
+package ge.freeuni.informatics.model.entity.user;
 
 public enum UserRole {
     STUDENT,

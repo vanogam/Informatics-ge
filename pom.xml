@@ -9,6 +9,8 @@
         <module>informatics-model</module>
         <module>informatics-utils</module>
         <module>informatics-repository</module>
+        <module>informatics-judge-integration</module>
+        <module>informatics-judge-integration-impl-cms</module>
     </modules>
     <parent>
         <groupId>org.springframework.boot</groupId>

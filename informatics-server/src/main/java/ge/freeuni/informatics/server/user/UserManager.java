@@ -2,7 +2,7 @@ package ge.freeuni.informatics.server.user;
 
 import ge.freeuni.informatics.model.dto.AuthenticationDetails;
 import ge.freeuni.informatics.model.dto.UserDTO;
-import ge.freeuni.informatics.model.entity.User;
+import ge.freeuni.informatics.model.entity.user.User;
 import ge.freeuni.informatics.repository.user.IUserRepository;
 import ge.freeuni.informatics.utils.UserUtils;
 import org.springframework.beans.factory.annotation.Autowired;

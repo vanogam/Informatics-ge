@@ -1,6 +1,6 @@
 package ge.freeuni.informatics.repository.user;
 
-import ge.freeuni.informatics.model.entity.User;
+import ge.freeuni.informatics.model.entity.user.User;
 
 public interface IUserRepository {
 

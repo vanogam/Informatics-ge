@@ -1,4 +1,4 @@
-package ge.freeuni.informatics.model.entity;
+package ge.freeuni.informatics.model.entity.user;
 
 import javax.persistence.*;
 
@@ -15,7 +15,11 @@ public class User {
 
     private String firstName;
 
-    String lastName;
+    private String lastName;
+
+    private String roles;
+
+    private Integer version;
 
     @Id
     @GeneratedValue
@@ -66,5 +70,22 @@ public class User {
 
     public void setLastName(String lastName) {
         this.lastName = lastName;
+    }
+
+    public String getRoles() {
+        return roles;
+    }
+
+    public void setRoles(String roles) {
+        this.roles = roles;
+    }
+
+    @Version
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
     }
 }

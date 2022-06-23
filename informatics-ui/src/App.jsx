@@ -11,7 +11,7 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LockIcon from '@mui/icons-material/Lock';
 import PersonIcon from '@mui/icons-material/Person';
 
-function LoginPopUp({ loginPopUp, setLoginPopUp}) {
+function LoginPopUp({ loginPopUp, setLoginPopUp, email, password, handleInputChange, handleLoginSubmit }) {
 	return (
 		<Modal open={loginPopUp} onClose={() => setLoginPopUp(false)}>
 			<Box
@@ -41,7 +41,7 @@ function LoginPopUp({ loginPopUp, setLoginPopUp}) {
 						label="Email"
 						type="email"
 						autoComplete="current-email"
-						
+						value={email} onChange = {(e) => handleInputChange(e)} 
 						/>
 				
 					<TextField
@@ -51,9 +51,10 @@ function LoginPopUp({ loginPopUp, setLoginPopUp}) {
 						type="password"
 						autoComplete="current-password"
 					
-						
+						value={password} 
+						onChange = {(e) => handleInputChange(e)} 
 						/>
-					  <Button  variant="contained" color="success">
+					  <Button  onClick={()=>handleLoginSubmit()} variant="contained" color="success">
 						შესვლა
 					</Button>
 					
@@ -63,7 +64,7 @@ function LoginPopUp({ loginPopUp, setLoginPopUp}) {
 	)
 }
 
-function RegisterPopUp({ registerPopUp, setRegisterPopUp}) {
+function RegisterPopUp({ registerPopUp, setRegisterPopUp }) {
 	return (
 		<Modal open={registerPopUp} onClose={() => setRegisterPopUp(false)}>
 			<Box
@@ -92,7 +93,7 @@ function RegisterPopUp({ registerPopUp, setRegisterPopUp}) {
 				label="FirstName"
 				type="FirstName"
 				autoComplete="FirstName"
-			
+				
 				InputProps={{
 					startAdornment: (
 					  <InputAdornment position="start">
@@ -120,7 +121,7 @@ function RegisterPopUp({ registerPopUp, setRegisterPopUp}) {
 				label="Username"
 				type="Nickname"
 				autoComplete="nickname"
-				
+			
 				InputProps={{
 					startAdornment: (
 					<InputAdornment position="start">
@@ -139,7 +140,7 @@ function RegisterPopUp({ registerPopUp, setRegisterPopUp}) {
 					label="Email"
 					type="email"
 					autoComplete="current-email"
-				
+			
 				/>
 		
 			<TextField
@@ -155,7 +156,7 @@ function RegisterPopUp({ registerPopUp, setRegisterPopUp}) {
 					  </InputAdornment>
 					)}}
 				/>
-				 <Button  variant="contained" color="success">
+				 <Button variant="contained" color="success">
 						რეგისტრაცია
 					</Button>
 			</Box>
@@ -165,11 +166,36 @@ function RegisterPopUp({ registerPopUp, setRegisterPopUp}) {
 }
 
 function App() {
+	const [isLogin, setIsLogin] = useState(false)
+	const [loginPopUp, setLoginPopUp] = useState(false)
+	const [registerPopUp, setRegisterPopUp] = useState(false)
+	const [email, setEmail] = useState(null);
+    const [password,setPassword] = useState(null)
+
+	const handleInputChange = (e) => {
+		console.log(e)
+		const {id , value} = e.target;
+		
+		if(id === "email"){
+			setEmail(value);
+		}
+		if(id === "password"){
+			setPassword(value);
+		}
+
+	}
+	
+	const handleLoginSubmit  = () => {
+		// setEmail(email)
+		// setPassword(password)
+		console.log(email, password)
+	}
+
 
 	return (
 		<Box display="flex" flexDirection="column">
 			<LoginPopUp loginPopUp={loginPopUp} setLoginPopUp={setLoginPopUp}
-			 />
+			email={email} handleInputChange={handleInputChange} password={password} handleLoginSubmit={handleLoginSubmit} />
 			<RegisterPopUp
 				registerPopUp={registerPopUp}
 				setRegisterPopUp={setRegisterPopUp}

@@ -64,7 +64,7 @@ function LoginPopUp({ loginPopUp, setLoginPopUp, email, password, handleInputCha
 	)
 }
 
-function RegisterPopUp({ registerPopUp, setRegisterPopUp }) {
+function RegisterPopUp({ registerPopUp, setRegisterPopUp, registerEmail, registerFirstName, registerLastName, registerPassword, registerUsername, handleInputChange, handleRegistrationSubmit }) {
 	return (
 		<Modal open={registerPopUp} onClose={() => setRegisterPopUp(false)}>
 			<Box
@@ -93,7 +93,8 @@ function RegisterPopUp({ registerPopUp, setRegisterPopUp }) {
 				label="FirstName"
 				type="FirstName"
 				autoComplete="FirstName"
-				
+				value={registerFirstName} 
+				onChange = {(e) => handleInputChange(e)} 
 				InputProps={{
 					startAdornment: (
 					  <InputAdornment position="start">
@@ -107,7 +108,8 @@ function RegisterPopUp({ registerPopUp, setRegisterPopUp }) {
 				label="LastName"
 				type="LastName"
 				autoComplete="LastName"
-			
+				value={registerLastName} 
+				onChange = {(e) => handleInputChange(e)} 
 				InputProps={{
 					startAdornment: (
 					  <InputAdornment position="start">
@@ -121,7 +123,8 @@ function RegisterPopUp({ registerPopUp, setRegisterPopUp }) {
 				label="Username"
 				type="Nickname"
 				autoComplete="nickname"
-			
+				value={registerUsername} 
+				onChange = {(e) => handleInputChange(e)} 
 				InputProps={{
 					startAdornment: (
 					<InputAdornment position="start">
@@ -140,7 +143,8 @@ function RegisterPopUp({ registerPopUp, setRegisterPopUp }) {
 					label="Email"
 					type="email"
 					autoComplete="current-email"
-			
+					value={registerEmail} 
+					onChange = {(e) => handleInputChange(e)} 
 				/>
 		
 			<TextField
@@ -149,6 +153,8 @@ function RegisterPopUp({ registerPopUp, setRegisterPopUp }) {
 				label="Password"
 				type="password"
 				autoComplete="current-password"
+				value={registerPassword} 
+				onChange = {(e) => handleInputChange(e)} 
 				InputProps={{
 					startAdornment: (
 					  <InputAdornment position="start">
@@ -156,7 +162,7 @@ function RegisterPopUp({ registerPopUp, setRegisterPopUp }) {
 					  </InputAdornment>
 					)}}
 				/>
-				 <Button variant="contained" color="success">
+				 <Button onClick={()=>handleRegistrationSubmit()} variant="contained" color="success">
 						რეგისტრაცია
 					</Button>
 			</Box>
@@ -172,6 +178,12 @@ function App() {
 	const [email, setEmail] = useState(null);
     const [password,setPassword] = useState(null)
 
+	const [registerEmail, setRegisterEmail] = useState(null);
+    const [registerPassword,setRegisterPassword] = useState(null)
+	const [registerFirstName,setRegisterFirstName] = useState(null)
+	const [registerLastName,setRegisterLastName] = useState(null)
+	const [registerUsername,setRegisterUsername] = useState(null)
+
 	const handleInputChange = (e) => {
 		console.log(e)
 		const {id , value} = e.target;
@@ -182,7 +194,28 @@ function App() {
 		if(id === "password"){
 			setPassword(value);
 		}
+		
+		if(id == 'register-email'){
+			setRegisterEmail(value)
+		}
 
+		if(id == 'register-password'){
+			setRegisterPassword(value)
+		}
+
+		if(id == 'register-first-name'){
+			setRegisterFirstName(value)
+		}
+
+		if(id == 'register-last-name'){
+			setRegisterLastName(value)
+		}
+
+		if(id == 'username'){
+			setRegisterUsername(value)
+		}
+	
+	
 	}
 	
 	const handleLoginSubmit  = () => {
@@ -191,6 +224,9 @@ function App() {
 		console.log(email, password)
 	}
 
+	const handleRegistrationSubmit = () => {
+		console.log(registerEmail, registerFirstName, registerLastName, registerPassword, registerUsername)
+	}
 
 	return (
 		<Box display="flex" flexDirection="column">
@@ -198,7 +234,9 @@ function App() {
 			email={email} handleInputChange={handleInputChange} password={password} handleLoginSubmit={handleLoginSubmit} />
 			<RegisterPopUp
 				registerPopUp={registerPopUp}
-				setRegisterPopUp={setRegisterPopUp}
+				setRegisterPopUp={setRegisterPopUp} registerEmail={registerEmail} registerFirstName={registerFirstName}
+				registerLastName={registerLastName} registerPassword={registerPassword} registerUsername={registerUsername}
+				handleInputChange={handleInputChange} handleRegistrationSubmit={handleRegistrationSubmit}
 			/>
 			<Navbar
 				isLogin={isLogin}

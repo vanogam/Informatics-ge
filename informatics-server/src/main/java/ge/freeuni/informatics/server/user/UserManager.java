@@ -3,6 +3,7 @@ package ge.freeuni.informatics.server.user;
 import ge.freeuni.informatics.model.dto.AuthenticationDetails;
 import ge.freeuni.informatics.model.dto.UserDTO;
 import ge.freeuni.informatics.model.entity.user.User;
+import ge.freeuni.informatics.model.exception.InformaticsServerException;
 import ge.freeuni.informatics.repository.user.IUserRepository;
 import ge.freeuni.informatics.utils.UserUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +31,7 @@ public class UserManager implements IUserManager{
     }
 
     @Override
-    public UserDTO authenticate(AuthenticationDetails auth) {
+    public UserDTO authenticate(AuthenticationDetails auth) throws InformaticsServerException {
         try {
             User user = userRepository.getUser(auth.getUsername());
             String hash = UserUtils.getHash(auth.getPassword(), user.getPasswordSalt());

@@ -1,9 +1,7 @@
 package ge.freeuni.informatics.model.entity.task;
 
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+import javax.persistence.*;
+import java.util.List;
 import java.util.Map;
 
 @Entity
@@ -35,6 +33,8 @@ public class Task {
      * Used to parse and number test case file names.
      */
     String testCaseTemplate;
+
+    List<TestCase> testCases;
 
     @Id
     @GeneratedValue
@@ -117,5 +117,14 @@ public class Task {
 
     public void setTestCaseTemplate(String testCaseTemplate) {
         this.testCaseTemplate = testCaseTemplate;
+    }
+
+    @OneToMany(mappedBy = "id")
+    public List<TestCase> getTestCases() {
+        return testCases;
+    }
+
+    public void setTestCases(List<TestCase> testCases) {
+        this.testCases = testCases;
     }
 }

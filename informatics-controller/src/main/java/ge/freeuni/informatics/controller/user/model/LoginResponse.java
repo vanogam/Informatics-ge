@@ -6,6 +6,8 @@ public class LoginResponse {
 
     String username;
 
+    String message;
+
     public String getStatus() {
         return status;
     }
@@ -20,5 +22,13 @@ public class LoginResponse {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 }

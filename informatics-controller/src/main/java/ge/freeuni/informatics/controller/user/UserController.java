@@ -3,6 +3,7 @@ package ge.freeuni.informatics.controller.user;
 import ge.freeuni.informatics.controller.user.model.LoginResponse;
 import ge.freeuni.informatics.model.dto.AuthenticationDetails;
 import ge.freeuni.informatics.model.dto.UserDTO;
+import ge.freeuni.informatics.model.exception.InformaticsServerException;
 import ge.freeuni.informatics.server.user.IUserManager;
 import ge.freeuni.informatics.controller.user.model.RegisterDTO;
 import org.slf4j.Logger;
@@ -38,14 +39,20 @@ public class UserController {
     @PostMapping("/login")
     @ResponseBody
     public LoginResponse login(@RequestBody AuthenticationDetails authenticationDetails) {
-        UserDTO userDTO = userManager.authenticate(authenticationDetails);
         LoginResponse response = new LoginResponse();
-        if (userDTO != null) {
-            response.setStatus("SUCCESS");
-            response.setUsername(userDTO.getUsername());
-        } else {
-            response.setStatus("FAILURE");
+        try {
+            UserDTO userDTO = userManager.authenticate(authenticationDetails);
+            if (userDTO != null) {
+                response.setStatus("SUCCESS");
+            }
+        } catch (InformaticsServerException e) {
+            response.setStatus("FAIL");
+            response.setMessage(e.getMessage());
         }
+
         return response;
+
     }
+
+
 }

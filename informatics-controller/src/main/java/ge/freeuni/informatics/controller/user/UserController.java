@@ -47,7 +47,7 @@ public class UserController {
             }
         } catch (InformaticsServerException e) {
             response.setStatus("FAIL");
-            response.setMessage(e.getMessage());
+            response.setMessage(e.getCode());
         }
 
         return response;

@@ -10,7 +10,7 @@ import EmailIcon from '@mui/icons-material/Email';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LockIcon from '@mui/icons-material/Lock';
 import PersonIcon from '@mui/icons-material/Person';
-
+import axios from 'axios';
 function LoginPopUp({ loginPopUp, setLoginPopUp, email, password, handleInputChange, handleLoginSubmit }) {
 	return (
 		<Modal open={loginPopUp} onClose={() => setLoginPopUp(false)}>
@@ -222,10 +222,15 @@ function App() {
 		// setEmail(email)
 		// setPassword(password)
 		console.log(email, password)
+		const body = {'password': password, 'username' : email}
+		axios.post('http://localhost:8080/login', body )
+			.then(response => console.log(response));
 	}
 
 	const handleRegistrationSubmit = () => {
+		const body = {'username': registerUsername, 'firstName': registerFirstName, 'lastName': registerLastName, 'password': registerPassword}
 		console.log(registerEmail, registerFirstName, registerLastName, registerPassword, registerUsername)
+		axios.post('http://localhost:8080/register', body).then(response => console.log(response));
 	}
 
 	return (

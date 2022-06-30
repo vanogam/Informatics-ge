@@ -8,4 +8,16 @@ public class InformaticsServerException extends Exception {
         super(ex);
         this.code = code;
     }
+    public InformaticsServerException(String code) {
+        super();
+        this.code = code;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
 }

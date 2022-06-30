@@ -14,6 +14,8 @@ public class Submission {
 
     private long id;
 
+    private long cmsId;
+
     private long userId;
 
     private long taskId;
@@ -32,6 +34,14 @@ public class Submission {
 
     public void setId(long id) {
         this.id = id;
+    }
+
+    public long getCmsId() {
+        return cmsId;
+    }
+
+    public void setCmsId(long cmsId) {
+        this.cmsId = cmsId;
     }
 
     @OneToOne(targetEntity = User.class)

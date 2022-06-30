@@ -50,6 +50,7 @@
                             <goal>repackage</goal>
                         </goals>
                         <configuration>
+                            <outputDirectory>${project.basedir}/target-informatics</outputDirectory>
                             <mainClass>ge.freeuni.informatics.system.InformaticsApplication</mainClass>
                         </configuration>
                     </execution>

@@ -1,0 +1,8 @@
+{
+  "properties": [
+    {
+      "name": "ge.freeuni.informatics.model.entity.task.Task.taskDirectoryAddress",
+      "type": "java.lang.String",
+      "description": "Directory where tasks will be stored."
+  }
+] }

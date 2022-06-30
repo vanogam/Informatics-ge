@@ -7,11 +7,12 @@
         <class>ge.freeuni.informatics.model.entity.user.User</class>
         <class>ge.freeuni.informatics.model.entity.contestroom.ContestRoom</class>
         <class>ge.freeuni.informatics.model.entity.contest.Contest</class>
+        <class>ge.freeuni.informatics.model.entity.task.TestCase</class>
         <class>ge.freeuni.informatics.model.entity.task.Task</class>
         <class>ge.freeuni.informatics.model.entity.post.Post</class>
         <class>ge.freeuni.informatics.model.entity.submission.Submission</class>
         <properties>
-
+        <property name="hibernate.hbm2ddl.auto" value="update"/>
         </properties>
     </persistence-unit>
 </persistence>

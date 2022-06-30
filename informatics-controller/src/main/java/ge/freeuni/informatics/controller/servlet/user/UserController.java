@@ -1,5 +1,6 @@
 package ge.freeuni.informatics.controller.servlet.user;
 
+import ge.freeuni.informatics.controller.model.InformaticsResponse;
 import ge.freeuni.informatics.controller.model.LoginResponse;
 import ge.freeuni.informatics.model.dto.AuthenticationDetails;
 import ge.freeuni.informatics.model.dto.UserDTO;
@@ -12,6 +13,8 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 @RestController
 public class UserController {
@@ -26,14 +29,21 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public void register(@RequestBody RegisterDTO registerDTO) {
+    @ResponseBody
+    public InformaticsResponse register(@RequestBody RegisterDTO registerDTO) {
         UserDTO userDTO = new UserDTO();
         userDTO.setUsername(registerDTO.getUsername());
         userDTO.setFirstName(registerDTO.getFirstName());
         userDTO.setLastName(registerDTO.getLastName());
         userDTO.setPassword(registerDTO.getPassword());
-
-        userManager.createUser(userDTO);
+        InformaticsResponse response = new InformaticsResponse();
+        try {
+            userManager.createUser(userDTO);
+            response.setStatus("SUCCESS");
+        } catch (Exception ex) {
+            response.setStatus("FAIL");
+        }
+        return response;
     }
 
     @PostMapping("/login")
@@ -62,17 +72,13 @@ public class UserController {
 
     @PostMapping("/logout")
     @ResponseBody
-    public LoginResponse logout(HttpServletRequest request) {
-        LoginResponse response = new LoginResponse();
+    public void logout(HttpServletRequest request, HttpServletResponse response) {
         try {
             request.logout();
-            response.setStatus("SUCCESS");
-        } catch (ServletException ex) {
-            response.setStatus("FAIL");
+            response.sendRedirect("/");
+        } catch (ServletException | IOException ex) {
+            throw new RuntimeException(ex);
         }
-
-        return response;
-
     }
 
     @GetMapping("/get-user")

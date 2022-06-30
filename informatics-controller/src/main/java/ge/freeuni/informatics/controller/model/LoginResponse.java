@@ -1,4 +1,4 @@
-package ge.freeuni.informatics.controller.user.model;
+package ge.freeuni.informatics.controller.model;
 
 public class LoginResponse {
 

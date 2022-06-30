@@ -12,6 +12,12 @@
     <name>Informatics Server</name>
     <dependencies>
         <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-core</artifactId>
+            <version>5.6.2</version>
+        </dependency>
+
+        <dependency>
             <groupId>ge.freeuni</groupId>
             <artifactId>informatics-model</artifactId>
             <version>${project.version}</version>

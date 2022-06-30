@@ -13,9 +13,11 @@ public class UserDTO {
 
     private String firstName;
 
-    String lastName;
+    private String lastName;
 
-    Integer version;
+    private Integer version;
+
+    private String roles;
 
     public Long getId() {
         return id;
@@ -65,6 +67,14 @@ public class UserDTO {
         this.version = version;
     }
 
+    public String getRoles() {
+        return roles;
+    }
+
+    public void setRoles(String roles) {
+        this.roles = roles;
+    }
+
     public static UserDTO toDTO(User user) {
         UserDTO userDTO = new UserDTO();
 
@@ -73,6 +83,7 @@ public class UserDTO {
         userDTO.setFirstName(user.getFirstName());
         userDTO.setLastName(user.getLastName());
         userDTO.setVersion(userDTO.getVersion());
+        userDTO.setRoles(user.getRoles());
 
         return userDTO;
     }
@@ -86,6 +97,7 @@ public class UserDTO {
         user.setLastName(userDTO.getLastName());
         user.setPassword(userDTO.getPassword());
         user.setVersion(userDTO.getVersion());
+        user.setRoles(userDTO.getRoles());
 
         return user;
     }

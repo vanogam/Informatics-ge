@@ -1,4 +1,4 @@
-package ge.freeuni.informatics.controller.cmsapi;
+package ge.freeuni.informatics.controller.servlet.cmsapi;
 
 import ge.freeuni.informatics.server.submission.SubmissionManager;
 import org.springframework.beans.factory.annotation.Autowired;

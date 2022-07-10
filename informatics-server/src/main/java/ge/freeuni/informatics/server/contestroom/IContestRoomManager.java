@@ -1,6 +1,6 @@
 package ge.freeuni.informatics.server.contestroom;
 
-import ge.freeuni.informatics.model.entity.contestroom.ContestRoom;
+import ge.freeuni.informatics.common.model.contestroom.ContestRoom;
 
 import java.util.List;
 
@@ -8,11 +8,13 @@ public interface IContestRoomManager {
 
     void createRoom(ContestRoom room);
 
-    void addTeachers(List<Long> teacherIds);
+    ContestRoom getRoom(Long roomId);
 
-    void addParticipants(List<Long> participantIds);
+    void addTeachersToRoom(List<Long> teacherIds, Long roomId);
 
-    void getRoomsForTeachers(Long teacherId);
+    void addParticipantsToRoom(List<Long> participantIds, Long roomId);
+
+    List<ContestRoom> getRoomsForTeachers(Long teacherId);
 
     void getRoomsForParticipant(Long participantId);
 

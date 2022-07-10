@@ -18,7 +18,7 @@
         </dependency>
         <dependency>
             <groupId>ge.freeuni</groupId>
-            <artifactId>informatics-model</artifactId>
+            <artifactId>informatics-common</artifactId>
             <version>0.0.1-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>

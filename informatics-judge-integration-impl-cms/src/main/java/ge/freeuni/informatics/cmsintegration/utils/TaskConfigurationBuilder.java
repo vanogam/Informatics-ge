@@ -1,9 +1,8 @@
 package ge.freeuni.informatics.cmsintegration.utils;
 
-import ge.freeuni.informatics.model.Language;
-import ge.freeuni.informatics.model.entity.task.Task;
-import ge.freeuni.informatics.model.entity.task.TestCase;
-import ge.freeuni.informatics.model.exception.InformaticsServerException;
+import ge.freeuni.informatics.common.Language;
+import ge.freeuni.informatics.common.model.task.Task;
+import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.utils.FileUtils;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -12,8 +11,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 
 public class TaskConfigurationBuilder {

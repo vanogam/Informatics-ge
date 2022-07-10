@@ -1,6 +1,6 @@
 package ge.freeuni.informatics.system.configuration;
 
-import ge.freeuni.informatics.model.entity.user.UserRole;
+import ge.freeuni.informatics.common.model.user.UserRole;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;

@@ -2,9 +2,9 @@ package ge.freeuni.informatics.controller.servlet.user;
 
 import ge.freeuni.informatics.controller.model.InformaticsResponse;
 import ge.freeuni.informatics.controller.model.LoginResponse;
-import ge.freeuni.informatics.model.dto.AuthenticationDetails;
-import ge.freeuni.informatics.model.dto.UserDTO;
-import ge.freeuni.informatics.model.exception.InformaticsServerException;
+import ge.freeuni.informatics.common.dto.AuthenticationDetails;
+import ge.freeuni.informatics.common.dto.UserDTO;
+import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.server.user.IUserManager;
 import ge.freeuni.informatics.controller.model.RegisterDTO;
 import org.slf4j.Logger;
@@ -38,7 +38,7 @@ public class UserController {
         userDTO.setPassword(registerDTO.getPassword());
         InformaticsResponse response = new InformaticsResponse();
         try {
-            userManager.createUser(userDTO);
+            userManager.createUser(UserDTO.fromDTO(userDTO));
             response.setStatus("SUCCESS");
         } catch (Exception ex) {
             response.setStatus("FAIL");

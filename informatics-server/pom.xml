@@ -16,26 +16,33 @@
             <artifactId>spring-security-core</artifactId>
             <version>5.6.2</version>
         </dependency>
-
         <dependency>
             <groupId>ge.freeuni</groupId>
-            <artifactId>informatics-model</artifactId>
+            <artifactId>informatics-common</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>ge.freeuni</groupId>
             <artifactId>informatics-utils</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>ge.freeuni</groupId>
             <artifactId>informatics-repository</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>ge.freeuni</groupId>
+            <artifactId>informatics-judge-integration</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ge.freeuni</groupId>
+            <artifactId>informatics-judge-integration-impl-cms</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
-
-
 </project>

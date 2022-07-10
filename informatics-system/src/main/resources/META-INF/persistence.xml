@@ -4,13 +4,13 @@
              xmlns="http://java.sun.com/xml/ns/persistence"
              xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_1_0.xsd">
     <persistence-unit name="default">
-        <class>ge.freeuni.informatics.model.entity.user.User</class>
-        <class>ge.freeuni.informatics.model.entity.contestroom.ContestRoom</class>
-        <class>ge.freeuni.informatics.model.entity.contest.Contest</class>
-        <class>ge.freeuni.informatics.model.entity.task.TestCase</class>
-        <class>ge.freeuni.informatics.model.entity.task.Task</class>
-        <class>ge.freeuni.informatics.model.entity.post.Post</class>
-        <class>ge.freeuni.informatics.model.entity.submission.Submission</class>
+        <class>ge.freeuni.informatics.common.model.user.User</class>
+        <class>ge.freeuni.informatics.common.model.contestroom.ContestRoom</class>
+        <class>ge.freeuni.informatics.common.model.contest.Contest</class>
+        <class>ge.freeuni.informatics.common.model.task.TestCase</class>
+        <class>ge.freeuni.informatics.common.model.task.Task</class>
+        <class>ge.freeuni.informatics.common.model.post.Post</class>
+        <class>ge.freeuni.informatics.common.model.submission.Submission</class>
         <properties>
         <property name="hibernate.hbm2ddl.auto" value="update"/>
         </properties>

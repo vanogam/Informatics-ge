@@ -1,17 +1,58 @@
 package ge.freeuni.informatics.server.submission;
 
-import ge.freeuni.informatics.repository.submission.SubmissionRepository;
+import ge.freeuni.informatics.judgeintegration.IJudgeIntegration;
+import ge.freeuni.informatics.common.exception.InformaticsServerException;
+import ge.freeuni.informatics.common.model.CodeLanguage;
+import ge.freeuni.informatics.common.model.submission.Submission;
+import ge.freeuni.informatics.common.model.user.User;
+import ge.freeuni.informatics.repository.submission.ISubmissionRepository;
+import ge.freeuni.informatics.server.user.IUserManager;
+import ge.freeuni.informatics.utils.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 @Service
 public class SubmissionManager implements ISubmissionManager {
 
-    final SubmissionRepository submissionRepository;
+    private final static String SUBMISSION_DIRECTORY = "/informaticsFiles/submissions";
+
+    private final ISubmissionRepository submissionRepository;
+
+    private final IUserManager userManager;
+
+    private final IJudgeIntegration judgeIntegration;
 
     @Autowired
-    public SubmissionManager(SubmissionRepository submissionRepository) {
+    public SubmissionManager(ISubmissionRepository submissionRepository, IUserManager userManager, IJudgeIntegration judgeIntegration) {
         this.submissionRepository = submissionRepository;
+        this.userManager = userManager;
+        this.judgeIntegration = judgeIntegration;
+    }
+
+    @Override
+    public void addSubmissionViaText(Submission submission, String text) throws InformaticsServerException {
+        User user = userManager.getUser(submission.getUserId());
+        CodeLanguage language = CodeLanguage.valueOf(submission.getLanguage());
+        submission.setFileName(submission.getId() + "." + language.getSuffix());
+        String path = FileUtils.buildPath(Arrays.asList(SUBMISSION_DIRECTORY,
+                user.getId().toString(),
+                submission.getFileName()));
+        File submissionFile = new File(path);
+        try {
+            OutputStream os = new FileOutputStream(submissionFile);
+            os.write(text.getBytes(StandardCharsets.UTF_8));
+            os.close();
+        } catch (FileNotFoundException e) {
+            throw new InformaticsServerException("Problem creating submission file", e);
+        } catch (IOException e) {
+            throw new InformaticsServerException("Error writing submission", e);
+        }
+        judgeIntegration.addSubmission(path, submission);
+        submissionRepository.addSubmission(submission);
     }
 
     @Override

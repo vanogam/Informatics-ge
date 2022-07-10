@@ -11,6 +11,7 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LockIcon from '@mui/icons-material/Lock';
 import PersonIcon from '@mui/icons-material/Person';
 import axios from 'axios';
+
 function LoginPopUp({ loginPopUp, setLoginPopUp, email, password, handleInputChange, handleLoginSubmit }) {
 	return (
 		<Modal open={loginPopUp} onClose={() => setLoginPopUp(false)}>
@@ -54,7 +55,8 @@ function LoginPopUp({ loginPopUp, setLoginPopUp, email, password, handleInputCha
 						value={password} 
 						onChange = {(e) => handleInputChange(e)} 
 						/>
-					  <Button  onClick={()=>handleLoginSubmit()} variant="contained" color="success">
+					  <Button  sx = {{	background: 'rgb(42,13,56)',
+									background: 'linear-gradient(90deg, rgba(42,13,56,1) 63%, rgba(53,26,88,1) 77%, rgba(73,62,153,1) 92%)'}} onClick={()=>handleLoginSubmit()} variant="contained" color="success">
 						შესვლა
 					</Button>
 					
@@ -162,7 +164,8 @@ function RegisterPopUp({ registerPopUp, setRegisterPopUp, registerEmail, registe
 					  </InputAdornment>
 					)}}
 				/>
-				 <Button onClick={()=>handleRegistrationSubmit()} variant="contained" color="success">
+				 <Button sx = {{	background: 'rgb(42,13,56)',
+									background: 'linear-gradient(90deg, rgba(42,13,56,1) 63%, rgba(53,26,88,1) 77%, rgba(73,62,153,1) 92%)'}}onClick={()=>handleRegistrationSubmit()} variant="contained">
 						რეგისტრაცია
 					</Button>
 			</Box>
@@ -218,13 +221,21 @@ function App() {
 	
 	}
 	
+	const changeAuthStatus = (response) => {
+		if (response.status === 200){
+			console.log("Logging in")
+			setIsLogin(true)
+		}
+			
+	}
 	const handleLoginSubmit  = () => {
 		// setEmail(email)
 		// setPassword(password)
 		console.log(email, password)
 		const body = {'password': password, 'username' : email}
 		axios.post('http://localhost:8080/login', body )
-			.then(response => console.log(response));
+			.then(response => changeAuthStatus(response));
+	
 	}
 
 	const handleRegistrationSubmit = () => {
@@ -249,6 +260,7 @@ function App() {
 				setLoginPopUp={setLoginPopUp}
 				setRegisterPopUp={setRegisterPopUp}
 			/>
+		
 			<Routes>
 				<Route path="/" element={<Main />} />
 				<Route path="/compiler" element={<Compiler />} />
@@ -258,3 +270,5 @@ function App() {
 }
 
 export default App
+// #mvn clean install 
+// #sudo docker-compose up --build 

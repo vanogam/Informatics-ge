@@ -1,7 +1,9 @@
 package ge.freeuni.informatics.repository.contest;
 
 import ge.freeuni.informatics.common.model.contest.Contest;
+import ge.freeuni.informatics.common.model.contest.ContestStatus;
 
+import java.util.Date;
 import java.util.List;
 
 public interface IContestRepository {
@@ -10,5 +12,5 @@ public interface IContestRepository {
 
     Contest getContest(Long contestId);
 
-    List<Contest> getRoomContests(Long roomId);
+    List<Contest> getContests(Long roomId, String name, List<ContestStatus> statuses, Date minStartDate, Date maxStartDate);
 }

@@ -1,11 +1,16 @@
-package ge.freeuni.informatics.common.model.task;
+package ge.freeuni.informatics.common.dto;
+
+import ge.freeuni.informatics.common.model.task.Task;
+import ge.freeuni.informatics.common.model.task.TaskScoreType;
+import ge.freeuni.informatics.common.model.task.TaskType;
+import ge.freeuni.informatics.common.model.task.TestCase;
 
 import javax.persistence.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-@Entity
-public class Task {
+public class TaskDTO {
 
     long id;
 
@@ -36,8 +41,6 @@ public class Task {
 
     List<TestCase> testCases;
 
-    @Id
-    @GeneratedValue
     public long getId() {
         return id;
     }
@@ -46,7 +49,6 @@ public class Task {
         this.id = id;
     }
 
-    @Column(unique = true)
     public String getCode() {
         return code;
     }
@@ -55,7 +57,6 @@ public class Task {
         this.code = code;
     }
 
-    @ElementCollection
     public Map<String, String> getTitle() {
         return title;
     }
@@ -120,7 +121,6 @@ public class Task {
         this.testCaseTemplate = testCaseTemplate;
     }
 
-    @OneToMany(mappedBy = "id")
     public List<TestCase> getTestCases() {
         return testCases;
     }
@@ -128,4 +128,59 @@ public class Task {
     public void setTestCases(List<TestCase> testCases) {
         this.testCases = testCases;
     }
+
+    public static Task fromDTO(TaskDTO taskDTO) {
+        Task task = new Task();
+
+        task.setTaskType(taskDTO.getTaskType());
+        task.setTaskScoreParameter(taskDTO.getTaskScoreParameter());
+        task.setTaskScoreType(taskDTO.getTaskScoreType());
+        task.setId(taskDTO.getId());
+        task.setCode(taskDTO.getCode());
+        task.setConfigAddress(taskDTO.getConfigAddress());
+        task.setTestCases(taskDTO.getTestCases());
+        task.setTestCaseTemplate(taskDTO.getTestCaseTemplate());
+        task.setMemoryLimitMB(taskDTO.getMemoryLimitMB());
+        task.setTimeLimitMillis(taskDTO.getTimeLimitMillis());
+        task.setTitle(taskDTO.getTitle());
+
+        return task;
+    }
+
+    public static List<Task> fromDTOs(List<TaskDTO> taskDTOs) {
+        List<Task> tasks = new ArrayList<>();
+
+        for (TaskDTO taskDTO : taskDTOs) {
+            tasks.add(TaskDTO.fromDTO(taskDTO));
+        }
+        return tasks;
+    }
+
+    public static TaskDTO toDTO(Task task) {
+        TaskDTO taskDTO = new TaskDTO();
+
+        taskDTO.setTaskType(task.getTaskType());
+        taskDTO.setTaskScoreParameter(task.getTaskScoreParameter());
+        taskDTO.setTaskScoreType(task.getTaskScoreType());
+        taskDTO.setId(task.getId());
+        taskDTO.setCode(task.getCode());
+        taskDTO.setConfigAddress(task.getConfigAddress());
+        taskDTO.setTestCases(task.getTestCases());
+        taskDTO.setTestCaseTemplate(task.getTestCaseTemplate());
+        taskDTO.setMemoryLimitMB(task.getMemoryLimitMB());
+        taskDTO.setTimeLimitMillis(task.getTimeLimitMillis());
+        taskDTO.setTitle(task.getTitle());
+
+        return taskDTO;
+    }
+
+    public static List<TaskDTO> toDTOs(List<Task> tasks) {
+        List<TaskDTO> taskDTOs = new ArrayList<>();
+
+        for (Task task : tasks) {
+            taskDTOs.add(TaskDTO.toDTO(task));
+        }
+        return taskDTOs;
+    }
+
 }

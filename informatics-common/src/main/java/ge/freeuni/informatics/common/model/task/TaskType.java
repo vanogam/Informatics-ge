@@ -3,7 +3,6 @@ package ge.freeuni.informatics.common.model.task;
 public enum TaskType {
     BATCH("Batch");
 
-
     private String code;
 
     TaskType(String code) {

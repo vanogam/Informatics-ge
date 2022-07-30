@@ -1,7 +1,9 @@
 package ge.freeuni.informatics.common.dto;
 
 import ge.freeuni.informatics.common.model.contest.Contest;
+import ge.freeuni.informatics.common.model.contest.ContestStatus;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -14,11 +16,14 @@ public class ContestDTO {
 
     Date startDate;
 
-    Long durationInSeconds;
+    Integer durationInSeconds;
 
-    Long spaceId;
+    Long roomId;
 
+    ContestStatus status;
     List<UserDTO> participants;
+
+    List<TaskDTO> tasks = new ArrayList<>();
 
     public long getId() {
         return id;
@@ -44,20 +49,28 @@ public class ContestDTO {
         this.startDate = startDate;
     }
 
-    public Long getDurationInSeconds() {
+    public Integer getDurationInSeconds() {
         return durationInSeconds;
     }
 
-    public void setDurationInSeconds(Long durationInSeconds) {
+    public void setDurationInSeconds(Integer durationInSeconds) {
         this.durationInSeconds = durationInSeconds;
     }
 
-    public Long getSpaceId() {
-        return spaceId;
+    public Long getRoomId() {
+        return roomId;
     }
 
-    public void setSpaceId(Long spaceId) {
-        this.spaceId = spaceId;
+    public void setRoomId(Long roomId) {
+        this.roomId = roomId;
+    }
+
+    public ContestStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(ContestStatus status) {
+        this.status = status;
     }
 
     public List<UserDTO> getParticipants() {
@@ -68,6 +81,14 @@ public class ContestDTO {
         this.participants = participants;
     }
 
+    public List<TaskDTO> getTasks() {
+        return tasks;
+    }
+
+    public void setTasks(List<TaskDTO> tasks) {
+        this.tasks = tasks;
+    }
+
     public static ContestDTO toDTO(Contest contest) {
         ContestDTO contestDTO = new ContestDTO();
 
@@ -76,6 +97,7 @@ public class ContestDTO {
         contestDTO.setDurationInSeconds(contest.getDurationInSeconds());
         contestDTO.setName(contest.getName());
         contestDTO.setParticipants(contest.getParticipants().stream().map(UserDTO::toDTO).collect(Collectors.toList()));
+        contestDTO.setTasks(TaskDTO.toDTOs(contest.getTasks()));
 
         return contestDTO;
     }

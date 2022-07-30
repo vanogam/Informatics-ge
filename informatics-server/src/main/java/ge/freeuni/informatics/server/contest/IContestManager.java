@@ -1,16 +1,21 @@
 package ge.freeuni.informatics.server.contest;
 
-import ge.freeuni.informatics.common.model.contest.Contest;
+import ge.freeuni.informatics.common.dto.ContestDTO;
 import ge.freeuni.informatics.common.model.contest.ContestStatus;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 
+import java.util.Date;
 import java.util.List;
 
 public interface IContestManager {
 
-    void createContest(Contest contest) throws InformaticsServerException;
+    void createContest(ContestDTO contest) throws InformaticsServerException;
 
-    List<Contest> getContests(Long roomId, String name, List<ContestStatus> statuses);
+    ContestDTO getContest(Long contestId);
+
+    List<ContestDTO> getContests(Long roomId, String name, List<ContestStatus> statuses, Date minStartDate, Date maxStartDate);
+
+    void updateContest(ContestDTO contest);
 
     void deleteContest(long contestId);
 

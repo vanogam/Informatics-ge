@@ -1,11 +1,9 @@
 package ge.freeuni.informatics.common.model.contest;
 
+import ge.freeuni.informatics.common.model.task.Task;
 import ge.freeuni.informatics.common.model.user.User;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.ManyToMany;
+import javax.persistence.*;
 import java.util.Date;
 import java.util.List;
 
@@ -18,11 +16,15 @@ public class Contest {
 
     private Date startDate;
 
-    private Long durationInSeconds;
+    private Integer durationInSeconds;
+
+    private ContestStatus status;
 
     private Long roomId;
 
     private List<User> participants;
+
+    private List<Task> tasks;
 
     @Id
     @GeneratedValue
@@ -50,12 +52,20 @@ public class Contest {
         this.startDate = startDate;
     }
 
-    public Long getDurationInSeconds() {
+    public Integer getDurationInSeconds() {
         return durationInSeconds;
     }
 
-    public void setDurationInSeconds(Long durationInSeconds) {
+    public void setDurationInSeconds(Integer durationInSeconds) {
         this.durationInSeconds = durationInSeconds;
+    }
+
+    public ContestStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(ContestStatus status) {
+        this.status = status;
     }
 
     @ManyToMany
@@ -73,5 +83,14 @@ public class Contest {
 
     public void setRoomId(Long roomId) {
         this.roomId = roomId;
+    }
+
+    @OneToMany
+    public List<Task> getTasks() {
+        return tasks;
+    }
+
+    public void setTasks(List<Task> tasks) {
+        this.tasks = tasks;
     }
 }

@@ -1,19 +1,16 @@
-package ge.freeuni.informatics.common.model.task;
+package ge.freeuni.informatics.controller.model;
 
-import javax.persistence.*;
-import java.util.List;
+import ge.freeuni.informatics.common.model.task.TaskScoreType;
+import ge.freeuni.informatics.common.model.task.TaskType;
 import java.util.Map;
 
-@Entity
-public class Task {
+public class AddTaskRequest {
 
-    long id;
+    Integer contestId;
 
     String code;
 
     Map<String, String> title;
-
-    String configAddress;
 
     TaskType taskType;
 
@@ -29,24 +26,14 @@ public class Task {
 
     Integer memoryLimitMB;
 
-    /**
-     * Used to parse and number test case file names.
-     */
-    String testCaseTemplate;
-
-    List<TestCase> testCases;
-
-    @Id
-    @GeneratedValue
-    public long getId() {
-        return id;
+    public Integer getContestId() {
+        return contestId;
     }
 
-    public void setId(long id) {
-        this.id = id;
+    public void setContestId(Integer contestId) {
+        this.contestId = contestId;
     }
 
-    @Column(unique = true)
     public String getCode() {
         return code;
     }
@@ -55,21 +42,12 @@ public class Task {
         this.code = code;
     }
 
-    @ElementCollection
     public Map<String, String> getTitle() {
         return title;
     }
 
     public void setTitle(Map<String, String> title) {
         this.title = title;
-    }
-
-    public String getConfigAddress() {
-        return configAddress;
-    }
-
-    public void setConfigAddress(String configAddress) {
-        this.configAddress = configAddress;
     }
 
     public TaskType getTaskType() {
@@ -112,20 +90,4 @@ public class Task {
         this.memoryLimitMB = memoryLimitMB;
     }
 
-    public String getTestCaseTemplate() {
-        return testCaseTemplate;
-    }
-
-    public void setTestCaseTemplate(String testCaseTemplate) {
-        this.testCaseTemplate = testCaseTemplate;
-    }
-
-    @OneToMany(mappedBy = "id")
-    public List<TestCase> getTestCases() {
-        return testCases;
-    }
-
-    public void setTestCases(List<TestCase> testCases) {
-        this.testCases = testCases;
-    }
 }

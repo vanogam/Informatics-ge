@@ -2,6 +2,15 @@ package ge.freeuni.informatics.controller.model;
 
 public class InformaticsResponse {
 
+    public InformaticsResponse() {
+
+    }
+
+    public InformaticsResponse(String status, String message) {
+        this.status = status;
+        this.message = message;
+    }
+
     private String message;
 
     private String status;

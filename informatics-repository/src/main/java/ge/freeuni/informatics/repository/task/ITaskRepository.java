@@ -6,5 +6,6 @@ public interface ITaskRepository {
 
     void addTask(Task task);
 
+    Task getTask(Long taskId);
     
 }

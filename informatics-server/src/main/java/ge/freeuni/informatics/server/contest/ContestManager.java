@@ -1,5 +1,6 @@
 package ge.freeuni.informatics.server.contest;
 
+import ge.freeuni.informatics.common.dto.ContestDTO;
 import ge.freeuni.informatics.common.dto.UserDTO;
 import ge.freeuni.informatics.common.model.contest.Contest;
 import ge.freeuni.informatics.common.model.contest.ContestStatus;
@@ -12,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Component;
 
+import java.util.Date;
 import java.util.List;
 
 @Component
@@ -32,7 +34,8 @@ public class ContestManager implements IContestManager {
 
     @Secured({"TEACHER", "ADMIN"})
     @Override
-    public void createContest(Contest contest) throws InformaticsServerException {
+    public void createContest(ContestDTO contestDTO) throws InformaticsServerException {
+        Contest contest = ContestDTO.fromDTO(contestDTO);
         ContestRoom room = contestRoomManager.getRoom(contest.getRoomId());
         if (!room.getTeachers().contains(UserDTO.fromDTO(userManager.getAuthenticatedUser()))) {
             throw new InformaticsServerException("This user can not create contest in this room");
@@ -41,8 +44,18 @@ public class ContestManager implements IContestManager {
     }
 
     @Override
-    public List<Contest> getContests(Long roomId, String name, List<ContestStatus> statuses) {
+    public ContestDTO getContest(Long contestId) {
+        return ContestDTO.toDTO(contestRepository.getContest(contestId));
+    }
+
+      @Override
+    public List<ContestDTO> getContests(Long roomId, String name, List<ContestStatus> statuses, Date minStartDate, Date maxStartDate) {
         return null;
+    }
+
+    @Override
+    public void updateContest(ContestDTO contest) {
+        contestRepository.addContest(ContestDTO.fromDTO(contest));
     }
 
     @Override

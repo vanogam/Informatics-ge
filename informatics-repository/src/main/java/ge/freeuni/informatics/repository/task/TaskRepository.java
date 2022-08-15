@@ -5,8 +5,10 @@ import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.transaction.Transactional;
 
 @Repository
+@Transactional
 public class TaskRepository implements ITaskRepository {
 
     @PersistenceContext
@@ -18,7 +20,7 @@ public class TaskRepository implements ITaskRepository {
     }
 
     @Override
-    public Task getTask(Long taskId) {
+    public Task getTask(int taskId) {
         return em.find(Task.class, taskId);
     }
 }

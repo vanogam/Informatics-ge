@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface IContestRepository {
 
-    void addContest(Contest contest);
+    Contest addContest(Contest contest);
 
     Contest getContest(Long contestId);
 

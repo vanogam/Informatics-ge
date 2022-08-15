@@ -2,6 +2,8 @@ package ge.freeuni.informatics.common.model.contest;
 
 import ge.freeuni.informatics.common.model.task.Task;
 import ge.freeuni.informatics.common.model.user.User;
+import org.hibernate.annotations.LazyCollection;
+import org.hibernate.annotations.LazyCollectionOption;
 
 import javax.persistence.*;
 import java.util.Date;
@@ -86,6 +88,7 @@ public class Contest {
     }
 
     @OneToMany
+    @LazyCollection(LazyCollectionOption.FALSE)
     public List<Task> getTasks() {
         return tasks;
     }

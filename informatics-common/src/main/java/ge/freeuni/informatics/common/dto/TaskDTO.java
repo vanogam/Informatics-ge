@@ -5,18 +5,18 @@ import ge.freeuni.informatics.common.model.task.TaskScoreType;
 import ge.freeuni.informatics.common.model.task.TaskType;
 import ge.freeuni.informatics.common.model.task.TestCase;
 
-import javax.persistence.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class TaskDTO {
 
-    long id;
+    Integer id;
 
     String code;
 
-    Map<String, String> title;
+    Map<String, String> title = new HashMap<>();
 
     String configAddress;
 
@@ -37,15 +37,17 @@ public class TaskDTO {
     /**
      * Used to parse and number test case file names.
      */
-    String testCaseTemplate;
+    String inputTemplate;
+
+    String outputTemplate;
 
     List<TestCase> testCases;
 
-    public long getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
@@ -113,12 +115,20 @@ public class TaskDTO {
         this.memoryLimitMB = memoryLimitMB;
     }
 
-    public String getTestCaseTemplate() {
-        return testCaseTemplate;
+    public String getInputTemplate() {
+        return inputTemplate;
     }
 
-    public void setTestCaseTemplate(String testCaseTemplate) {
-        this.testCaseTemplate = testCaseTemplate;
+    public void setInputTemplate(String inputTemplate) {
+        this.inputTemplate = inputTemplate;
+    }
+
+    public String getOutputTemplate() {
+        return outputTemplate;
+    }
+
+    public void setOutputTemplate(String outputTemplate) {
+        this.outputTemplate = outputTemplate;
     }
 
     public List<TestCase> getTestCases() {
@@ -139,7 +149,8 @@ public class TaskDTO {
         task.setCode(taskDTO.getCode());
         task.setConfigAddress(taskDTO.getConfigAddress());
         task.setTestCases(taskDTO.getTestCases());
-        task.setTestCaseTemplate(taskDTO.getTestCaseTemplate());
+        task.setInputTemplate(taskDTO.getInputTemplate());
+        task.setOutputTemplate(taskDTO.getOutputTemplate());
         task.setMemoryLimitMB(taskDTO.getMemoryLimitMB());
         task.setTimeLimitMillis(taskDTO.getTimeLimitMillis());
         task.setTitle(taskDTO.getTitle());
@@ -166,7 +177,8 @@ public class TaskDTO {
         taskDTO.setCode(task.getCode());
         taskDTO.setConfigAddress(task.getConfigAddress());
         taskDTO.setTestCases(task.getTestCases());
-        taskDTO.setTestCaseTemplate(task.getTestCaseTemplate());
+        taskDTO.setInputTemplate(task.getInputTemplate());
+        taskDTO.setOutputTemplate(task.getOutputTemplate());
         taskDTO.setMemoryLimitMB(task.getMemoryLimitMB());
         taskDTO.setTimeLimitMillis(task.getTimeLimitMillis());
         taskDTO.setTitle(task.getTitle());

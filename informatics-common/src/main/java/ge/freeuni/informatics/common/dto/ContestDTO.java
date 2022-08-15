@@ -93,10 +93,14 @@ public class ContestDTO {
         ContestDTO contestDTO = new ContestDTO();
 
         contestDTO.setId(contest.getId());
+        contestDTO.setRoomId(contest.getRoomId());
         contestDTO.setStartDate(contest.getStartDate());
         contestDTO.setDurationInSeconds(contest.getDurationInSeconds());
         contestDTO.setName(contest.getName());
-        contestDTO.setParticipants(contest.getParticipants().stream().map(UserDTO::toDTO).collect(Collectors.toList()));
+        contestDTO.setStatus(contest.getStatus());
+        if (contest.getParticipants() != null) {
+            contestDTO.setParticipants(contest.getParticipants().stream().map(UserDTO::toDTO).collect(Collectors.toList()));
+        }
         contestDTO.setTasks(TaskDTO.toDTOs(contest.getTasks()));
 
         return contestDTO;
@@ -107,10 +111,31 @@ public class ContestDTO {
 
         contest.setId(contestDTO.getId());
         contest.setName(contestDTO.getName());
+        contest.setRoomId(contestDTO.getRoomId());
         contest.setStartDate(contestDTO.getStartDate());
         contest.setDurationInSeconds(contest.getDurationInSeconds());
-        contest.setParticipants(contestDTO.getParticipants().stream().map(UserDTO::fromDTO).collect(Collectors.toList()));
+        contest.setStatus(contestDTO.getStatus());
+        if (contestDTO.getParticipants() != null) {
+            contest.setParticipants(contestDTO.getParticipants().stream().map(UserDTO::fromDTO).collect(Collectors.toList()));
+        }
+        contest.setTasks(TaskDTO.fromDTOs(contestDTO.getTasks()));
 
         return contest;
+    }
+
+    public static List<Contest> fromDTOs(List<ContestDTO> contestDTOs) {
+        List<Contest> contests = new ArrayList<>();
+        for (ContestDTO contestDTO : contestDTOs) {
+            contests.add(fromDTO(contestDTO));
+        }
+        return contests;
+    }
+
+    public static List<ContestDTO> toDTOs(List<Contest> contests) {
+        List<ContestDTO> contestsDTOs = new ArrayList<>();
+        for (Contest contest : contests) {
+            contestsDTOs.add(toDTO(contest));
+        }
+        return contestsDTOs;
     }
 }

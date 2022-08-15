@@ -6,14 +6,18 @@ import ge.freeuni.informatics.controller.model.AddTaskRequest;
 import ge.freeuni.informatics.controller.model.GetTasksRequest;
 import ge.freeuni.informatics.controller.model.InformaticsResponse;
 import ge.freeuni.informatics.server.task.ITaskManager;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 @RestController
 public class TaskController {
+
+    @Autowired
+    Logger log;
 
     @Autowired
     ITaskManager taskManager;
@@ -24,11 +28,11 @@ public class TaskController {
     }
 
     @PostMapping("/add-task")
-    InformaticsResponse addTask(@RequestParam AddTaskRequest request) {
-
+    InformaticsResponse addTask(@RequestBody AddTaskRequest request) {
         TaskDTO taskDTO = new TaskDTO();
         taskDTO.setTaskType(request.getTaskType());
         taskDTO.setCode(request.getCode());
+        taskDTO.setTitle(request.getTitle());
         taskDTO.setTaskScoreType(request.getTaskScoreType());
         taskDTO.setTaskScoreParameter(request.getTaskScoreParameter());
         taskDTO.setMemoryLimitMB(request.getMemoryLimitMB());
@@ -37,6 +41,45 @@ public class TaskController {
             taskManager.addTask(taskDTO, request.getContestId());
         } catch (InformaticsServerException ex) {
             return new InformaticsResponse("FAIL", ex.getCode());
+        }
+        return new InformaticsResponse("SUCCESS", null);
+    }
+
+    @PostMapping("/add-testcase")
+    InformaticsResponse addTestcase(@RequestParam MultipartFile[] files, @RequestParam Integer testId, @RequestParam Integer taskId){
+        if (files.length != 2) {
+            return new InformaticsResponse("FAIL", "incorrectNumberOfFiles");
+        }
+        byte[] input = {}, output = {};
+        for (MultipartFile file : files) {
+            try {
+                if (file.getName().equals("input")) {
+                    input = file.getBytes();
+                } else {
+                    output = file.getBytes();
+                }
+            } catch (IOException ex) {
+                log.error("Error during file upload", ex);
+                return new InformaticsResponse("FAIL", "fileUploadError");
+            }
+        }
+        try {
+            taskManager.addTestcase(taskId, testId, input, output);
+        } catch (InformaticsServerException ex) {
+            return new InformaticsResponse("FAIL", ex.getCode());
+        }
+        return new InformaticsResponse("SUCCESS", null);
+    }
+
+    @PostMapping("/add-testcases")
+    InformaticsResponse addTestcases(@RequestParam MultipartFile file, @RequestParam Integer taskId){
+        try {
+            taskManager.addTestcases(taskId, file.getBytes());
+        } catch (InformaticsServerException ex) {
+            return new InformaticsResponse("FAIL", ex.getCode());
+        } catch (IOException ex) {
+            log.error("Error during file upload", ex);
+            return new InformaticsResponse("FAIL", "fileUploadError");
         }
         return new InformaticsResponse("SUCCESS", null);
     }

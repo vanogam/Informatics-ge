@@ -36,6 +36,7 @@ public class ContestManager implements IContestManager {
     @Override
     public void createContest(ContestDTO contestDTO) throws InformaticsServerException {
         Contest contest = ContestDTO.fromDTO(contestDTO);
+        contest.setStatus(ContestStatus.FUTURE);
         ContestRoom room = contestRoomManager.getRoom(contest.getRoomId());
         if (!room.getTeachers().contains(UserDTO.fromDTO(userManager.getAuthenticatedUser()))) {
             throw new InformaticsServerException("This user can not create contest in this room");
@@ -50,7 +51,7 @@ public class ContestManager implements IContestManager {
 
       @Override
     public List<ContestDTO> getContests(Long roomId, String name, List<ContestStatus> statuses, Date minStartDate, Date maxStartDate) {
-        return null;
+        return ContestDTO.toDTOs(contestRepository.getContests(roomId, name, statuses, minStartDate, maxStartDate));
     }
 
     @Override

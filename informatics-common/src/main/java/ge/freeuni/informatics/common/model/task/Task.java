@@ -7,11 +7,15 @@ import java.util.Map;
 @Entity
 public class Task {
 
-    long id;
+    Integer id;
+
+    Integer judgeId;
 
     String code;
 
     Map<String, String> title;
+
+    Map<String, String> statements;
 
     String configAddress;
 
@@ -32,18 +36,28 @@ public class Task {
     /**
      * Used to parse and number test case file names.
      */
-    String testCaseTemplate;
+    String inputTemplate;
+
+    String outputTemplate;
 
     List<TestCase> testCases;
 
     @Id
     @GeneratedValue
-    public long getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Integer id) {
         this.id = id;
+    }
+
+    public Integer getJudgeId() {
+        return judgeId;
+    }
+
+    public void setJudgeId(Integer judgeId) {
+        this.judgeId = judgeId;
     }
 
     @Column(unique = true)
@@ -60,8 +74,18 @@ public class Task {
         return title;
     }
 
+
     public void setTitle(Map<String, String> title) {
         this.title = title;
+    }
+
+    @ElementCollection
+    public Map<String, String> getStatements() {
+        return statements;
+    }
+
+    public void setStatements(Map<String, String> statements) {
+        this.statements = statements;
     }
 
     public String getConfigAddress() {
@@ -112,15 +136,23 @@ public class Task {
         this.memoryLimitMB = memoryLimitMB;
     }
 
-    public String getTestCaseTemplate() {
-        return testCaseTemplate;
+    public String getInputTemplate() {
+        return inputTemplate;
     }
 
-    public void setTestCaseTemplate(String testCaseTemplate) {
-        this.testCaseTemplate = testCaseTemplate;
+    public void setInputTemplate(String inputTemplate) {
+        this.inputTemplate = inputTemplate;
     }
 
-    @OneToMany(mappedBy = "id")
+    public String getOutputTemplate() {
+        return outputTemplate;
+    }
+
+    public void setOutputTemplate(String outputTemplate) {
+        this.outputTemplate = outputTemplate;
+    }
+
+    @OneToMany
     public List<TestCase> getTestCases() {
         return testCases;
     }

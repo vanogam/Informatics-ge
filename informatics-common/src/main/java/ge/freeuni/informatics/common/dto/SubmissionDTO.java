@@ -13,13 +13,17 @@ public class SubmissionDTO {
 
     private long userId;
 
-    private long taskId;
+    private int taskId;
 
     private long contestId;
 
     private String language;
 
     private Date submissionTime;
+
+    private String compilationResult;
+
+    private String compilationMessage;
 
     public long getId() {
         return id;
@@ -45,11 +49,11 @@ public class SubmissionDTO {
         this.userId = userId;
     }
 
-    public long getTaskId() {
+    public int getTaskId() {
         return taskId;
     }
 
-    public void setTaskId(long taskId) {
+    public void setTaskId(int taskId) {
         this.taskId = taskId;
     }
 
@@ -77,6 +81,22 @@ public class SubmissionDTO {
         this.submissionTime = submissionTime;
     }
 
+    public String getCompilationResult() {
+        return compilationResult;
+    }
+
+    public void setCompilationResult(String compilationResult) {
+        this.compilationResult = compilationResult;
+    }
+
+    public String getCompilationMessage() {
+        return compilationMessage;
+    }
+
+    public void setCompilationMessage(String compilationMessage) {
+        this.compilationMessage = compilationMessage;
+    }
+
     public static SubmissionDTO toDTO(Submission submission) {
         SubmissionDTO submissionDTO = new SubmissionDTO();
 
@@ -87,6 +107,8 @@ public class SubmissionDTO {
         submissionDTO.setUserId(submission.getUserId());
         submissionDTO.setLanguage(submission.getLanguage());
         submissionDTO.setSubmissionTime(submission.getSubmissionTime());
+        submissionDTO.setCompilationMessage(submission.getCompilationMessage());
+        submissionDTO.setCompilationResult(submission.getCompilationResult());
 
         return submissionDTO;
     }
@@ -100,6 +122,8 @@ public class SubmissionDTO {
         submission.setUserId(submissionDTO.getUserId());
         submission.setLanguage(submissionDTO.getLanguage());
         submission.setSubmissionTime(submissionDTO.getSubmissionTime());
+        submission.setCompilationResult(submissionDTO.getCompilationResult());
+        submission.setCompilationMessage(submissionDTO.getCompilationMessage());
 
         return submission;
     }

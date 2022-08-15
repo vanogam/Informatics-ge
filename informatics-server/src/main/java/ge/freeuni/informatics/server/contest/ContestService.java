@@ -1,7 +1,6 @@
 package ge.freeuni.informatics.server.contest;
 
 import ge.freeuni.informatics.common.dto.ContestDTO;
-import ge.freeuni.informatics.common.model.contest.Contest;
 import ge.freeuni.informatics.common.model.contest.ContestStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.TaskScheduler;
@@ -30,7 +29,7 @@ public class ContestService {
 
     @PostConstruct
     public void startup() {
-        List<ContestDTO> futureContests = contestManager.getContests(null, null, Arrays.asList(ContestStatus.LIVE, ContestStatus.FUTURE), new Date(), null);
+        List<ContestDTO> futureContests = contestManager.getContests(null, null, Arrays.asList(ContestStatus.FUTURE), null, null);
         List<ContestDTO> liveContests = contestManager.getContests(null, null, Arrays.asList(ContestStatus.LIVE, ContestStatus.FUTURE), null, new Date());
 
         scheduleFutureContests(futureContests);

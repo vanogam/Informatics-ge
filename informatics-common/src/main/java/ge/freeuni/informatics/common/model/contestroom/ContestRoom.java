@@ -41,7 +41,11 @@ public class ContestRoom {
         this.name = name;
     }
 
-    @ManyToMany
+    @ManyToMany(cascade = CascadeType.ALL)
+    @JoinTable(name = "Room_Teacher",
+            joinColumns = { @JoinColumn(name = "room_id") },
+            inverseJoinColumns = { @JoinColumn(name = "teacher_id") }
+    )
     public List<User> getTeachers() {
         return teachers;
     }
@@ -51,6 +55,10 @@ public class ContestRoom {
     }
 
     @ManyToMany
+    @JoinTable(name = "Room_Participant",
+            joinColumns = { @JoinColumn(name = "room_id") },
+            inverseJoinColumns = { @JoinColumn(name = "participant_id") }
+    )
     public List<User> getParticipants() {
         return participants;
     }

@@ -59,5 +59,10 @@
       "name": "ge.freeuni.informatics.cmsintegration.contestName",
       "type": "java.lang.String",
       "description": "Description for ge.freeuni.informatics.cmsintegration.contestName."
+    },
+    {
+      "name": "ge.freeuni.informatics.Task.submissionDirectoryAddress",
+      "type": "java.lang.String",
+      "description": "Description for ge.freeuni.informatics.Task.submissionDirectoryAddress."
     }
   ] }

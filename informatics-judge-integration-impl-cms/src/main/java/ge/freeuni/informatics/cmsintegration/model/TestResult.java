@@ -1,16 +1,16 @@
-package ge.freeuni.informatics.common.model.submission;
+package ge.freeuni.informatics.cmsintegration.model;
 
-public class SubmissionTestResult {
+public class TestResult {
 
     private String idx;
 
-    private String outcome;
-
-    private String text;
+    private String[] text;
 
     private Float time;
 
     private Integer memory;
+
+    private String outcome;
 
     public String getIdx() {
         return idx;
@@ -20,19 +20,11 @@ public class SubmissionTestResult {
         this.idx = idx;
     }
 
-    public String getOutcome() {
-        return outcome;
-    }
-
-    public void setOutcome(String outcome) {
-        this.outcome = outcome;
-    }
-
-    public String getText() {
+    public String[] getText() {
         return text;
     }
 
-    public void setText(String text) {
+    public void setText(String[] text) {
         this.text = text;
     }
 
@@ -50,5 +42,13 @@ public class SubmissionTestResult {
 
     public void setMemory(Integer memory) {
         this.memory = memory;
+    }
+
+    public String getOutcome() {
+        return outcome;
+    }
+
+    public void setOutcome(String outcome) {
+        this.outcome = outcome;
     }
 }

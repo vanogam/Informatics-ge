@@ -59,10 +59,10 @@ public class CmsCommunicationManager implements ICmsCommunicationManager {
         ProcessBuilder processBuilder = new ProcessBuilder().command(
                 pythonCommandExecutable, submissionFileAddress,
                 "-c", "1",
-                "f", constructFileName(submission, task),
+                "-f", constructFileName(submission, task),
                 "-I", String.valueOf(submission.getId()),
-                submissionFileAddress,
-                informaticsCmsUser);
+                informaticsCmsUser,
+                task.getCode());
         try {
             runProcess(processBuilder);
         } catch (IOException ex) {

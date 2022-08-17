@@ -6,11 +6,13 @@ import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
+import javax.transaction.Transactional;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @Repository
+@Transactional
 public class SubmissionRepository implements ISubmissionRepository {
 
     final

@@ -29,7 +29,7 @@ public class CmsIntegrationRepository implements ICmsIntegrationRepository{
 
     @Override
     public Submission getSubmission(int submissionId) {
-        Submission submission = em.find(Submission.class, submissionId);
+        Submission submission = em.find(Submission.class, (long) submissionId);
         em.detach(submission);
         return submission;
     }

@@ -3,6 +3,8 @@ package ge.freeuni.informatics.cmsintegration.api;
 import ge.freeuni.informatics.cmsintegration.manager.ICmsApiManager;
 import ge.freeuni.informatics.cmsintegration.model.RegisterRequest;
 import ge.freeuni.informatics.cmsintegration.model.SubmissionCompilationResultRequest;
+import ge.freeuni.informatics.cmsintegration.model.SubmissionResultRequest;
+import ge.freeuni.informatics.cmsintegration.model.SubmissionTestRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
@@ -31,12 +33,12 @@ public class CmsApiController {
     }
 
     @PostMapping("/submission-result")
-    public void submissionResult(@RequestParam Integer cmsID, @RequestParam String score, @RequestParam String[] submissionResult) {
-
+    public void submissionResult(@RequestBody SubmissionResultRequest request) {
+        cmsApiManager.setSubmissionResult(request.getCmsID(), Float.valueOf(request.getScore()), request.getSubmissionResult());
     }
 
     @PostMapping("/update-submission-test")
-    public void updateSubmissionTest(@RequestParam Integer cmsID, @RequestParam String testNumber) {
-
+    public void updateSubmissionTest(@RequestBody SubmissionTestRequest request) {
+        cmsApiManager.setSubmissionTest(request.getCmsID(), Integer.valueOf(request.getTestNumber()));
     }
 }

@@ -1,7 +1,5 @@
 package ge.freeuni.informatics.common.model.submission;
 
-import ge.freeuni.informatics.common.model.task.Task;
-import ge.freeuni.informatics.common.model.user.User;
 import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
@@ -16,7 +14,7 @@ public class Submission {
 
     private long userId;
 
-    private int taskId;
+    private Integer taskId;
 
     private long contestId;
 
@@ -35,6 +33,8 @@ public class Submission {
     private String compilationResult;
 
     private String compilationMessage;
+
+    private Integer currentTest;
 
     private SubmissionTestResultList submissionTestResultList;
 
@@ -56,7 +56,6 @@ public class Submission {
         this.cmsId = cmsId;
     }
 
-    @OneToOne(targetEntity = User.class)
     public long getUserId() {
         return userId;
     }
@@ -65,12 +64,11 @@ public class Submission {
         this.userId = userId;
     }
 
-    @OneToOne(targetEntity = Task.class)
-    public int getTaskId() {
+    public Integer getTaskId() {
         return taskId;
     }
 
-    public void setTaskId(int taskId) {
+    public void setTaskId(Integer taskId) {
         this.taskId = taskId;
     }
 
@@ -138,12 +136,21 @@ public class Submission {
         this.compilationResult = compilationResult;
     }
 
+    @Column(length = Integer.MAX_VALUE)
     public String getCompilationMessage() {
         return compilationMessage;
     }
 
     public void setCompilationMessage(String compilationMessage) {
         this.compilationMessage = compilationMessage;
+    }
+
+    public Integer getCurrentTest() {
+        return currentTest;
+    }
+
+    public void setCurrentTest(Integer currentTest) {
+        this.currentTest = currentTest;
     }
 
     @Type(type = SubmissionTestResultListType.TYPE)

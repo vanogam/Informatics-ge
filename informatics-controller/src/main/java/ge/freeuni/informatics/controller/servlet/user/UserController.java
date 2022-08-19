@@ -1,12 +1,10 @@
 package ge.freeuni.informatics.controller.servlet.user;
 
-import ge.freeuni.informatics.controller.model.InformaticsResponse;
-import ge.freeuni.informatics.controller.model.LoginResponse;
+import ge.freeuni.informatics.controller.model.*;
 import ge.freeuni.informatics.common.dto.AuthenticationDetails;
 import ge.freeuni.informatics.common.dto.UserDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.server.user.IUserManager;
-import ge.freeuni.informatics.controller.model.RegisterDTO;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -88,6 +86,36 @@ public class UserController {
         } catch (InformaticsServerException e) {
             return null;
         }
+    }
+
+    @GetMapping("/recover/verify/{link}")
+    public InformaticsResponse verifyLink(@PathVariable String link) {
+        try {
+            userManager.verifyRecoveryQuery(link);
+        } catch (InformaticsServerException ex) {
+            return new InformaticsResponse("FAIL", ex.getMessage());
+        }
+        return new InformaticsResponse("SUCCESS", null);
+    }
+
+    @GetMapping("/recover/request")
+    public InformaticsResponse requestRecovery(@RequestBody AddRecoveryRequest request) {
+        try {
+            userManager.addPasswordRecoveryQuery(request.getUsername());
+        } catch (InformaticsServerException ex) {
+            return new InformaticsResponse("FAIL", ex.getMessage());
+        }
+        return new InformaticsResponse("SUCCESS", null);
+    }
+
+    @PostMapping("/recover/{link}")
+    public InformaticsResponse recover(@PathVariable String link, @RequestBody RecoverPasswordRequest request) {
+        try {
+            userManager.recoverPassword(link, request.getNewPassword());
+        } catch (InformaticsServerException ex) {
+            return new InformaticsResponse("FAIL", ex.getMessage());
+        }
+        return new InformaticsResponse("SUCCESS", null);
     }
 
 }

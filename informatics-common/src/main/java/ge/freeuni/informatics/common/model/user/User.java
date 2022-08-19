@@ -19,6 +19,8 @@ public class User {
 
     private String roles;
 
+    private String email;
+
     private Integer version;
 
     @Id
@@ -87,6 +89,14 @@ public class User {
 
     public void setVersion(Integer version) {
         this.version = version;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     @Override

@@ -27,7 +27,7 @@ public class TaskController {
     @Autowired
     ITaskManager taskManager;
 
-    @Value("{ge.freeuni.informatics.defaultLanguage}")
+    @Value("${ge.freeuni.informatics.defaultLanguage}")
     String defaultLanguage;
 
     @GetMapping("/get-tasks")

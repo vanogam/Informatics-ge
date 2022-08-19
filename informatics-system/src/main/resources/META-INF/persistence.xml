@@ -5,6 +5,7 @@
              xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_1_0.xsd">
     <persistence-unit name="default">
         <class>ge.freeuni.informatics.common.model.user.User</class>
+        <class>ge.freeuni.informatics.common.model.user.RecoverPassword</class>
         <class>ge.freeuni.informatics.common.model.contestroom.ContestRoom</class>
         <class>ge.freeuni.informatics.common.model.contest.Contest</class>
         <class>ge.freeuni.informatics.common.model.task.TestCase</class>

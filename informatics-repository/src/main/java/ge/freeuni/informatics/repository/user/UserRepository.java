@@ -1,5 +1,6 @@
 package ge.freeuni.informatics.repository.user;
 
+import ge.freeuni.informatics.common.model.user.RecoverPassword;
 import ge.freeuni.informatics.common.model.user.User;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import org.springframework.stereotype.Repository;
@@ -37,5 +38,18 @@ public class UserRepository implements IUserRepository{
     @Override
     public void addUser(User user) {
         em.persist(user);
+    }
+
+    @Override
+    public void addPasswordRecoveryQuery(RecoverPassword query) {
+        em.merge(query);
+    }
+
+    @Override
+    public RecoverPassword getPasswordRecoveryQuery(String link) {
+        String query = "SELECT r FROM RecoverPassword r WHERE r.link = :link";
+        return em.createQuery(query, RecoverPassword.class)
+                .setParameter("link", link)
+                .getSingleResult();
     }
 }

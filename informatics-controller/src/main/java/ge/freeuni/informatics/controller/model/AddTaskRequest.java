@@ -6,25 +6,25 @@ import java.util.Map;
 
 public class AddTaskRequest {
 
-    Integer contestId;
+    private Integer contestId;
 
-    String code;
+    private String code;
 
-    Map<String, String> title;
+    private Map<String, String> title;
 
-    TaskType taskType;
+    private TaskType taskType;
 
-    TaskScoreType taskScoreType;
+    private TaskScoreType taskScoreType;
 
     /**
      * Describes how to distribute score to test cases.
      * For formatting info, see TaskScoreType class.
      */
-    String taskScoreParameter;
+    private String taskScoreParameter;
 
-    Integer timeLimitMillis;
+    private Integer timeLimitMillis;
 
-    Integer memoryLimitMB;
+    private Integer memoryLimitMB;
 
     public Integer getContestId() {
         return contestId;

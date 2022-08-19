@@ -1,10 +1,7 @@
 package ge.freeuni.informatics.common.model.contestroom;
 
-import ge.freeuni.informatics.common.model.contest.Contest;
-import ge.freeuni.informatics.common.model.user.User;
-
 import javax.persistence.*;
-import java.util.List;
+import java.util.Set;
 
 @Entity
 public class ContestRoom {
@@ -16,12 +13,13 @@ public class ContestRoom {
 
     private String name;
 
-    private List<User> teachers;
+    private boolean open;
 
-    private List<User> participants;
+    private Set<Long> teachers;
 
+    private Set<Long> participants;
 
-    private List<Contest> contests;
+    private Set<Long> contests;
 
     @Id
     @GeneratedValue
@@ -41,38 +39,38 @@ public class ContestRoom {
         this.name = name;
     }
 
-    @ManyToMany(cascade = CascadeType.ALL)
-    @JoinTable(name = "Room_Teacher",
-            joinColumns = { @JoinColumn(name = "room_id") },
-            inverseJoinColumns = { @JoinColumn(name = "teacher_id") }
-    )
-    public List<User> getTeachers() {
+    public boolean isOpen() {
+        return open;
+    }
+
+    public void setOpen(boolean open) {
+        this.open = open;
+    }
+
+    @ElementCollection
+    public Set<Long> getTeachers() {
         return teachers;
     }
 
-    public void setTeachers(List<User> teachers) {
+    public void setTeachers(Set<Long> teachers) {
         this.teachers = teachers;
     }
 
-    @ManyToMany
-    @JoinTable(name = "Room_Participant",
-            joinColumns = { @JoinColumn(name = "room_id") },
-            inverseJoinColumns = { @JoinColumn(name = "participant_id") }
-    )
-    public List<User> getParticipants() {
+    @ElementCollection
+    public Set<Long> getParticipants() {
         return participants;
     }
 
-    public void setParticipants(List<User> participants) {
+    public void setParticipants(Set<Long> participants) {
         this.participants = participants;
     }
 
-    @OneToMany
-    public List<Contest> getContests() {
+    @ElementCollection
+    public Set<Long> getContests() {
         return contests;
     }
 
-    public void setContests(List<Contest> contests) {
+    public void setContests(Set<Long> contests) {
         this.contests = contests;
     }
 }

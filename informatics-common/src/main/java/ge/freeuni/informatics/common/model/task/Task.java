@@ -11,6 +11,8 @@ public class Task {
 
     Integer judgeId;
 
+    Long contestId;
+
     String code;
 
     Map<String, String> title;
@@ -58,6 +60,14 @@ public class Task {
 
     public void setJudgeId(Integer judgeId) {
         this.judgeId = judgeId;
+    }
+
+    public Long getContestId() {
+        return contestId;
+    }
+
+    public void setContestId(Long contestId) {
+        this.contestId = contestId;
     }
 
     @Column(unique = true)

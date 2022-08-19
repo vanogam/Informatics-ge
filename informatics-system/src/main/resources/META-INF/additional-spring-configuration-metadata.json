@@ -64,5 +64,35 @@
       "name": "ge.freeuni.informatics.Task.submissionDirectoryAddress",
       "type": "java.lang.String",
       "description": "Description for ge.freeuni.informatics.Task.submissionDirectoryAddress."
+    },
+    {
+      "name": "ge.freeuni.informatics.defaultLanguage",
+      "type": "java.lang.String",
+      "description": "Description for ge.freeuni.informatics.defaultLanguage."
+    },
+    {
+      "name": "ge.freeuni.informatics.server.user.passwordRecoveryValidityMinutes",
+      "type": "java.lang.String",
+      "description": "Description for ge.freeuni.informatics.server.user.passwordRecoveryValidityMinutes."
+    },
+    {
+      "name": "ge.freeuni.informatics.mail.password",
+      "type": "java.lang.String",
+      "description": "Description for ge.freeuni.informatics.mail.password."
+    },
+    {
+      "name": "ge.freeuni.informatics.mail.address",
+      "type": "java.lang.String",
+      "description": "Description for ge.freeuni.informatics.mail.address."
+    },
+    {
+      "name": "ge.freeuni.informatics.mail.host",
+      "type": "java.lang.String",
+      "description": "Description for ge.freeuni.informatics.mail.host."
+    },
+    {
+      "name": "ge.freeuni.informatics.host",
+      "type": "java.lang.String",
+      "description": "Description for ge.freeuni.informatics.host."
     }
   ] }

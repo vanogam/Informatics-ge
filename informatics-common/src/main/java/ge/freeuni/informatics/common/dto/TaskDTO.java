@@ -14,6 +14,8 @@ public class TaskDTO {
 
     Integer id;
 
+    Long contestId;
+
     String code;
 
     Map<String, String> title = new HashMap<>();
@@ -49,6 +51,14 @@ public class TaskDTO {
 
     public void setId(Integer id) {
         this.id = id;
+    }
+
+    public Long getContestId() {
+        return contestId;
+    }
+
+    public void setContestId(Long contestId) {
+        this.contestId = contestId;
     }
 
     public String getCode() {
@@ -143,6 +153,7 @@ public class TaskDTO {
         Task task = new Task();
 
         task.setTaskType(taskDTO.getTaskType());
+        task.setContestId(task.getContestId());
         task.setTaskScoreParameter(taskDTO.getTaskScoreParameter());
         task.setTaskScoreType(taskDTO.getTaskScoreType());
         task.setId(taskDTO.getId());
@@ -171,6 +182,7 @@ public class TaskDTO {
         TaskDTO taskDTO = new TaskDTO();
 
         taskDTO.setTaskType(task.getTaskType());
+        taskDTO.setContestId(task.getContestId());
         taskDTO.setTaskScoreParameter(task.getTaskScoreParameter());
         taskDTO.setTaskScoreType(task.getTaskScoreType());
         taskDTO.setId(task.getId());

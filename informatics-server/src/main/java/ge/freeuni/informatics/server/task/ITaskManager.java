@@ -4,11 +4,15 @@ import ge.freeuni.informatics.common.Language;
 import ge.freeuni.informatics.common.dto.TaskDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 
+import java.io.File;
+
 public interface ITaskManager {
 
     void addTask(TaskDTO task, long contestId) throws InformaticsServerException;
 
     void removeTask(int taskId, long contest);
+
+    File getStatement(int taskId, Language language) throws InformaticsServerException;
 
     void addStatement(int taskId, byte[] statement, Language language) throws InformaticsServerException;
 

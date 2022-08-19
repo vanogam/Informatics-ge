@@ -60,6 +60,7 @@ public class TaskManager implements ITaskManager {
         if (!checkAddTaskPermission(contestDTO)) {
             throw new InformaticsServerException("User does not have permission to add task to this contest");
         }
+        taskDTO.setContestId(contestId);
         Task task = TaskDTO.fromDTO(taskDTO);
         taskRepository.addTask(task);
         contestDTO.getTasks().add(TaskDTO.toDTO(task));
@@ -72,10 +73,27 @@ public class TaskManager implements ITaskManager {
     }
 
     @Override
+    public File getStatement(int taskId, Language language) throws InformaticsServerException {
+        Task task = taskRepository.getTask(taskId);
+        ContestDTO contestDTO = contestManager.getContest(task.getContestId());
+        ContestRoom room = roomManager.getRoom(contestDTO.getRoomId());
+        Long currentUser = userManager.getAuthenticatedUser().getId();
+        if (!room.isOpen() && !room.getTeachers().contains(currentUser) && !room.getParticipants().contains(currentUser)) {
+            throw new InformaticsServerException("permissionDenied");
+        }
+        if (!task.getStatements().containsKey(language.name())) {
+            throw new InformaticsServerException("statementNotAvailable");
+        }
+        return new File(task.getStatements().get(language.name()));
+    }
+
+    @Override
     public void addStatement(int taskId, byte[] statement, Language language) throws InformaticsServerException {
         Task task = taskRepository.getTask(taskId);
+
         try {
             task.getStatements().put(language.name(), storeStatement(language, task.getCode(), statement));
+            taskRepository.addTask(task);
         } catch (IOException e) {
             throw new InformaticsServerException("Error while storing statement.");
         }
@@ -216,11 +234,14 @@ public class TaskManager implements ITaskManager {
         String folder = FileUtils.buildPath(statementsDirectoryAddress, taskCode);
         Files.createDirectories(Paths.get(folder));
         String fileAddress = FileUtils.buildPath(folder, getStatementName(lang, taskCode));
-        File test = new File(fileAddress);
-        if(!test.createNewFile()) {
+        File statementFile = new File(fileAddress);
+        if (statementFile.isFile()) {
+            boolean ignored = statementFile.delete();
+        }
+        if(!statementFile.createNewFile()) {
             throw new InformaticsServerException("Could not create statement");
         }
-        OutputStream outputStream = Files.newOutputStream(test.toPath());
+        OutputStream outputStream = Files.newOutputStream(statementFile.toPath());
         outputStream.write(statement);
         return fileAddress;
     }

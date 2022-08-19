@@ -1,17 +1,22 @@
 package ge.freeuni.informatics.controller.servlet.tasks;
 
+import ge.freeuni.informatics.common.Language;
 import ge.freeuni.informatics.common.dto.TaskDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.controller.model.AddTaskRequest;
 import ge.freeuni.informatics.controller.model.GetTasksRequest;
 import ge.freeuni.informatics.controller.model.InformaticsResponse;
+import ge.freeuni.informatics.controller.model.LanguageDTO;
 import ge.freeuni.informatics.server.task.ITaskManager;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
+import java.io.*;
+import java.nio.file.Files;
 
 @RestController
 public class TaskController {
@@ -21,6 +26,9 @@ public class TaskController {
 
     @Autowired
     ITaskManager taskManager;
+
+    @Value("{ge.freeuni.informatics.defaultLanguage}")
+    String defaultLanguage;
 
     @GetMapping("/get-tasks")
     void getTasks(GetTasksRequest tasksRequest) {
@@ -82,5 +90,33 @@ public class TaskController {
             return new InformaticsResponse("FAIL", "fileUploadError");
         }
         return new InformaticsResponse("SUCCESS", null);
+    }
+
+    @PostMapping("/upload-statement")
+    InformaticsResponse uploadStatement(@RequestParam MultipartFile statement, @RequestParam Integer taskId, @RequestParam LanguageDTO language) {
+        try {
+            taskManager.addStatement(taskId, statement.getBytes(), Language.valueOf(language.name()));
+        } catch (InformaticsServerException ex) {
+            return new InformaticsResponse("FAIL", ex.getCode());
+        } catch (IOException ex) {
+            log.error("Error during file upload", ex);
+            return new InformaticsResponse("FAIL", "fileUploadError");
+        }
+        return new InformaticsResponse("SUCCESS", null);
+    }
+
+    @GetMapping(value = "/statements/{task_id}/{language}", produces = MediaType.APPLICATION_PDF_VALUE)
+    byte[] getStatement(@PathVariable(required = false) LanguageDTO language,
+                        @PathVariable Integer task_id) {
+        if (language == null) {
+            language = LanguageDTO.valueOf(defaultLanguage);
+        }
+        try {
+            File file = taskManager.getStatement(task_id, Language.valueOf(language.name()));
+            return Files.readAllBytes(file.toPath());
+        } catch (InformaticsServerException | IOException ex) {
+            log.error("Error during sending statement", ex);
+            return null;
+        }
     }
 }

@@ -10,10 +10,9 @@ import news2 from "../Components/news2.jpg";
 import news3 from "../Components/news3.jpg";
 import {  Box} from '@mui/material';
 
-
 export default function Main() {
   return (
-	<Box >
+	<Box sx = {{backgroundImage: 'linear-gradient(to top, #5d566d 0%, #e7e7e7 100%);'}}>
 		<Box sx = {{marginLeft: '15%',marginTop:'5%'}}>
 		<Button  
 		sx={{ marginInline: '2px' , alignSelf: 'flex-end', color: '#4a366c', fontWeight: 'bold', fontFamily: '"Lucida Console", "Courier New", monospace',

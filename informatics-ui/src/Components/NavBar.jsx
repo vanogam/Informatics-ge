@@ -46,31 +46,35 @@ const Navbar = ({ isLogin, setIsLogin, setLoginPopUp, setRegisterPopUp }) => {
 
 	  }, [])
 	return (
-		<Box sx={{ borderBottom: `1px solid ${blue[100]}`, padding: '1rem' ,  
-		background: 'rgb(42,13,56)',
-		background:' linear-gradient(90deg, rgba(42,13,56,1) 32%, rgba(8,14,130,0.5214679621848739) 100%, rgba(0,212,255,1) 100%)'}}>
-			<Container maxWidth="md">
-				<Box display="flex" justifyContent="space-between" >
-			
-					<Button 
-						sx = {{flex: '50%',fontSize: 20, color: '#e1dce6', alignSelf: "left"}}
+		<Box  display="flex" displayFlex = 'row' sx={{ borderBottom: `1px solid ${blue[100]}`, padding: '1rem' ,  
+		background: '#3c324e',}}>
+				<Button 
+						sx = {{marginLeft: '5%',fontSize: 20, fontWeight: 'bold', color: '#e1dce6', }}
 					
 						component={NavLink} to="/">
 						Informatics.GE
 					</Button>
+			<Container maxWidth="md">
+				<Box display= "flex" justifyContent ="space-between">            
+				
 					{(toggleMenu || screenWidth > 500) && (
-					<Box className = "list"
-					 sx = {{alignItems: 'flex-end' ,display: "flex", justifyContent: "space-between", color: '#e1dce6' } }>
+					
+					<Box 
+					 sx = {{ alignItems: 'flex-end' ,display: "flex", justifyContent: "space-between", color: '#e1dce6' } }>
 						
+						<Box>
+							
+						</Box>
+						<Box display='flex' flexDirection='row' sx ={{marginLeft: '10%', alignItems: 'flex-end' ,display: "flex", justifyContent: "space-between"}}>
 						<Button className = "items"
-							sx={{ marginInline: '2px', alignSelf: 'flex-end' , color: '#e1dce6'}}
+							sx={{ marginLeft: '10%', marginInline: '2px', alignSelf: 'flex-end' , color: '#e1dce6'}}
 							component={NavLink}
 							to="/compiler"
 						>
 							კომპილატორი
 						</Button>
 						<Button className = "items"
-							sx={{ marginInline: '2px', color: '#e1dce6' }}
+							sx={{ marginLeft: '10%', marginInline: '2px', color: '#e1dce6' }}
 							component={NavLink}
 							to="/contests"
 						>
@@ -82,9 +86,10 @@ const Navbar = ({ isLogin, setIsLogin, setLoginPopUp, setRegisterPopUp }) => {
 							to="/materials"
 						>
 							მასალები
-
-
-						</Button>
+							</Button>
+						</Box>
+					
+						<Box display='flex' flexDirection='row' sx ={{marginLeft: '70%', alignItems: 'flex-end' ,display: "flex", justifyContent: "space-between"}}>
 						{isLogin ? (
 							<Button className = "items"
 								sx={{ marginInline: '2px' , marginLeft: '60px',color: '#e1dce6'}}
@@ -94,15 +99,17 @@ const Navbar = ({ isLogin, setIsLogin, setLoginPopUp, setRegisterPopUp }) => {
 							</Button>
 						) : (
 							<>
-								<Button className = "items"
-									sx={{ marginInline: '2px' , alignSelf: 'right', marginLeft: '60px' ,  
-									background: 'rgb(42,13,56)',
-									background: 'linear-gradient(90deg, rgba(42,13,56,1) 63%, rgba(53,26,88,1) 77%, rgba(73,62,153,1) 92%)'}}
-									variant="contained"
+							<Box sx = {{marginLeft: '10%'}}>
+							<Button className = "items"
+								    id = "login"
+									sx={{ marginInline: '2px' , alignSelf: 'flex-end', color: '#e1dce6'}}
+									// variant="contained"
 									onClick={showLogin}
 								>
 									შესვლა
 								</Button>
+							</Box>
+								
 								<Button  className = "items"
 									sx={{ marginInline: '2px' , alignSelf: 'flex-end', color: '#e1dce6'}}
 									// background: 'linear-gradient(90deg, rgba(141,114,154,1) 63%, rgba(115,81,159,1) 77%, rgba(33,30,52,1) 92%)'}}
@@ -114,6 +121,10 @@ const Navbar = ({ isLogin, setIsLogin, setLoginPopUp, setRegisterPopUp }) => {
 								
 							</>
 						)}
+						</Box>
+						
+						
+					
 					</Box> )}
 					<button sx ={{backgroundColor:"purple"}} onClick={toggleNav} className="btn">☰</button>
 				</Box>

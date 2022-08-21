@@ -3,6 +3,7 @@ import { Box, Modal, TextField, Button, Typography } from '@mui/material'
 import { Route, Routes } from 'react-router-dom'
 import Navbar from './Components/NavBar'
 import Compiler from './Pages/Compiler'
+import Contests from './Pages/Contests'
 import Main from './Pages/Main'
 import { blue } from '@mui/material/colors'
 import InputAdornment from '@mui/material/InputAdornment';
@@ -329,6 +330,7 @@ function App() {
 	}
 
 	return (
+		<div className="App">
 		<Box display="flex" flexDirection="column">
 			<LoginPopUp setRegisterPopUp = {setRegisterPopUp} setErrorMessage={setErrorMessage} loginPopUp={loginPopUp} setLoginPopUp={setLoginPopUp}
 			email={email} handleInputChange={handleInputChange} password={password} handleLoginSubmit={handleLoginSubmit} errorMessage={errorMessage} />
@@ -347,15 +349,19 @@ function App() {
 				setLoginPopUp={setLoginPopUp}
 				setRegisterPopUp={setRegisterPopUp}
 			/>
-		
+
 			<Routes>
 				<Route path="/" element={<Main />} />
 				<Route path="/compiler" element={<Compiler />} />
 				<Route path="/reset" element={<ResetPassword />} />
 				<Route path="/resetSuccess" element={<ResetSuccess />} />
 				<Route path="/materials" element={<Materials />} />
+				<Route path="/contests" element={<Contests />} />
 			</Routes>
+		
+			
 		</Box>
+		</div>
 	)
 }
 

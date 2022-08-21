@@ -1,7 +1,13 @@
-import * as React from 'react';
+import React from 'react';
 import Box from '@mui/material/Box';
+import Editor from 'react-simple-code-editor';
+import { highlight, languages } from 'prismjs/components/prism-core';
+import 'prismjs/components/prism-clike';
+import 'prismjs/components/prism-javascript';
+import 'prismjs/themes/prism.css'; //Example style, you can use another
+import "./numbers.css"
+import { Button } from '@mui/material';
 import TextField from '@mui/material/TextField';
-import {  Button } from '@mui/material'
 
 const boxStyle = {
 	display: 'flex',
@@ -17,46 +23,50 @@ const boxStyle = {
 	 fontSize: '20',
 
 }
-const Compiler = () => {
+const hightlightWithLineNumbers = (input, language) =>
+  highlight(input, language)
+    .split("\n")
+    .map((line, i) => `<span class='editorLineNumber'>${i + 1}</span>${line}`)
+    .join("\n");
 
-  
-	return ( 
-		<Box sx = {{
-			
-			 display: 'flex',
-		flexDirection: 'row'}}>
+export default function Materials()  {
+const [code, setCode] = React.useState(
+	`#include <iostream>\nusing namespace std;\nint main()\n{\ncout << "Hello, World!";\nreturn 0; \n}\n`
+  );
+  return (
+	<Box sx ={ {
+    display: 'flex',
+ flexDirection: 'row'}}>
 
-	
-		 <Box
-		component="form"
-	
-		sx={{
-			paddingTop: '50px',
-		'& .MuiTextField-root': { m: 1, width: '50ch' },
-		color: 'purple',
+		<Box 
 
-		paddingLeft: '10%',
-		fontWeight: 'bold',
-		display: "flex",
-		flexDirection: 'column',
+  sx={{
+    paddingTop: '50px',
+  '& .MuiTextField-root': { m: 1, width: '50ch' },
 
-		fontSize: '20',
+  paddingLeft: '10%',
+  display: "flex",
+  flexDirection: 'column',
 
-		}}
-		>	
+  fontSize: '20',
 
-		<p >შეიყვანე კოდი: </p>
-			<TextField
-			
-			id="outlined-multiline-static"
-			multiline
-			rows={20}
-			>
-
-			</TextField>
-
-			<Button className = "items"
-									sx={{ marginInline: '2px' , alignSelf: 'right', marginLeft: '60px' ,   width : "50%",
+  }}>
+  <p sx = {{color:'purple'}}>შეიყვანე კოდი: </p>
+		<Editor
+      value={code}
+      onValueChange={code => setCode(code)}
+      highlight={code => hightlightWithLineNumbers(code, languages.js)}
+      padding={10}
+      rows = {10}
+      className = 'editor'
+      textareaId="codeArea"
+      style={{
+        fontFamily: '"Fira code", "Fira Mono", monospace',
+        fontSize: 12,
+      }}
+    />
+		<Button className = "items"
+									sx={{ marginInline: '2px' , alignSelf: 'right', marginLeft: '60px' ,   width : "50%", marginTop: '5%',
 									background: 'rgb(42,13,56)',
 									background: 'linear-gradient(90deg, rgba(42,13,56,1) 63%, rgba(53,26,88,1) 77%, rgba(73,62,153,1) 92%)'}}
 									variant="contained"
@@ -64,9 +74,9 @@ const Compiler = () => {
 								>
 									დაკომპილირება
 								</Button>
-		</Box>
-		
-		
+	</Box>
+
+      	
 		<Box
 		sx = {boxStyle}
 		component="form"
@@ -101,11 +111,8 @@ const Compiler = () => {
 
 			</TextField>
 			</Box>
-		
-		</Box>
-			
+	</Box>
 	
-	)
+ 
+  );
 }
-
-export default Compiler

@@ -14,6 +14,7 @@ import axios from 'axios';
 import { NavLink } from 'react-router-dom'
 import ResetSuccess from "./Pages/ResetSuccess"
 import ResetPassword from "./Pages/ResetPassword"
+import Materials from './Pages/Materials'
 
 function LoginPopUp({ setErrorMessage, loginPopUp, setRegisterPopUp, setLoginPopUp, email, password, handleInputChange, handleLoginSubmit, errorMessage }) {
 	function handleEmailError(){
@@ -352,6 +353,7 @@ function App() {
 				<Route path="/compiler" element={<Compiler />} />
 				<Route path="/reset" element={<ResetPassword />} />
 				<Route path="/resetSuccess" element={<ResetSuccess />} />
+				<Route path="/materials" element={<Materials />} />
 			</Routes>
 		</Box>
 	)

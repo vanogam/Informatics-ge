@@ -1,5 +1,5 @@
 const Materials = () => {
-	return <p>I am materials((:))</p>
+	return <p>Materials ((:))</p>
 }
 
 export default Materials

@@ -22,7 +22,7 @@ export default function ResetPassword() {
 
 	const handleReset = () => {
 		console.log(email)
-		setSuccess("False")
+		setSuccess("True")
 		// const body = {'username': registerUsername, 'firstName': registerFirstName, 'lastName': registerLastName, 'password': registerPassword}
 		// console.log(registerEmail, registerFirstName, registerLastName, registerPassword, registerUsername)
 		// axios.post('http://localhost:8080/register', body).then(response => console.log(response));
@@ -32,7 +32,7 @@ export default function ResetPassword() {
 		<Box>
 			 <Box sx={{ '& > :not(style)': { marginLeft: '25%', marginTop: '15%'} }}>
 		   <InputLabel >
-          შეიყვანე ელ-ფოსტა:
+          შეიყვანეთ ელ-ფოსტა:
         </InputLabel>
 		 {/* <Typography gutterBottom variant="p" component="div">
           შეიყვანე ელ-ფოსტა: </Typography> */}
@@ -53,18 +53,17 @@ export default function ResetPassword() {
 				/>
 	  
     </Box>
-	
 
 	<Button sx = {{marginLeft: '30%', marginTop: '12%',	background: 'rgb(42,13,56)'}}onClick={()=>handleReset()} variant="contained">
 პაროლის აღდგენა
 </Button>
-    {success==="True" && (<Box  display="flex" justifyContent="row" sx ={{marginLeft: '10%', marginTop:'3%'}}><CheckCircleIcon></CheckCircleIcon>
-					<Typography gutterBottom variant="p" component="div" sx = {{color: 'green'}}>
-          პაროლის აღსადგენი ლინკი გამოგზავნილია თქვენს ელ-ფოსტაზე </Typography> </Box>
+    {success==="True" && (<Box  display="flex" justifyContent="row" sx ={{marginLeft: '30%', marginTop:'12%'}}><CheckCircleIcon></CheckCircleIcon>
+					<Typography gutterBottom variant="p" component="div" sx = {{color: 'green',    fontSize: '0.8rem',}}>
+        ლინკი გადმოგზავნილია ელ-ფოსტაზე </Typography> </Box>
 			
 					)}
-	{success==="False" && (<Box  display="flex" justifyContent="row" sx ={{marginLeft: '10%', marginTop:'3%'}}><CancelIcon></CancelIcon>
-				<Typography gutterBottom variant="p" component="div" sx = {{color: 'red'}}>
+	{success==="False" && (<Box  display="flex" justifyContent="row" sx ={{marginLeft: '30%', marginTop:'12%'}}><CancelIcon></CancelIcon>
+				<Typography gutterBottom variant="p" component="div" sx = {{color: 'red', fontSize: '0.8rem'}}>
 		მომხმარებელი არ მოიძებნა </Typography> </Box>
 		
 				)}

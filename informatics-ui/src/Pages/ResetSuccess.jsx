@@ -89,14 +89,14 @@ export default function ResetSuccess() {
 	<Button sx = {{marginLeft: '30%', marginTop: '12%',	background: 'rgb(42,13,56)'}}onClick={()=>handleReset()} variant="contained">
 პაროლის აღდგენა
 </Button>
-    {success==="True" && (<Box  display="flex" justifyContent="row" sx ={{marginLeft: '10%', marginTop:'3%'}}><CheckCircleIcon></CheckCircleIcon>
+    {success==="True" && (<Box  display="flex" justifyContent="row" sx ={{marginLeft: '30%', marginTop:'3%'}}><CheckCircleIcon></CheckCircleIcon>
 					<Typography gutterBottom variant="p" component="div" sx = {{color: 'green'}}>
-          პაროლი წარმატებით შეიცვალა </Typography> </Box>
+          პაროლი შეიცვალა </Typography> </Box>
 			
 					)}
-	{success==="False" && (<Box  display="flex" justifyContent="row" sx ={{marginLeft: '10%', marginTop:'3%'}}><CancelIcon></CancelIcon>
+	{success==="False" && (<Box  display="flex" justifyContent="row" sx ={{marginLeft: '30%', marginTop:'3%'}}><CancelIcon></CancelIcon>
 				<Typography gutterBottom variant="p" component="div" sx = {{color: 'red'}}>
-		პაროლები არ ემთხვევა ერთმანეთს </Typography> </Box>
+		პაროლები არ ემთხვევა </Typography> </Box>
 		
 				)}
 	</Box>

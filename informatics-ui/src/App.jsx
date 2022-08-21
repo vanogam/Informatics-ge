@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Box, Modal, TextField, Button } from '@mui/material'
+import { Box, Modal, TextField, Button, Typography } from '@mui/material'
 import { Route, Routes } from 'react-router-dom'
 import Navbar from './Components/NavBar'
 import Compiler from './Pages/Compiler'
@@ -11,8 +11,20 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LockIcon from '@mui/icons-material/Lock';
 import PersonIcon from '@mui/icons-material/Person';
 import axios from 'axios';
+import { NavLink } from 'react-router-dom'
+import ResetSuccess from "./Pages/ResetSuccess"
+import ResetPassword from "./Pages/ResetPassword"
 
-function LoginPopUp({ loginPopUp, setLoginPopUp, email, password, handleInputChange, handleLoginSubmit }) {
+function LoginPopUp({ setErrorMessage, loginPopUp, setRegisterPopUp, setLoginPopUp, email, password, handleInputChange, handleLoginSubmit, errorMessage }) {
+	function handleEmailError(){
+		setErrorMessage('')
+		setLoginPopUp(false)
+		setRegisterPopUp(true) 
+	}
+	function handlePassError(){
+		setErrorMessage('')
+		setLoginPopUp(false)
+	}
 	return (
 		<Modal open={loginPopUp} onClose={() => setLoginPopUp(false)}>
 			<Box
@@ -39,7 +51,7 @@ function LoginPopUp({ loginPopUp, setLoginPopUp, email, password, handleInputCha
 					>
 						<TextField
 						id="email"
-						label="Email"
+						label="ელ-ფოსტა"
 						type="email"
 						autoComplete="current-email"
 						value={email} onChange = {(e) => handleInputChange(e)} 
@@ -48,7 +60,7 @@ function LoginPopUp({ loginPopUp, setLoginPopUp, email, password, handleInputCha
 					<TextField
 					
 						id="password"
-						label="Password"
+						label="პაროლი"
 						type="password"
 						autoComplete="current-password"
 					
@@ -59,14 +71,38 @@ function LoginPopUp({ loginPopUp, setLoginPopUp, email, password, handleInputCha
 									background: 'linear-gradient(90deg, rgba(42,13,56,1) 63%, rgba(53,26,88,1) 77%, rgba(73,62,153,1) 92%)'}} onClick={()=>handleLoginSubmit()} variant="contained" color="success">
 						შესვლა
 					</Button>
-					
-					</Box>
+				
+
+					{errorMessage==='P' && (
+					<Button
+							sx={{color: 'red'}}
+							component={NavLink}
+							onClick={()=>handlePassError()} 
+							to="/reset"
+						>
+						პაროლი არასწორია. დაგავიწყდა პაროლი? 
+						</Button>
+					)}
+
+					{errorMessage==='E' && (
+										<Button 
+												sx={{color: 'red'}}
+												component={NavLink}
+												onClick={()=>handleEmailError()} 
+												to="/"
+											>
+											მომხარებელი არ მოიძებნა. რეგისტრაცია 
+											</Button>
+										)}
+										
+				</Box>
 			</Box>
 		</Modal>
 	)
 }
 
-function RegisterPopUp({ registerPopUp, setRegisterPopUp, registerEmail, registerFirstName, registerLastName, registerPassword, registerUsername, handleInputChange, handleRegistrationSubmit }) {
+function RegisterPopUp({success, confirmPassword, registerPopUp, setRegisterPopUp, registerEmail, registerFirstName, registerLastName, registerPassword, registerUsername, handleInputChange, handleRegistrationSubmit }) {
+	
 	return (
 		<Modal open={registerPopUp} onClose={() => setRegisterPopUp(false)}>
 			<Box
@@ -92,7 +128,7 @@ function RegisterPopUp({ registerPopUp, setRegisterPopUp, registerEmail, registe
 			>	<TextField
 				style = {{ alignItems: 'center',  justifyContent: 'center'}}
 				id="register-first-name"
-				label="FirstName"
+				label="სახელი"
 				type="FirstName"
 				autoComplete="FirstName"
 				value={registerFirstName} 
@@ -107,7 +143,7 @@ function RegisterPopUp({ registerPopUp, setRegisterPopUp, registerEmail, registe
 				<TextField
 				style = {{ alignItems: 'center',  justifyContent: 'center'}}
 				id="register-last-name"
-				label="LastName"
+				label="გვარი"
 				type="LastName"
 				autoComplete="LastName"
 				value={registerLastName} 
@@ -122,7 +158,7 @@ function RegisterPopUp({ registerPopUp, setRegisterPopUp, registerEmail, registe
 				<TextField
 				style = {{ alignItems: 'center',  justifyContent: 'center'}}
 				id="username"
-				label="Username"
+				label="username"
 				type="Nickname"
 				autoComplete="nickname"
 				value={registerUsername} 
@@ -142,7 +178,7 @@ function RegisterPopUp({ registerPopUp, setRegisterPopUp, registerEmail, registe
 					  </InputAdornment>
 					)}}
 					id="register-email"
-					label="Email"
+					label="ელ-ფოსტა"
 					type="email"
 					autoComplete="current-email"
 					value={registerEmail} 
@@ -152,7 +188,7 @@ function RegisterPopUp({ registerPopUp, setRegisterPopUp, registerEmail, registe
 			<TextField
 			
 				id="register-password"
-				label="Password"
+				label="პაროლი"
 				type="password"
 				autoComplete="current-password"
 				value={registerPassword} 
@@ -164,11 +200,37 @@ function RegisterPopUp({ registerPopUp, setRegisterPopUp, registerEmail, registe
 					  </InputAdornment>
 					)}}
 				/>
-				 <Button sx = {{	background: 'rgb(42,13,56)',
+				 {/* <Button sx = {{	background: 'rgb(42,13,56)',
+									background: 'linear-gradient(90deg, rgba(42,13,56,1) 63%, rgba(53,26,88,1) 77%, rgba(73,62,153,1) 92%)'}}onClick={()=>handleRegistrationSubmit()} variant="contained">
+						რეგისტრაცია
+					</Button> */}
+			   <Box>
+				<TextField
+				id="confirm-password"
+						label="გაიმეორე პაროლი"
+						type="password"
+						autoComplete="current-password"
+						value={confirmPassword} 
+						onChange = {(e) => handleInputChange(e)} 
+						InputProps={{
+							startAdornment: (
+							<InputAdornment position="start">
+								<LockIcon></LockIcon>
+							</InputAdornment>
+							)}}
+						/>
+        </Box>
+			
+		{success==="False" && (<Box  display="flex" justifyContent="row" sx ={{marginLeft: '10%', marginTop:'3%'}}>
+				<Typography gutterBottom variant="p" component="div" sx = {{color: 'red'}}>
+		პაროლები არ ემთხვევა ერთმანეთს </Typography> </Box>
+		
+				)}
+			</Box>
+			<Button sx = {{	background: 'rgb(42,13,56)', marginLeft: '2%', marginTop: '2%',
 									background: 'linear-gradient(90deg, rgba(42,13,56,1) 63%, rgba(53,26,88,1) 77%, rgba(73,62,153,1) 92%)'}}onClick={()=>handleRegistrationSubmit()} variant="contained">
 						რეგისტრაცია
 					</Button>
-			</Box>
 			</Box>
 		</Modal>
 	)
@@ -178,14 +240,17 @@ function App() {
 	const [isLogin, setIsLogin] = useState(false)
 	const [loginPopUp, setLoginPopUp] = useState(false)
 	const [registerPopUp, setRegisterPopUp] = useState(false)
-	const [email, setEmail] = useState(null);
-    const [password,setPassword] = useState(null)
-
-	const [registerEmail, setRegisterEmail] = useState(null);
-    const [registerPassword,setRegisterPassword] = useState(null)
-	const [registerFirstName,setRegisterFirstName] = useState(null)
-	const [registerLastName,setRegisterLastName] = useState(null)
-	const [registerUsername,setRegisterUsername] = useState(null)
+	const [email, setEmail] = useState('');
+    const [password,setPassword] = useState('')
+	const [errorMessage, setErrorMessage] = useState('');
+	
+	const [registerEmail, setRegisterEmail] = useState('');
+    const [registerPassword,setRegisterPassword] = useState('')
+	const [registerFirstName,setRegisterFirstName] = useState('')
+	const [registerLastName,setRegisterLastName] = useState('')
+	const [registerUsername,setRegisterUsername] = useState('')
+	const [confirmPassword, setConfirmPassword] = useState('');
+	const [success, setSuccess] = useState('');
 
 	const handleInputChange = (e) => {
 		console.log(e)
@@ -195,29 +260,33 @@ function App() {
 			setEmail(value);
 		}
 		if(id === "password"){
+		
 			setPassword(value);
 		}
-		
-		if(id == 'register-email'){
+		if(id === 'register-email'){
 			setRegisterEmail(value)
 		}
 
-		if(id == 'register-password'){
+		if(id === 'register-password'){
 			setRegisterPassword(value)
 		}
 
-		if(id == 'register-first-name'){
+		if(id === 'register-first-name'){
 			setRegisterFirstName(value)
 		}
 
-		if(id == 'register-last-name'){
+		if(id === 'register-last-name'){
 			setRegisterLastName(value)
 		}
 
-		if(id == 'username'){
+		if(id === 'username'){
 			setRegisterUsername(value)
 		}
-	
+		
+		if(id === 'confirm-password'){
+			setConfirmPassword(value)
+		}
+		
 	
 	}
 	
@@ -232,24 +301,41 @@ function App() {
 		// setEmail(email)
 		// setPassword(password)
 		console.log(email, password)
+		if (email === 'a'){
+			setErrorMessage('E')
+		}
+		if (password === 'a'){
+			setErrorMessage('P')
+		}
 		const body = {'password': password, 'username' : email}
-		axios.post('http://localhost:8080/login', body )
-			.then(response => changeAuthStatus(response));
+		// axios.post('http://localhost:8080/login', body )
+		// 	.then(response => changeAuthStatus(response));
 	
 	}
 
 	const handleRegistrationSubmit = () => {
-		const body = {'username': registerUsername, 'firstName': registerFirstName, 'lastName': registerLastName, 'password': registerPassword}
-		console.log(registerEmail, registerFirstName, registerLastName, registerPassword, registerUsername)
-		axios.post('http://localhost:8080/register', body).then(response => console.log(response));
+		setSuccess("True")
+		if (registerPassword === confirmPassword) {
+			setSuccess("True")
+			const body = {'username': registerUsername, 'firstName': registerFirstName, 'lastName': registerLastName, 'password': registerPassword}
+			console.log(registerEmail, registerFirstName, registerLastName, registerPassword, registerUsername)
+		// axios.post('http://localhost:8080/register', body).then(response => console.log(response));
+		}
+		else{
+			setSuccess("False")
+		}
+		
 	}
 
 	return (
 		<Box display="flex" flexDirection="column">
-			<LoginPopUp loginPopUp={loginPopUp} setLoginPopUp={setLoginPopUp}
-			email={email} handleInputChange={handleInputChange} password={password} handleLoginSubmit={handleLoginSubmit} />
+			<LoginPopUp setRegisterPopUp = {setRegisterPopUp} setErrorMessage={setErrorMessage} loginPopUp={loginPopUp} setLoginPopUp={setLoginPopUp}
+			email={email} handleInputChange={handleInputChange} password={password} handleLoginSubmit={handleLoginSubmit} errorMessage={errorMessage} />
 			<RegisterPopUp
+			    setConfirmPassword = {setConfirmPassword}
 				registerPopUp={registerPopUp}
+				success = {success}
+				confirmPassword = {confirmPassword}
 				setRegisterPopUp={setRegisterPopUp} registerEmail={registerEmail} registerFirstName={registerFirstName}
 				registerLastName={registerLastName} registerPassword={registerPassword} registerUsername={registerUsername}
 				handleInputChange={handleInputChange} handleRegistrationSubmit={handleRegistrationSubmit}
@@ -264,6 +350,8 @@ function App() {
 			<Routes>
 				<Route path="/" element={<Main />} />
 				<Route path="/compiler" element={<Compiler />} />
+				<Route path="/reset" element={<ResetPassword />} />
+				<Route path="/resetSuccess" element={<ResetSuccess />} />
 			</Routes>
 		</Box>
 	)

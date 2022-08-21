@@ -65,10 +65,9 @@ const [code, setCode] = React.useState(
         fontSize: 12,
       }}
     />
-		<Button className = "items"
+		<Button 
 									sx={{ marginInline: '2px' , alignSelf: 'right', marginLeft: '60px' ,   width : "50%", marginTop: '5%',
-									background: 'rgb(42,13,56)',
-									background: 'linear-gradient(90deg, rgba(42,13,56,1) 63%, rgba(53,26,88,1) 77%, rgba(73,62,153,1) 92%)'}}
+									background: '#3c324e'}}
 									variant="contained"
 								
 								>
@@ -92,10 +91,10 @@ const [code, setCode] = React.useState(
 	
 			</TextField>
 
-			<Button className = "items"
+			<Button 
 									sx={{ marginInline: '2px' , alignSelf: 'right',    width : "50%", marginBottom: "20%", marginLeft: '30px' ,
-									background: 'rgb(42,13,56)',
-									background: 'linear-gradient(90deg, rgba(42,13,56,1) 63%, rgba(53,26,88,1) 77%, rgba(73,62,153,1) 92%)'}}
+									background: '#3c324e'
+									}}
 									variant="contained"
 								
 								>

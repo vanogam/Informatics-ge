@@ -69,8 +69,8 @@ function LoginPopUp({ setErrorMessage, loginPopUp, setRegisterPopUp, setLoginPop
 						value={password} 
 						onChange = {(e) => handleInputChange(e)} 
 						/>
-					  <Button  sx = {{	background: 'rgb(42,13,56)',
-									background: 'linear-gradient(90deg, rgba(42,13,56,1) 63%, rgba(53,26,88,1) 77%, rgba(73,62,153,1) 92%)'}} onClick={()=>handleLoginSubmit()} variant="contained" color="success">
+					  <Button  sx = {{	background: '#3c324e',
+					  }} onClick={()=>handleLoginSubmit()} variant="contained" color="success">
 						შესვლა
 					</Button>
 				
@@ -229,8 +229,8 @@ function RegisterPopUp({success, confirmPassword, registerPopUp, setRegisterPopU
 		
 				)}
 			</Box>
-			<Button sx = {{	background: 'rgb(42,13,56)', marginLeft: '2%', marginTop: '2%',
-									background: 'linear-gradient(90deg, rgba(42,13,56,1) 63%, rgba(53,26,88,1) 77%, rgba(73,62,153,1) 92%)'}}onClick={()=>handleRegistrationSubmit()} variant="contained">
+			<Button sx = {{	background: '#3c324e', marginLeft: '2%', marginTop: '2%',
+									}}onClick={()=>handleRegistrationSubmit()} variant="contained">
 						რეგისტრაცია
 					</Button>
 			</Box>

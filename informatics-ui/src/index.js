@@ -1,17 +1,17 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import {ToastContainer} from "react-toastify"
-
+import {AuthContextProvider} from './store/authentication'
 import App from './App'
 import './index.css'
 
 const root = ReactDOM.createRoot(document.getElementById('root'))
 root.render(
 	<React.StrictMode>
-		<BrowserRouter>
-			<ToastContainer />
-			<App />
-		</BrowserRouter>
+		<AuthContextProvider>
+			<BrowserRouter>
+				<App />
+			</BrowserRouter>
+		</AuthContextProvider>
 	</React.StrictMode>
 )

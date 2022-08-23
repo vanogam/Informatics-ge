@@ -1,7 +1,8 @@
-import { Box, Button, Container, Link } from '@mui/material'
+import { Box, Button, Container } from '@mui/material'
 import { blue } from '@mui/material/colors'
 import { NavLink } from 'react-router-dom'
 import axios from 'axios'
+import { toast } from 'react-toastify'
 import './NavBar.css'
 
 import React, { useState, useEffect, useContext } from 'react'
@@ -31,7 +32,11 @@ const Navbar = () => {
 	const handleLogOut = () => {
 		axios
 			.post('http://localhost:8080/logout', {})
-			.then((response) => authContext.logout())
+			.then((response) => {
+				toast.success('Logout Successful')
+				authContext.logout()
+			})
+			.catch((error) => console.log(error))
 	}
 
 	return (

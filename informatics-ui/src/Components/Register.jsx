@@ -3,15 +3,11 @@ import { Box } from '@mui/system'
 import InputAdornment from '@mui/material/InputAdornment'
 import { blue } from '@mui/material/colors'
 
-import {
-	Email,
-	AccountCircle,
-	Lock,
-	Person,
-} from '@mui/icons-material'
+import { Email, AccountCircle, Lock, Person } from '@mui/icons-material'
 import { useRef, useState, useContext } from 'react'
 import { AuthContext } from '../store/authentication'
 import axios from 'axios'
+import { toast } from 'react-toastify'
 
 export default function Register() {
 	const [popUp, setPopUp] = useState(false)
@@ -40,6 +36,7 @@ export default function Register() {
 		axios
 			.post('http://localhost:8080/register', body)
 			.then((response) => {
+				toast.success('Register Success')
 				setPopUp(false)
 				axios
 					.post('http://localhost:8080/login', {
@@ -47,10 +44,12 @@ export default function Register() {
 						password: password.current.value,
 					})
 					.then((response) => {
-						if (response.data.status === "SUCCESS") {
-							authContext.login(nickname.current.value)
-						} else {
-							console.error(response.data)
+						if (response.data.status === 'SUCCESS') {
+							setPopUp(false)
+							toast.success('Login Success')
+							authContext.login(response.data.message)
+						} else if (response.data.status === 'FAIL') {
+							toast.error('Login Error')
 						}
 					})
 					.catch((error) => {
@@ -59,6 +58,7 @@ export default function Register() {
 			})
 			.catch((error) => {
 				console.error(error)
+				toast.error('Error while registering')
 			})
 	}
 

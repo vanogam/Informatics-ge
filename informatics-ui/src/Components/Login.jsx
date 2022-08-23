@@ -4,6 +4,7 @@ import axios from 'axios'
 import { Box } from '@mui/system'
 import { NavLink } from 'react-router-dom'
 import { AuthContext } from '../store/authentication'
+import { toast } from 'react-toastify'
 
 export default function Login() {
 	const [popUp, setPopUp] = useState(false)
@@ -15,10 +16,12 @@ export default function Login() {
 	const handleLoginResponse = (response) => {
 		if (response.data.status === 'SUCCESS') {
 			setPopUp(false)
+			toast.success('Login Success')
 			setCredentialsError(false)
 			authContext.login(response.data.message)
 		} else if (response.data.status === 'FAIL') {
 			setCredentialsError(true)
+			toast.error('Login Error')
 		}
 	}
 

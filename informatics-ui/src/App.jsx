@@ -27,6 +27,7 @@ function LoginPopUp({ setErrorMessage, loginPopUp, setRegisterPopUp, setLoginPop
 		setErrorMessage('')
 		setLoginPopUp(false)
 	}
+
 	return (
 		<Modal open={loginPopUp} onClose={() => setLoginPopUp(false)}>
 			<Box
@@ -65,7 +66,7 @@ function LoginPopUp({ setErrorMessage, loginPopUp, setRegisterPopUp, setLoginPop
 						label="პაროლი"
 						type="password"
 						autoComplete="current-password"
-					
+						// inputRef={textInput}
 						value={password} 
 						onChange = {(e) => handleInputChange(e)} 
 						/>
@@ -227,7 +228,11 @@ function RegisterPopUp({success, confirmPassword, registerPopUp, setRegisterPopU
 				<Typography gutterBottom variant="p" component="div" sx = {{color: 'red'}}>
 		პაროლები არ ემთხვევა ერთმანეთს </Typography> </Box>
 		
+		
 				)}
+		{/* {success==="True" && (<Box  display="flex" justifyContent="row" sx ={{marginLeft: '10%', marginTop:'3%'}}>
+				<Typography gutterBottom variant="p" component="div" sx = {{color: 'green'}}>
+		თქვენ წარმატებით დარეგისტრირდით </Typography> </Box> )} */}
 			</Box>
 			<Button sx = {{	background: '#3c324e', marginLeft: '2%', marginTop: '2%',
 									}}onClick={()=>handleRegistrationSubmit()} variant="contained">
@@ -293,25 +298,36 @@ function App() {
 	}
 	
 	const changeAuthStatus = (response) => {
-		if (response.status === 200){
+	
+		if (response.data.status === "SUCCESS"){
 			console.log("Logging in")
+			setLoginPopUp(false)
 			setIsLogin(true)
+			
 		}
+		else if (response.data.status === "FAIL"){
+				console.log("Login Fail")
+			
+					setErrorMessage('P')
+			}
+		
+
 			
 	}
 	const handleLoginSubmit  = () => {
+		setErrorMessage('')
 		// setEmail(email)
 		// setPassword(password)
 		console.log(email, password)
-		if (email === 'a'){
-			setErrorMessage('E')
-		}
+		// if (email === 'a'){
+		// 	setErrorMessage('E')
+		// }
 		if (password === 'a'){
 			setErrorMessage('P')
 		}
 		const body = {'password': password, 'username' : email}
-		// axios.post('http://localhost:8080/login', body )
-		// 	.then(response => changeAuthStatus(response));
+		axios.post('http://localhost:8080/login', body )
+			.then(response => changeAuthStatus(response));
 	
 	}
 
@@ -320,9 +336,18 @@ function App() {
 		if (registerPassword === confirmPassword) {
 			setSuccess("True")
 			const body = {'username': registerUsername, 'firstName': registerFirstName, 'lastName': registerLastName, 'password': registerPassword}
+			// const body = {'username':registerUsername, 'password':registerPassword}
+			console.log(body)
 			console.log(registerEmail, registerFirstName, registerLastName, registerPassword, registerUsername)
-		// axios.post('http://localhost:8080/register', body).then(response => console.log(response));
+			axios.post('http://localhost:8080/register', body).then(response => console.log(response));
+			
+			setRegisterPopUp(false)
+			const login_body = {'password':registerPassword, 'username' : registerUsername}
+			axios.post('http://localhost:8080/login', login_body )
+				.then(response => changeAuthStatus(response));
+			
 		}
+		
 		else{
 			setSuccess("False")
 		}

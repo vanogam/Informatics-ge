@@ -80,7 +80,7 @@ export default function Login() {
 					>
 						<TextField
 							id="nickname"
-							label="ზედმეტსახელი"
+							label="მომხმარებელი"
 							type="nickname"
 							autoComplete="current-nickname"
 							inputRef={nickname}

@@ -3,6 +3,8 @@ import Box from '@mui/material/Box'
 import Editor from 'react-simple-code-editor'
 import { highlight, languages } from 'prismjs/components/prism-core'
 import 'prismjs/components/prism-clike'
+import 'prismjs/components/prism-c'
+import 'prismjs/components/prism-cpp'
 import 'prismjs/components/prism-javascript'
 import 'prismjs/themes/prism.css' //Example style, you can use another
 import './numbers.css'
@@ -22,8 +24,8 @@ const boxStyle = {
 
 	fontSize: '20',
 }
-const hightlightWithLineNumbers = (input, language) =>
-	highlight(input, language)
+const hightlightWithLineNumbers = (input, grammar, language) =>
+	highlight(input, grammar, language)
 		.split('\n')
 		.map((line, i) => `<span class='editorLineNumber'>${i + 1}</span>${line}`)
 		.join('\n')
@@ -52,22 +54,19 @@ export default function Materials() {
 				}}
 			>
 				<p sx={{ color: 'purple' }}>შეიყვანე კოდი: </p>
-				<Editor
-					value={code}
-					onValueChange={(code) => setCode(code)}
-					highlight={(code) => hightlightWithLineNumbers(code, languages.js)}
-					// padding={10}
-					//   rows = {10}
-					className="editor"
-					textareaId="codeArea"
-					style={{
-						// maxHeight: '50%',
-						// overflowY: "scroll",
-						rows: 20,
-						fontFamily: '"Fira code", "Fira Mono", monospace',
-						fontSize: 12,
-					}}
-				/>
+					<Editor
+						value={code}
+						onValueChange={(code) => setCode(code)}
+						highlight={(code) => hightlightWithLineNumbers(code, languages.cpp, 'cpp')}
+						className="editor"
+						textareaId="codeArea"
+						style={{
+							overflowY: 'auto',
+							height: '50vh',
+							fontFamily: '"Fira code", "Fira Mono", monospace',
+							fontSize: 12,
+						}}
+					/>
 				<Button
 					sx={{
 						marginInline: '2px',

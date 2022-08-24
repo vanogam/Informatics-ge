@@ -32,6 +32,7 @@ public class UserController {
         UserDTO userDTO = new UserDTO();
         userDTO.setUsername(registerDTO.getUsername());
         userDTO.setFirstName(registerDTO.getFirstName());
+        userDTO.setEmail(registerDTO.getEmail());
         userDTO.setLastName(registerDTO.getLastName());
         userDTO.setPassword(registerDTO.getPassword());
         InformaticsResponse response = new InformaticsResponse();

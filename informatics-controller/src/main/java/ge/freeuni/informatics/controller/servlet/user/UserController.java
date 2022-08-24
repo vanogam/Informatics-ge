@@ -99,7 +99,7 @@ public class UserController {
         return new InformaticsResponse("SUCCESS", null);
     }
 
-    @GetMapping("/recover/request")
+    @PostMapping("/recover/request")
     public InformaticsResponse requestRecovery(@RequestBody AddRecoveryRequest request) {
         try {
             userManager.addPasswordRecoveryQuery(request.getUsername());

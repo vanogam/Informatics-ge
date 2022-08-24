@@ -11,6 +11,8 @@ public class UserDTO {
 
     private String password;
 
+    private String email;
+
     private String firstName;
 
     private String lastName;
@@ -41,6 +43,14 @@ public class UserDTO {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getFirstName() {
@@ -81,6 +91,7 @@ public class UserDTO {
         userDTO.setId(user.getId());
         userDTO.setUsername(user.getUsername());
         userDTO.setFirstName(user.getFirstName());
+        userDTO.setEmail(user.getEmail());
         userDTO.setLastName(user.getLastName());
         userDTO.setVersion(userDTO.getVersion());
         userDTO.setRoles(user.getRoles());
@@ -95,6 +106,7 @@ public class UserDTO {
         user.setUsername(userDTO.getUsername());
         user.setFirstName(userDTO.getFirstName());
         user.setLastName(userDTO.getLastName());
+        user.setEmail(userDTO.getEmail());
         user.setPassword(userDTO.getPassword());
         user.setVersion(userDTO.getVersion());
         user.setRoles(userDTO.getRoles());

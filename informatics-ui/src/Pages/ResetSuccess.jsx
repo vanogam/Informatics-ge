@@ -6,7 +6,7 @@ import TextField from '@mui/material/TextField'
 import logo from '../Components/logo.png'
 import EmailIcon from '@mui/icons-material/Email'
 import { Button } from '@mui/material'
-import { useState, useRef } from 'react'
+import { useState, useRef, useContext } from 'react'
 import Typography from '@mui/material/Typography'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import CancelIcon from '@mui/icons-material/Cancel'
@@ -14,14 +14,19 @@ import LockIcon from '@mui/icons-material/Lock'
 import { useParams } from 'react-router-dom'
 import axios from 'axios'
 import { toast } from 'react-toastify'
-
+import { AuthContext } from '../store/authentication'
+import { useNavigate } from 'react-router-dom'
 export default function ResetSuccess() {
 	let { token } = useParams()
 
 	const password = useRef('')
 	const confirmPassword = useRef('')
 	const [success, setSuccess] = useState('')
-
+	const authProvider = useContext(AuthContext)
+	let navigate = useNavigate()
+	if (authProvider.isLoggedIn) {
+		return navigate('/')
+	}
 	const handleReset = () => {
 		if (password.current.value !== confirmPassword.current.value) {
 			return

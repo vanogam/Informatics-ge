@@ -27,6 +27,7 @@ export default function Register() {
 		}
 		setPasswordMatch(true)
 		const body = {
+			email: email.current.value,
 			username: nickname.current.value,
 			firstName: firstName.current.value,
 			lastName: firstName.current.value,

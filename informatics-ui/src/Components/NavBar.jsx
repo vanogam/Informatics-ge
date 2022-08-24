@@ -10,7 +10,7 @@ import Login from './Login'
 import Register from './Register'
 import { AuthContext } from '../store/authentication'
 
-const Navbar = () => {
+function Navbar() {
 	const authContext = useContext(AuthContext)
 	const isLoggedIn = authContext.isLoggedIn
 	const [toggleMenu, setToggleMenu] = useState(false)
@@ -124,7 +124,7 @@ const Navbar = () => {
 					>
 						{isLoggedIn ? (
 							<div style={{ display: 'flex', alignItems: 'center' }}>
-								<Typography variant='button'>{authContext.username}</Typography>
+								<Typography variant="button">{authContext.username}</Typography>
 								<Button
 									className="items"
 									sx={{

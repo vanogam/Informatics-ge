@@ -9,16 +9,23 @@ import ResetPassword from './Pages/ResetPassword'
 import Materials from './Pages/Materials'
 
 function App() {
-
 	return (
 		<div className="App">
 			<Box display="flex" flexDirection="column">
 				<Navbar />
 
+
 				<Routes>
 					<Route path="/" element={<Main />} />
 					<Route path="/compiler" element={<Compiler />} />
 					<Route path="/reset" element={<ResetPassword />} />
+					{/* Reset Password Sample */}
+					{/* /recover/update-password/RrjT9ez3cQNoctAkGZp0+8wTcSYfAducOnahwj2Y */}
+					<Route path="recover">
+						<Route path="update-password">
+							<Route path=":token" element={<ResetSuccess />} />
+						</Route>
+					</Route>
 					<Route path="/resetSuccess" element={<ResetSuccess />} />
 					<Route path="/materials" element={<Materials />} />
 					<Route path="/contests" element={<Contests />} />

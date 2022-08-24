@@ -30,7 +30,7 @@ const hightlightWithLineNumbers = (input, grammar, language) =>
 		.map((line, i) => `<span class='editorLineNumber'>${i + 1}</span>${line}`)
 		.join('\n')
 
-export default function Materials() {
+export default function Compiler() {
 	const [code, setCode] = React.useState(
 		`#include <iostream>\nusing namespace std;\nint main()\n{\ncout << "Hello, World!";\nreturn 0; \n}\n`
 	)
@@ -54,19 +54,21 @@ export default function Materials() {
 				}}
 			>
 				<p sx={{ color: 'purple' }}>შეიყვანე კოდი: </p>
-					<Editor
-						value={code}
-						onValueChange={(code) => setCode(code)}
-						highlight={(code) => hightlightWithLineNumbers(code, languages.cpp, 'cpp')}
-						className="editor"
-						textareaId="codeArea"
-						style={{
-							overflowY: 'auto',
-							height: '50vh',
-							fontFamily: '"Fira code", "Fira Mono", monospace',
-							fontSize: 12,
-						}}
-					/>
+				<Editor
+					value={code}
+					onValueChange={(code) => setCode(code)}
+					highlight={(code) =>
+						hightlightWithLineNumbers(code, languages.cpp, 'cpp')
+					}
+					className="editor"
+					textareaId="codeArea"
+					style={{
+						overflowY: 'auto',
+						height: '50vh',
+						fontFamily: '"Fira code", "Fira Mono", monospace',
+						fontSize: 12,
+					}}
+				/>
 				<Button
 					sx={{
 						marginInline: '2px',

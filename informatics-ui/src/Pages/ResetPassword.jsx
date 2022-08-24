@@ -1,80 +1,134 @@
-
-import * as React from 'react';
-import Box from '@mui/material/Box';
-import InputLabel from '@mui/material/InputLabel';
-import InputAdornment from '@mui/material/InputAdornment';
-import TextField from '@mui/material/TextField';
-
-import EmailIcon from '@mui/icons-material/Email';
+import { useState, useRef, useContext } from 'react'
+import Box from '@mui/material/Box'
+import InputLabel from '@mui/material/InputLabel'
+import InputAdornment from '@mui/material/InputAdornment'
+import TextField from '@mui/material/TextField'
+import axios from 'axios'
+import EmailIcon from '@mui/icons-material/Email'
 import { Button } from '@mui/material'
-import { useState } from 'react';
-import Typography from '@mui/material/Typography';
+import Typography from '@mui/material/Typography'
 import logo from '../Components/logo.png'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CancelIcon from '@mui/icons-material/Cancel';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import CancelIcon from '@mui/icons-material/Cancel'
+import { toast } from 'react-toastify'
+import { AuthContext } from '../store/authentication'
+import { useNavigate } from 'react-router-dom'
+import {
+	Email,
+	AccountCircle,
+	Lock,
+	Person,
+} from '@mui/icons-material'
+
 export default function ResetPassword() {
-	const [email, setEmail] = useState('');
-	const [success, setSuccess] = useState('');
-	const handleInputChange = (e) => {
-		setEmail(e.target.value)
-	
+	const username = useRef('')
+	const [success, setSuccess] = useState('')
+	const authProvider = useContext(AuthContext)
+	let navigate = useNavigate()
+	if (authProvider.isLoggedIn) {
+		return navigate('/')
 	}
-
 	const handleReset = () => {
-		console.log(email)
-		setSuccess("True")
-		// const body = {'username': registerUsername, 'firstName': registerFirstName, 'lastName': registerLastName, 'password': registerPassword}
-		// console.log(registerEmail, registerFirstName, registerLastName, registerPassword, registerUsername)
-		// axios.post('http://localhost:8080/register', body).then(response => console.log(response));
+		const body = {
+			username: username.current.value,
+		}
+		axios
+			.post('http://localhost:8080/recover/request', body)
+			.then((response) => {
+				if (response.data.status === 'SUCCESS') {
+					setSuccess('True')
+					toast.success('Recovery Link Sent')
+				} else if (response.data.status === 'FAIL') {
+					setSuccess('False')
+					toast.error('Recovery Link Error')
+				}
+			})
+			.catch((error) => {
+				console.log(error)
+				toast.error('Recovery Link: Unknown Error')
+			})
 	}
-  return (
-	<Box sx ={{display:'flex', flexDirection: 'row' ,marginLeft : '25%', marginTop: '2%'}}>
-		<Box>
-			 <Box sx={{ '& > :not(style)': { marginLeft: '25%', marginTop: '15%'} }}>
-		   <InputLabel >
-          შეიყვანეთ ელ-ფოსტა:
-        </InputLabel>
-		 {/* <Typography gutterBottom variant="p" component="div">
-          შეიყვანე ელ-ფოსტა: </Typography> */}
-     <TextField
-	 	
-				InputProps={{
-					startAdornment: (
-					  <InputAdornment position="start">
-						<EmailIcon></EmailIcon>
-					  </InputAdornment>
-					)}}
-					id="register-email"
-					type="email"
-					autoComplete="current-email"
-					value={email}
-					onChange = {(e) => handleInputChange(e)} 
-					
-				/>
-	  
-    </Box>
+	return (
+		<Box
+			sx={{
+				display: 'flex',
+				width: '100%',
+				height: '100%',
+				justifyContent: 'center',
+				alignItems: 'center',
+				flexDirection: 'row',
+				marginInline: 'auto',
+				marginTop: '3rem',
+			}}
+		>
+			<Box>
+				<Box >
+					<InputLabel>შეიყვანეთ მომხმარებლის სახელი:</InputLabel>
+					<TextField
+						InputProps={{
+							startAdornment: (
+								<InputAdornment position="start">
+									<AccountCircle></AccountCircle>
+								</InputAdornment>
+							),
+							}}
+						id="register-email"
+						type="text"
+						autoComplete="current-username"
+						inputRef={username}
+					/>
+				</Box>
 
-	<Button sx = {{marginLeft: '30%', marginTop: '12%',	background: 'rgb(42,13,56)'}}onClick={()=>handleReset()} variant="contained">
-პაროლის აღდგენა
-</Button>
-    {success==="True" && (<Box  display="flex" justifyContent="row" sx ={{marginLeft: '30%', marginTop:'12%'}}><CheckCircleIcon></CheckCircleIcon>
-					<Typography gutterBottom variant="p" component="div" sx = {{color: 'green',    fontSize: '0.8rem',}}>
-        ლინკი გადმოგზავნილია ელ-ფოსტაზე </Typography> </Box>
-			
-					)}
-	{success==="False" && (<Box  display="flex" justifyContent="row" sx ={{marginLeft: '30%', marginTop:'12%'}}><CancelIcon></CancelIcon>
-				<Typography gutterBottom variant="p" component="div" sx = {{color: 'red', fontSize: '0.8rem'}}>
-		მომხმარებელი არ მოიძებნა </Typography> </Box>
-		
+				<Button
+					sx={{
+						marginLeft: '30%',
+						marginTop: '12%',
+						background: 'rgb(42,13,56)',
+					}}
+					onClick={() => handleReset()}
+					variant="contained"
+				>
+					პაროლის აღდგენა
+				</Button>
+				{success === 'True' && (
+					<Box
+						display="flex"
+						justifyContent="row"
+						sx={{ marginLeft: '30%', marginTop: '12%' }}
+					>
+						<CheckCircleIcon></CheckCircleIcon>
+						<Typography
+							gutterBottom
+							variant="p"
+							component="div"
+							sx={{ color: 'green', fontSize: '0.8rem' }}
+						>
+							ლინკი გადმოგზავნილია ელ-ფოსტაზე{' '}
+						</Typography>{' '}
+					</Box>
 				)}
-	</Box>
+				{success === 'False' && (
+					<Box
+						display="flex"
+						justifyContent="row"
+						sx={{ marginLeft: '30%', marginTop: '12%' }}
+					>
+						<CancelIcon></CancelIcon>
+						<Typography
+							gutterBottom
+							variant="p"
+							component="div"
+							sx={{ color: 'red', fontSize: '0.8rem' }}
+						>
+							მომხმარებელი არ მოიძებნა{' '}
+						</Typography>{' '}
+					</Box>
+				)}
+			</Box>
 
-	<Box sx = {{marginLeft: '5%', marginTop: '7%'}}> 
-    <img src={logo} height={'90%'} width={'50%'} />
-    </Box>
-	
-	</Box>
-	
-   
-  );
+			<Box>
+				<img src={logo} style={{ maxWidth: '20rem' }} />
+			</Box>
+		</Box>
+	)
 }

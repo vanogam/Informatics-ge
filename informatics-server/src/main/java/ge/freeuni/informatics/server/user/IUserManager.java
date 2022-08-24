@@ -1,16 +1,25 @@
 package ge.freeuni.informatics.server.user;
 
-import ge.freeuni.informatics.model.dto.UserDTO;
-import ge.freeuni.informatics.model.exception.InformaticsServerException;
+import ge.freeuni.informatics.common.dto.UserDTO;
+import ge.freeuni.informatics.common.model.user.RecoverPassword;
+import ge.freeuni.informatics.common.model.user.User;
+import ge.freeuni.informatics.common.exception.InformaticsServerException;
 
 public interface IUserManager {
 
-    void createUser(UserDTO userDTO);
+    User getUser(Long userId);
 
-    UserDTO authenticate(String username, String password) throws InformaticsServerException;
+    void createUser(User user);
 
-    void editUser(UserDTO userDTO);
+    User authenticate(String username, String password) throws InformaticsServerException;
+
+    void editUser(User user);
 
     UserDTO getAuthenticatedUser() throws InformaticsServerException;
 
+    void addPasswordRecoveryQuery(String username) throws InformaticsServerException;
+
+    RecoverPassword verifyRecoveryQuery(String link) throws InformaticsServerException;
+
+    void recoverPassword(String link, String newPassword) throws InformaticsServerException;
 }

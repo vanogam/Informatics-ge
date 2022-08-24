@@ -1,8 +1,8 @@
 package ge.freeuni.informatics.repository.user;
 
-import ge.freeuni.informatics.model.entity.user.User;
-import ge.freeuni.informatics.model.exception.InformaticsServerException;
-import org.apache.catalina.LifecycleState;
+import ge.freeuni.informatics.common.model.user.RecoverPassword;
+import ge.freeuni.informatics.common.model.user.User;
+import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
@@ -18,6 +18,10 @@ public class UserRepository implements IUserRepository{
     @PersistenceContext
     EntityManager em;
 
+    @Override
+    public User getUser(Long id) {
+        return em.find(User.class, id);
+    }
 
     @Override
     public User getUser(String username) throws InformaticsServerException {
@@ -34,5 +38,18 @@ public class UserRepository implements IUserRepository{
     @Override
     public void addUser(User user) {
         em.persist(user);
+    }
+
+    @Override
+    public void addPasswordRecoveryQuery(RecoverPassword query) {
+        em.merge(query);
+    }
+
+    @Override
+    public RecoverPassword getPasswordRecoveryQuery(String link) {
+        String query = "SELECT r FROM RecoverPassword r WHERE r.link = :link";
+        return em.createQuery(query, RecoverPassword.class)
+                .setParameter("link", link)
+                .getSingleResult();
     }
 }

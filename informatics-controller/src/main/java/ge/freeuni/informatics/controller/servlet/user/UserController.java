@@ -1,17 +1,18 @@
 package ge.freeuni.informatics.controller.servlet.user;
 
-import ge.freeuni.informatics.controller.model.LoginResponse;
-import ge.freeuni.informatics.model.dto.AuthenticationDetails;
-import ge.freeuni.informatics.model.dto.UserDTO;
-import ge.freeuni.informatics.model.exception.InformaticsServerException;
+import ge.freeuni.informatics.controller.model.*;
+import ge.freeuni.informatics.common.dto.AuthenticationDetails;
+import ge.freeuni.informatics.common.dto.UserDTO;
+import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.server.user.IUserManager;
-import ge.freeuni.informatics.controller.model.RegisterDTO;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 @RestController
 public class UserController {
@@ -26,14 +27,21 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public void register(@RequestBody RegisterDTO registerDTO) {
+    @ResponseBody
+    public InformaticsResponse register(@RequestBody RegisterDTO registerDTO) {
         UserDTO userDTO = new UserDTO();
         userDTO.setUsername(registerDTO.getUsername());
         userDTO.setFirstName(registerDTO.getFirstName());
         userDTO.setLastName(registerDTO.getLastName());
         userDTO.setPassword(registerDTO.getPassword());
-
-        userManager.createUser(userDTO);
+        InformaticsResponse response = new InformaticsResponse();
+        try {
+            userManager.createUser(UserDTO.fromDTO(userDTO));
+            response.setStatus("SUCCESS");
+        } catch (Exception ex) {
+            response.setStatus("FAIL");
+        }
+        return response;
     }
 
     @PostMapping("/login")
@@ -62,17 +70,13 @@ public class UserController {
 
     @PostMapping("/logout")
     @ResponseBody
-    public LoginResponse logout(HttpServletRequest request) {
-        LoginResponse response = new LoginResponse();
+    public void logout(HttpServletRequest request, HttpServletResponse response) {
         try {
             request.logout();
-            response.setStatus("SUCCESS");
-        } catch (ServletException ex) {
-            response.setStatus("FAIL");
+            response.sendRedirect("/");
+        } catch (ServletException | IOException ex) {
+            throw new RuntimeException(ex);
         }
-
-        return response;
-
     }
 
     @GetMapping("/get-user")
@@ -82,6 +86,36 @@ public class UserController {
         } catch (InformaticsServerException e) {
             return null;
         }
+    }
+
+    @GetMapping("/recover/verify/{link}")
+    public InformaticsResponse verifyLink(@PathVariable String link) {
+        try {
+            userManager.verifyRecoveryQuery(link);
+        } catch (InformaticsServerException ex) {
+            return new InformaticsResponse("FAIL", ex.getMessage());
+        }
+        return new InformaticsResponse("SUCCESS", null);
+    }
+
+    @GetMapping("/recover/request")
+    public InformaticsResponse requestRecovery(@RequestBody AddRecoveryRequest request) {
+        try {
+            userManager.addPasswordRecoveryQuery(request.getUsername());
+        } catch (InformaticsServerException ex) {
+            return new InformaticsResponse("FAIL", ex.getMessage());
+        }
+        return new InformaticsResponse("SUCCESS", null);
+    }
+
+    @PostMapping("/recover/{link}")
+    public InformaticsResponse recover(@PathVariable String link, @RequestBody RecoverPasswordRequest request) {
+        try {
+            userManager.recoverPassword(link, request.getNewPassword());
+        } catch (InformaticsServerException ex) {
+            return new InformaticsResponse("FAIL", ex.getMessage());
+        }
+        return new InformaticsResponse("SUCCESS", null);
     }
 
 }

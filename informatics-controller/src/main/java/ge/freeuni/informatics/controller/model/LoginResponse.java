@@ -1,20 +1,8 @@
 package ge.freeuni.informatics.controller.model;
 
-public class LoginResponse {
-
-    String status;
+public class LoginResponse extends InformaticsResponse {
 
     String username;
-
-    String message;
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
 
     public String getUsername() {
         return username;
@@ -24,11 +12,4 @@ public class LoginResponse {
         this.username = username;
     }
 
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
 }

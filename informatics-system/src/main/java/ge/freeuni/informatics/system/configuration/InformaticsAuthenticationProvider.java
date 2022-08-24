@@ -1,9 +1,8 @@
 package ge.freeuni.informatics.system.configuration;
 
-import ge.freeuni.informatics.model.dto.AuthenticationDetails;
-import ge.freeuni.informatics.model.dto.UserDTO;
-import ge.freeuni.informatics.model.exception.InformaticsServerException;
-import ge.freeuni.informatics.model.security.InformaticsPrincipal;
+import ge.freeuni.informatics.common.exception.InformaticsServerException;
+import ge.freeuni.informatics.common.model.user.User;
+import ge.freeuni.informatics.common.security.InformaticsPrincipal;
 import ge.freeuni.informatics.server.user.IUserManager;
 import ge.freeuni.informatics.utils.BeanUtils;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -15,7 +14,6 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class InformaticsAuthenticationProvider implements AuthenticationProvider {
@@ -27,7 +25,7 @@ public class InformaticsAuthenticationProvider implements AuthenticationProvider
 
         IUserManager userManager = getUserManager();
         try {
-            UserDTO user = userManager.authenticate(username, password);
+            User user = userManager.authenticate(username, password);
             if (user == null) {
                 throw new AuthenticationServiceException("Invalid login");
             }

@@ -109,7 +109,7 @@ public class UserController {
         return new InformaticsResponse("SUCCESS", null);
     }
 
-    @PostMapping("/recover/{link}")
+    @PostMapping("/recover/update-password/{link}")
     public InformaticsResponse recover(@PathVariable String link, @RequestBody RecoverPasswordRequest request) {
         try {
             userManager.recoverPassword(link, request.getNewPassword());

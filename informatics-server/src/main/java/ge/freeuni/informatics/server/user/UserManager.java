@@ -165,7 +165,7 @@ public class UserManager implements IUserManager {
     }
 
     private String generateRecoverText(String link) {
-        String address = host + ("80".equals(port) ? "" : ":" + port) + "/recover/" + link;
+        String address = host + ("80".equals(port) ? "" : ":" + port) + "/recover/update-password/" + link;
         return "პაროლის აღსადგენად გადადით მოცემულ ლინკზე\n" + address;
     }
 }

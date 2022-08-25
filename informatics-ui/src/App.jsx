@@ -7,7 +7,8 @@ import Main from './Pages/Main'
 import ResetSuccess from './Pages/ResetSuccess'
 import ResetPassword from './Pages/ResetPassword'
 import Materials from './Pages/Materials'
-
+import Contest from './Pages/Contest'
+import Problem from './Pages/Problem'
 function App() {
 	return (
 		<div className="App">
@@ -29,6 +30,12 @@ function App() {
 					<Route path="/resetSuccess" element={<ResetSuccess />} />
 					<Route path="/materials" element={<Materials />} />
 					<Route path="/contests" element={<Contests />} />
+					<Route path="contest">
+							<Route path=":contest_id" element={<Contest />} />
+					</Route>
+					<Route path="problem">
+							<Route path=":problem_id" element={<Problem />} />
+					</Route>
 				</Routes>
 			</Box>
 		</div>

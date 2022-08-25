@@ -7,19 +7,47 @@ import {
 	TableHead,
 	TableRow,
 } from '@mui/material'
-
+import { NavLink } from "react-router-dom";
 export default function Contests() {
-	const mockData = [
+	const rows = [
 		{
 			id: 1,
-			name: 'Impel Hackathon',
+			name: 'FreeUni Hackaton1',
 			status: 'ongoing',
 			startDate: '10.06.2022 15:45',
 			duration: '01:30',
-			contestants: 44
+			contestants: 44,
+			results: 50
 		},
+		{
+			id: 2,
+			name: 'FreeUni Hackaton2',
+			status: 'ongoing',
+			startDate: '10.06.2022 15:45',
+			duration: '01:30',
+			contestants: 44,
+			results: 50
+		},
+		{
+			id: 3,
+			name: 'FreeUni Hackaton3',
+			status: 'ongoing',
+			startDate: '10.06.2022 15:45',
+			duration: '01:30',
+			contestants: 44,
+			results: 50
+		},
+		{
+			id: 4,
+			name: 'FreeUni Hackaton4',
+			status: 'ongoing',
+			startDate: '10.06.2022 15:45',
+			duration: '01:30',
+			contestants: 44,
+			results: 50
+		}
 	]
-
+	
 	return (
 		<main>
 			<Typography variant="h5" fontWeight="bold" mt="1rem" align="center">
@@ -47,20 +75,23 @@ export default function Contests() {
 						</TableRow>
 					</TableHead>
 					<TableBody>
-						{/* {rows.map((row) => (
+						{rows.map((row) => (
 							<TableRow
+							
 								key={row.name}
 								sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
 							>
+								
 								<TableCell component="th" scope="row">
-									{row.name}
+									
+									<NavLink to ={`/contest/${row.id}`} exact>{row.name} </NavLink>
 								</TableCell>
-								<TableCell align="right">{row.calories}</TableCell>
-								<TableCell align="right">{row.fat}</TableCell>
-								<TableCell align="right">{row.carbs}</TableCell>
-								<TableCell align="right">{row.protein}</TableCell>
+								<TableCell align="right">{row.startDate}</TableCell>
+								<TableCell align="right">{row.duration}</TableCell>
+								<TableCell align="right">{row.contestants}</TableCell>
+								<TableCell align="right">{row.results}</TableCell>
 							</TableRow>
-						))} */}
+						))}
 					</TableBody>
 				</Table>
 			</Container>

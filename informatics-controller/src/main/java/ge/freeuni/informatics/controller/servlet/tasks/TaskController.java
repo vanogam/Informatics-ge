@@ -32,9 +32,10 @@ public class TaskController {
 
     }
 
-    @PostMapping("/add-task")
-    InformaticsResponse addTask(@RequestBody AddTaskRequest request) {
+    @PostMapping("/save-task")
+    InformaticsResponse saveTask(@RequestBody AddTaskRequest request) {
         TaskDTO taskDTO = new TaskDTO();
+        taskDTO.setId(request.getTaskId());
         taskDTO.setTaskType(request.getTaskType());
         taskDTO.setContestId(Long.valueOf(request.getContestId()));
         taskDTO.setCode(request.getCode());

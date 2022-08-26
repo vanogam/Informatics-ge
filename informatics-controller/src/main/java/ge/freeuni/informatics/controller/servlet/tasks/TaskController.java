@@ -42,6 +42,8 @@ public class TaskController {
         taskDTO.setTaskScoreParameter(request.getTaskScoreParameter());
         taskDTO.setMemoryLimitMB(request.getMemoryLimitMB());
         taskDTO.setTimeLimitMillis(request.getTimeLimitMillis());
+        taskDTO.setInputTemplate(request.getInputTemplate());
+        taskDTO.setOutputTemplate(request.getOutputTemplate());
         try {
             taskManager.addTask(taskDTO, request.getContestId());
         } catch (InformaticsServerException ex) {

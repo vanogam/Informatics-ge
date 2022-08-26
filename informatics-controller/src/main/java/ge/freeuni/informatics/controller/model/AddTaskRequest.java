@@ -26,6 +26,10 @@ public class AddTaskRequest {
 
     private Integer memoryLimitMB;
 
+    private String inputTemplate;
+
+    private String outputTemplate;
+
     public Integer getContestId() {
         return contestId;
     }
@@ -90,4 +94,19 @@ public class AddTaskRequest {
         this.memoryLimitMB = memoryLimitMB;
     }
 
+    public String getInputTemplate() {
+        return inputTemplate;
+    }
+
+    public void setInputTemplate(String inputTemplate) {
+        this.inputTemplate = inputTemplate;
+    }
+
+    public String getOutputTemplate() {
+        return outputTemplate;
+    }
+
+    public void setOutputTemplate(String outputTemplate) {
+        this.outputTemplate = outputTemplate;
+    }
 }

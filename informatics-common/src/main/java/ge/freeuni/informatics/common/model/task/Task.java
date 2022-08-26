@@ -170,4 +170,14 @@ public class Task {
     public void setTestCases(List<TestCase> testCases) {
         this.testCases = testCases;
     }
+
+    @Transient
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof Task) {
+            return id.equals(((Task) obj).id);
+        }
+        return false;
+    }
 }

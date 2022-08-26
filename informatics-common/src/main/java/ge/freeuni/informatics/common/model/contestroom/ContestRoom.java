@@ -73,4 +73,9 @@ public class ContestRoom {
     public void setContests(Set<Long> contests) {
         this.contests = contests;
     }
+
+    @Transient
+    public boolean isMember(long userId) {
+        return participants.contains(userId) || teachers.contains(userId);
+    }
 }

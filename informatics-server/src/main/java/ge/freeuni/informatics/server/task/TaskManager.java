@@ -1,16 +1,16 @@
 package ge.freeuni.informatics.server.task;
 
 import ge.freeuni.informatics.common.Language;
-import ge.freeuni.informatics.common.dto.ContestDTO;
 import ge.freeuni.informatics.common.dto.TaskDTO;
 import ge.freeuni.informatics.common.dto.UserDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
+import ge.freeuni.informatics.common.model.contest.Contest;
 import ge.freeuni.informatics.common.model.contestroom.ContestRoom;
 import ge.freeuni.informatics.common.model.task.Task;
 import ge.freeuni.informatics.common.model.task.TestCase;
 import ge.freeuni.informatics.judgeintegration.IJudgeIntegration;
+import ge.freeuni.informatics.repository.contest.IContestRepository;
 import ge.freeuni.informatics.repository.task.ITaskRepository;
-import ge.freeuni.informatics.server.contest.IContestManager;
 import ge.freeuni.informatics.server.contestroom.IContestRoomManager;
 import ge.freeuni.informatics.server.user.IUserManager;
 import ge.freeuni.informatics.utils.FileUtils;
@@ -34,7 +34,7 @@ public class TaskManager implements ITaskManager {
     ITaskRepository taskRepository;
 
     @Autowired
-    IContestManager contestManager;
+    IContestRepository contestRepository;
 
     @Autowired
     IJudgeIntegration judgeIntegration;
@@ -55,16 +55,21 @@ public class TaskManager implements ITaskManager {
     String tempDirectoryAddress;
 
     @Override
+    public Task getTask(int taskId) {
+        return taskRepository.getTask(taskId);
+    }
+
+    @Override
     public void addTask(TaskDTO taskDTO, long contestId) throws InformaticsServerException {
-        ContestDTO contestDTO = contestManager.getContest(contestId);
-        if (!checkAddTaskPermission(contestDTO)) {
-            throw new InformaticsServerException("User does not have permission to add task to this contest");
+        Contest contest = contestRepository.getContest(contestId);
+        if (contest == null || !checkAddTaskPermission(contest)) {
+            throw new InformaticsServerException("permissionDenied");
         }
         taskDTO.setContestId(contestId);
         Task task = TaskDTO.fromDTO(taskDTO);
         taskRepository.addTask(task);
-        contestDTO.getTasks().add(TaskDTO.toDTO(task));
-        contestManager.updateContest(contestDTO);
+        contest.getTasks().add(task);
+        contestRepository.addContest(contest);
         judgeIntegration.addTask(TaskDTO.toDTO(task));
     }
 
@@ -75,8 +80,8 @@ public class TaskManager implements ITaskManager {
     @Override
     public File getStatement(int taskId, Language language) throws InformaticsServerException {
         Task task = taskRepository.getTask(taskId);
-        ContestDTO contestDTO = contestManager.getContest(task.getContestId());
-        ContestRoom room = roomManager.getRoom(contestDTO.getRoomId());
+        Contest contest = contestRepository.getContest(task.getContestId());
+        ContestRoom room = roomManager.getRoom(contest.getRoomId());
         Long currentUser = userManager.getAuthenticatedUser().getId();
         if (!room.isOpen() && !room.getTeachers().contains(currentUser) && !room.getParticipants().contains(currentUser)) {
             throw new InformaticsServerException("permissionDenied");
@@ -185,7 +190,7 @@ public class TaskManager implements ITaskManager {
         String testName = FileUtils.getRandomFileName(15);
         try {
             testCase.setInputFileAddress(createTestFile(testName, task.getCode(), "input", inputContent));
-            testCase.setOutputFileAddress(createTestFile(testName, task.getCode(), "output", inputContent));
+            testCase.setOutputFileAddress(createTestFile(testName, task.getCode(), "output", outputContent));
         } catch (IOException ex) {
             log.error("Error occurred while creating test files.", ex);
             throw new InformaticsServerException("Error occurred while creating test files.");
@@ -197,10 +202,10 @@ public class TaskManager implements ITaskManager {
         }
     }
 
-    private boolean checkAddTaskPermission(ContestDTO contestDTO) throws InformaticsServerException {
+    private boolean checkAddTaskPermission(Contest contest) throws InformaticsServerException {
         UserDTO user = userManager.getAuthenticatedUser();
-        ContestRoom room = roomManager.getRoom(contestDTO.getRoomId());
-        return room.getTeachers().contains(UserDTO.fromDTO(user));
+        ContestRoom room = roomManager.getRoom(contest.getRoomId());
+        return room.getTeachers().contains(user.getId());
     }
 
     private String createTestFile(String testName, String taskCode, String subFolder, byte[] fileContent) throws IOException, InformaticsServerException {
@@ -233,7 +238,7 @@ public class TaskManager implements ITaskManager {
     private String storeStatement(Language lang, String taskCode, byte[] statement) throws IOException, InformaticsServerException {
         String folder = FileUtils.buildPath(statementsDirectoryAddress, taskCode);
         Files.createDirectories(Paths.get(folder));
-        String fileAddress = FileUtils.buildPath(folder, getStatementName(lang, taskCode));
+        String fileAddress = FileUtils.buildPath(folder, getStatementName(lang));
         File statementFile = new File(fileAddress);
         if (statementFile.isFile()) {
             boolean ignored = statementFile.delete();
@@ -246,7 +251,7 @@ public class TaskManager implements ITaskManager {
         return fileAddress;
     }
 
-    private String getStatementName(Language language, String taskCode) {
+    private String getStatementName(Language language) {
         return "statement_" + language.name() + ".pdf";
     }
 

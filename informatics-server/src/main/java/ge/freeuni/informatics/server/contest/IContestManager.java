@@ -3,6 +3,7 @@ package ge.freeuni.informatics.server.contest;
 import ge.freeuni.informatics.common.dto.ContestDTO;
 import ge.freeuni.informatics.common.model.contest.ContestStatus;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
+import ge.freeuni.informatics.common.model.contest.ContestantResult;
 
 import java.util.Date;
 import java.util.List;
@@ -11,7 +12,7 @@ public interface IContestManager {
 
     void createContest(ContestDTO contest) throws InformaticsServerException;
 
-    ContestDTO getContest(Long contestId);
+    ContestDTO getContest(Long contestId) throws InformaticsServerException;
 
     List<ContestDTO> getContests(Long roomId, String name, List<ContestStatus> statuses, Date minStartDate, Date maxStartDate);
 
@@ -19,6 +20,8 @@ public interface IContestManager {
 
     void deleteContest(long contestId);
 
-    void registerUser(long userId, long contestId);
+    void registerUser(long contestId) throws InformaticsServerException;
+
+    List<ContestantResult> getStandings(long contestId, int offset, int size) throws InformaticsServerException;
 
 }

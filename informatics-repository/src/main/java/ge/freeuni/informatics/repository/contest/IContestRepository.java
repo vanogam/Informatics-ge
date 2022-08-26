@@ -13,4 +13,6 @@ public interface IContestRepository {
     Contest getContest(Long contestId);
 
     List<Contest> getContests(Long roomId, String name, List<ContestStatus> statuses, Date minStartDate, Date maxStartDate);
+
+    void deleteContest(long contestId);
 }

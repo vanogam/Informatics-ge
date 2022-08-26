@@ -1,9 +1,11 @@
 package ge.freeuni.informatics.common.model.contest;
 
+import ge.freeuni.informatics.common.model.submission.SubmissionTestResultListType;
 import ge.freeuni.informatics.common.model.task.Task;
 import ge.freeuni.informatics.common.model.user.User;
 import org.hibernate.annotations.LazyCollection;
 import org.hibernate.annotations.LazyCollectionOption;
+import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
 import java.util.Date;
@@ -24,9 +26,17 @@ public class Contest {
 
     private Long roomId;
 
-    private List<User> participants;
+    private List<Long> participants;
 
     private List<Task> tasks;
+
+    private boolean upsolvingAfterFinished;
+
+    private boolean upsolving;
+
+    private Standings standings;
+
+    private ScoringType scoringType;
 
     @Id
     @GeneratedValue
@@ -70,12 +80,12 @@ public class Contest {
         this.status = status;
     }
 
-    @ManyToMany
-    public List<User> getParticipants() {
+    @ElementCollection
+    public List<Long> getParticipants() {
         return participants;
     }
 
-    public void setParticipants(List<User> participants) {
+    public void setParticipants(List<Long> participants) {
         this.participants = participants;
     }
 
@@ -95,5 +105,39 @@ public class Contest {
 
     public void setTasks(List<Task> tasks) {
         this.tasks = tasks;
+    }
+
+    public boolean isUpsolving() {
+        return upsolving;
+    }
+
+    public void setUpsolving(boolean upsolving) {
+        this.upsolving = upsolving;
+    }
+
+    public boolean isUpsolvingAfterFinished() {
+        return upsolvingAfterFinished;
+    }
+
+    public void setUpsolvingAfterFinished(boolean upsolvingAfterFinished) {
+        this.upsolvingAfterFinished = upsolvingAfterFinished;
+    }
+
+    @Type(type = StandingsType.TYPE)
+    @Column(length = Integer.MAX_VALUE)
+    public Standings getStandings() {
+        return standings;
+    }
+
+    public void setStandings(Standings standings) {
+        this.standings = standings;
+    }
+
+    public ScoringType getScoringType() {
+        return scoringType;
+    }
+
+    public void setScoringType(ScoringType scoringType) {
+        this.scoringType = scoringType;
     }
 }

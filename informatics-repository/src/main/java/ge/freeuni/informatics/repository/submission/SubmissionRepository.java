@@ -40,29 +40,34 @@ public class SubmissionRepository implements ISubmissionRepository {
     }
 
     @Override
-    public List<Submission> getSubmissions(Long userId, Long taskId, Long roomId) {
-        StringBuilder sql = new StringBuilder("SELECT s FROM Submission s WHERE 1 = 1 AND ");
-        Map<String, String> parameters = new HashMap<>();
+    public List<Submission> getSubmissions(Long userId, Long taskId, Long contestId, Long roomId, Integer offset, Integer limit) {
+        StringBuilder sql = new StringBuilder("SELECT s FROM Submission s WHERE 1 = 1 ");
+        Map<String, Object> parameters = new HashMap<>();
         if (userId != null) {
-            sql.append("s.userId = :userId");
-            parameters.put("userId", userId.toString());
+            sql.append("AND s.userId = :userId ");
+            parameters.put("userId", userId);
         }
-        if (userId != null) {
-            sql.append("s.taskId = :taskId");
-            parameters.put("taskId", taskId.toString());
+        if (taskId != null) {
+            sql.append("AND s.taskId = :taskId ");
+            parameters.put("taskId", taskId);
         }
-        sql.append("s.roomId = :roomId");
-        parameters.put("roomId", roomId.toString());
+        if (contestId != null) {
+            sql.append("AND s.contestId = :contestId ");
+            parameters.put("contestId", contestId);
+        }
+        sql.append("AND s.roomId = :roomId ");
+        parameters.put("roomId", roomId);
         TypedQuery<Submission> submissionQuery = em.createQuery(sql.toString(), Submission.class);
         for (String key : parameters.keySet()) {
             submissionQuery.setParameter(key, parameters.get(key));
         }
-
+        if (offset != null) {
+            submissionQuery.setFirstResult(offset);
+        }
+        if (limit != null) {
+            submissionQuery.setMaxResults(limit);
+        }
         return submissionQuery.getResultList();
     }
 
-    @Override
-    public List<Submission> getSubmissions(long userId) {
-        return null;
-    }
 }

@@ -1,20 +1,25 @@
 package ge.freeuni.informatics.controller.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import ge.freeuni.informatics.common.model.contest.ScoringType;
 
 import java.time.LocalDateTime;
 
 
 public class CreateContestRequest {
 
-    String name;
+    private String name;
 
     @JsonFormat(pattern="dd/MM/yyyy HH:mm")
-    LocalDateTime startDate;
+    private LocalDateTime startDate;
 
-    Integer durationInSeconds;
+    private Integer durationInSeconds;
 
-    Long roomId;
+    private Long roomId;
+
+    private boolean upsolvingAfterFinish;
+
+    private ScoringType scoringType;
 
     public String getName() {
         return name;
@@ -46,5 +51,21 @@ public class CreateContestRequest {
 
     public void setRoomId(Long roomId) {
         this.roomId = roomId;
+    }
+
+    public boolean isUpsolvingAfterFinish() {
+        return upsolvingAfterFinish;
+    }
+
+    public void setUpsolvingAfterFinish(boolean upsolvingAfterFinish) {
+        this.upsolvingAfterFinish = upsolvingAfterFinish;
+    }
+
+    public ScoringType getScoringType() {
+        return scoringType;
+    }
+
+    public void setScoringType(ScoringType scoringType) {
+        this.scoringType = scoringType;
     }
 }

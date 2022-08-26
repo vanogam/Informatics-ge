@@ -3,10 +3,13 @@ package ge.freeuni.informatics.server.task;
 import ge.freeuni.informatics.common.Language;
 import ge.freeuni.informatics.common.dto.TaskDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
+import ge.freeuni.informatics.common.model.task.Task;
 
 import java.io.File;
 
 public interface ITaskManager {
+
+    Task getTask(int taskId);
 
     void addTask(TaskDTO task, long contestId) throws InformaticsServerException;
 

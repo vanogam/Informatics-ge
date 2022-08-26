@@ -60,4 +60,9 @@ public class ContestRepository implements IContestRepository {
         }
         return query.getResultList();
     }
+
+    @Override
+    public void deleteContest(long contestId) {
+        em.remove(em.find(Contest.class, contestId));
+    }
 }

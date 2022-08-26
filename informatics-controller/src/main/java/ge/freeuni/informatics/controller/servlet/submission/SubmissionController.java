@@ -48,13 +48,12 @@ public class SubmissionController {
         submissionDTO.setSubmissionTime(new Date());
         submissionDTO.setContestId(request.getContestId());
         try {
-            submissionDTO.setUserId(userManager.getAuthenticatedUser().getId());
             submissionManager.addSubmissionViaText(SubmissionDTO.fromDTO(submissionDTO), request.getSubmissionText());
             response.setStatus("SUCCESS");
             return response;
         } catch (InformaticsServerException e) {
             response.setStatus("FAIL");
-            response.setStatus(e.getCode());
+            response.setMessage(e.getCode());
             return response;
         }
     }

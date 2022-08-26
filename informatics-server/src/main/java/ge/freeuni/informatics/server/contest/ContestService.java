@@ -1,18 +1,19 @@
 package ge.freeuni.informatics.server.contest;
 
+import ge.freeuni.informatics.common.SubmissionEvent;
 import ge.freeuni.informatics.common.dto.ContestDTO;
 import ge.freeuni.informatics.common.model.contest.ContestStatus;
+import ge.freeuni.informatics.common.model.contest.ContestantResult;
+import ge.freeuni.informatics.common.model.submission.Submission;
+import ge.freeuni.informatics.server.task.ITaskManager;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledFuture;
 
 @Service
 public class ContestService {
@@ -23,18 +24,21 @@ public class ContestService {
     @Autowired
     private TaskScheduler taskScheduler;
 
-    private final ConcurrentHashMap<Long, ScheduledFuture<?>> futureContestsMap = new ConcurrentHashMap<>();
+    @Autowired
+    private ITaskManager taskManager;
 
-    private final ConcurrentHashMap<Long, ScheduledFuture<?>> liveContestsMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, ContestDTO> liveContests = new ConcurrentHashMap<>();
 
     @PostConstruct
     public void startup() {
-        List<ContestDTO> futureContests = contestManager.getContests(null, null, Arrays.asList(ContestStatus.FUTURE), null, null);
-        List<ContestDTO> liveContests = contestManager.getContests(null, null, Arrays.asList(ContestStatus.LIVE, ContestStatus.FUTURE), null, new Date());
+        List<ContestDTO> futureContests = contestManager.getContests(null, null, Collections.singletonList(ContestStatus.FUTURE), null, null);
+        List<ContestDTO> liveContests = contestManager.getContests(null, null, Collections.singletonList(ContestStatus.LIVE), null, null);
 
         scheduleFutureContests(futureContests);
         manageLiveContests(liveContests);
     }
+
+
 
     private void scheduleFutureContests(List<ContestDTO> futureContests) {
         for (ContestDTO contest : futureContests) {
@@ -44,13 +48,17 @@ public class ContestService {
 
     private void manageLiveContests(List<ContestDTO> futureContests) {
         for (ContestDTO contest : futureContests) {
+            liveContests.put(contest.getId(), contest);
             scheduleContestEnd(contest);
         }
     }
 
     private void scheduleContestStart(ContestDTO contest) {
-        ScheduledFuture<?> future = taskScheduler.schedule(new ContestStartThread(contest), contest.getStartDate());
-        futureContestsMap.put(contest.getId(), future);
+        if (new Date().after(contest.getStartDate())) {
+            new ContestStartThread(contest).run();
+        } else {
+            taskScheduler.schedule(new ContestStartThread(contest), contest.getStartDate());
+        }
 
     }
 
@@ -63,12 +71,30 @@ public class ContestService {
             contestManager.updateContest(contest);
         }
 
-        ScheduledFuture<?> future = taskScheduler.schedule(new ContestEndThread(contest), calendar.getTime());
-        futureContestsMap.put(contest.getId(), future);
+        if (new Date().after(calendar.getTime())) {
+            new ContestEndThread(contest).run();
+        } else {
+            taskScheduler.schedule(new ContestEndThread(contest), calendar.getTime());
+        }
+
 
     }
 
-    private static class ContestStartThread implements Runnable {
+    @EventListener
+    public void addSubmission(SubmissionEvent event) {
+        Submission submission = (Submission) event.getSource();
+        ContestDTO contest = liveContests.get(submission.getContestId());
+        if (contest == null) {
+            return;
+        }
+        for (ContestantResult contestantResult : contest.getStandings().getStandings()) {
+            if (contestantResult.getContestantId() == submission.getUserId()) {
+                contestantResult.setTaskScore(taskManager.getTask(submission.getTaskId()).getCode(), submission.getScore());
+            }
+        }
+    }
+
+    private class ContestStartThread implements Runnable {
 
         private final ContestDTO contest;
 
@@ -80,6 +106,8 @@ public class ContestService {
         @Override
         public void run() {
             contest.setStatus(ContestStatus.LIVE);
+            liveContests.put(contest.getId(), contest);
+            contestManager.updateContest(contest);
         }
     }
 

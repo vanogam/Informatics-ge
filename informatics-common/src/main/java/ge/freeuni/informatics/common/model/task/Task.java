@@ -162,7 +162,7 @@ public class Task {
         this.outputTemplate = outputTemplate;
     }
 
-    @OneToMany
+    @OneToMany(cascade = CascadeType.ALL)
     public List<TestCase> getTestCases() {
         return testCases;
     }

@@ -43,8 +43,6 @@ public class TaskDTO {
 
     String outputTemplate;
 
-    List<TestCase> testCases;
-
     public Integer getId() {
         return id;
     }
@@ -141,14 +139,6 @@ public class TaskDTO {
         this.outputTemplate = outputTemplate;
     }
 
-    public List<TestCase> getTestCases() {
-        return testCases;
-    }
-
-    public void setTestCases(List<TestCase> testCases) {
-        this.testCases = testCases;
-    }
-
     public static Task fromDTO(TaskDTO taskDTO) {
         Task task = new Task();
 
@@ -159,7 +149,6 @@ public class TaskDTO {
         task.setId(taskDTO.getId());
         task.setCode(taskDTO.getCode());
         task.setConfigAddress(taskDTO.getConfigAddress());
-        task.setTestCases(taskDTO.getTestCases());
         task.setInputTemplate(taskDTO.getInputTemplate());
         task.setOutputTemplate(taskDTO.getOutputTemplate());
         task.setMemoryLimitMB(taskDTO.getMemoryLimitMB());
@@ -188,7 +177,6 @@ public class TaskDTO {
         taskDTO.setId(task.getId());
         taskDTO.setCode(task.getCode());
         taskDTO.setConfigAddress(task.getConfigAddress());
-        taskDTO.setTestCases(task.getTestCases());
         taskDTO.setInputTemplate(task.getInputTemplate());
         taskDTO.setOutputTemplate(task.getOutputTemplate());
         taskDTO.setMemoryLimitMB(task.getMemoryLimitMB());

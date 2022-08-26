@@ -12,7 +12,6 @@ public interface ISubmissionRepository {
 
     Submission getSubmission(long id);
 
-    List<Submission> getSubmissions(Long userId, Long taskId, Long roomId);
+    List<Submission> getSubmissions(Long userId, Long taskId, Long contestId, Long roomId, Integer offset, Integer limit);
 
-    List<Submission> getSubmissions(long userId);
 }

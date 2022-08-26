@@ -3,10 +3,7 @@ package ge.freeuni.informatics.controller.servlet.tasks;
 import ge.freeuni.informatics.common.Language;
 import ge.freeuni.informatics.common.dto.TaskDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
-import ge.freeuni.informatics.controller.model.AddTaskRequest;
-import ge.freeuni.informatics.controller.model.GetTasksRequest;
-import ge.freeuni.informatics.controller.model.InformaticsResponse;
-import ge.freeuni.informatics.controller.model.LanguageDTO;
+import ge.freeuni.informatics.controller.model.*;
 import ge.freeuni.informatics.server.task.ITaskManager;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,9 +77,9 @@ public class TaskController {
     }
 
     @PostMapping("/add-testcases")
-    InformaticsResponse addTestcases(@RequestParam MultipartFile file, @RequestParam Integer taskId){
+    InformaticsResponse addTestcases(@ModelAttribute AddTestcasesRequest request){
         try {
-            taskManager.addTestcases(taskId, file.getBytes());
+            taskManager.addTestcases(request.getTaskId(), request.getFile().getBytes());
         } catch (InformaticsServerException ex) {
             return new InformaticsResponse("FAIL", ex.getCode());
         } catch (IOException ex) {

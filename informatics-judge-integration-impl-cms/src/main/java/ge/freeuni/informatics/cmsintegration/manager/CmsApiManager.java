@@ -3,10 +3,13 @@ package ge.freeuni.informatics.cmsintegration.manager;
 import ge.freeuni.informatics.cmsintegration.model.TestResult;
 import ge.freeuni.informatics.cmsintegration.repository.ICmsIntegrationRepository;
 import ge.freeuni.informatics.cmsintegration.utils.SubmissionResultHelper;
+import ge.freeuni.informatics.common.SubmissionEvent;
 import ge.freeuni.informatics.common.model.submission.Submission;
 import ge.freeuni.informatics.common.model.submission.SubmissionStatus;
 import ge.freeuni.informatics.common.model.task.Task;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -14,6 +17,9 @@ public class CmsApiManager implements ICmsApiManager {
 
     @Autowired
     ICmsIntegrationRepository repository;
+
+    @Autowired
+    ApplicationEventPublisher publisher;
 
     @Override
     public void registerTask(Integer cmsId, Integer taskId) {
@@ -60,5 +66,7 @@ public class CmsApiManager implements ICmsApiManager {
         submission.setStatus(SubmissionStatus.FINISHED);
         submission.setSubmissionTestResultList(SubmissionResultHelper.toSubmissionTestResultList(result));
         repository.updateSubmission(submission);
+        publisher.publishEvent(new SubmissionEvent(submission));
     }
+    
 }

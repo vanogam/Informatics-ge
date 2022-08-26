@@ -2,8 +2,11 @@ package ge.freeuni.informatics.common.dto;
 
 
 import ge.freeuni.informatics.common.model.submission.Submission;
+import ge.freeuni.informatics.common.model.submission.SubmissionTestResult;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 public class SubmissionDTO {
 
@@ -24,6 +27,8 @@ public class SubmissionDTO {
     private String compilationResult;
 
     private String compilationMessage;
+
+    private List<SubmissionTestResult> results;
 
     public long getId() {
         return id;
@@ -97,6 +102,14 @@ public class SubmissionDTO {
         this.compilationMessage = compilationMessage;
     }
 
+    public List<SubmissionTestResult> getResults() {
+        return results;
+    }
+
+    public void setResults(List<SubmissionTestResult> results) {
+        this.results = results;
+    }
+
     public static SubmissionDTO toDTO(Submission submission) {
         SubmissionDTO submissionDTO = new SubmissionDTO();
 
@@ -109,6 +122,7 @@ public class SubmissionDTO {
         submissionDTO.setSubmissionTime(submission.getSubmissionTime());
         submissionDTO.setCompilationMessage(submission.getCompilationMessage());
         submissionDTO.setCompilationResult(submission.getCompilationResult());
+        submissionDTO.setResults(submission.getSubmissionTestResultList().getSubmissionTestResults());
 
         return submissionDTO;
     }
@@ -126,5 +140,13 @@ public class SubmissionDTO {
         submission.setCompilationMessage(submissionDTO.getCompilationMessage());
 
         return submission;
+    }
+
+    public static List<SubmissionDTO> toDTOs(List<Submission> submissions) {
+        List<SubmissionDTO> submissionDTOs = new ArrayList<>();
+        for (Submission submission : submissions) {
+            submissionDTOs.add(toDTO(submission));
+        }
+        return submissionDTOs;
     }
 }

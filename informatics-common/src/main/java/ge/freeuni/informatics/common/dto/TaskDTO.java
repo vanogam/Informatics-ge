@@ -3,7 +3,6 @@ package ge.freeuni.informatics.common.dto;
 import ge.freeuni.informatics.common.model.task.Task;
 import ge.freeuni.informatics.common.model.task.TaskScoreType;
 import ge.freeuni.informatics.common.model.task.TaskType;
-import ge.freeuni.informatics.common.model.task.TestCase;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -143,7 +142,7 @@ public class TaskDTO {
         Task task = new Task();
 
         task.setTaskType(taskDTO.getTaskType());
-        task.setContestId(task.getContestId());
+        task.setContestId(taskDTO.getContestId());
         task.setTaskScoreParameter(taskDTO.getTaskScoreParameter());
         task.setTaskScoreType(taskDTO.getTaskScoreType());
         task.setId(taskDTO.getId());

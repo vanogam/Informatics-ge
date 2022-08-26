@@ -36,6 +36,7 @@ public class TaskController {
     InformaticsResponse addTask(@RequestBody AddTaskRequest request) {
         TaskDTO taskDTO = new TaskDTO();
         taskDTO.setTaskType(request.getTaskType());
+        taskDTO.setContestId(Long.valueOf(request.getContestId()));
         taskDTO.setCode(request.getCode());
         taskDTO.setTitle(request.getTitle());
         taskDTO.setTaskScoreType(request.getTaskScoreType());

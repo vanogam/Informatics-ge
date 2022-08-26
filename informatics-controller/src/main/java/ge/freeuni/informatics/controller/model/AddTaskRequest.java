@@ -6,6 +6,8 @@ import java.util.Map;
 
 public class AddTaskRequest {
 
+    private Integer taskId;
+
     private Integer contestId;
 
     private String code;
@@ -29,6 +31,14 @@ public class AddTaskRequest {
     private String inputTemplate;
 
     private String outputTemplate;
+
+    public Integer getTaskId() {
+        return taskId;
+    }
+
+    public void setTaskId(Integer taskId) {
+        this.taskId = taskId;
+    }
 
     public Integer getContestId() {
         return contestId;

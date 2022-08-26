@@ -5,11 +5,9 @@ import ge.freeuni.informatics.common.dto.UserDTO;
 import ge.freeuni.informatics.common.model.contest.Contest;
 import ge.freeuni.informatics.common.model.contest.ContestStatus;
 import ge.freeuni.informatics.common.model.contest.ContestantResult;
-import ge.freeuni.informatics.common.model.contest.ScoringType;
 import ge.freeuni.informatics.common.model.contestroom.ContestRoom;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.task.Task;
-import ge.freeuni.informatics.common.model.user.User;
 import ge.freeuni.informatics.repository.contest.IContestRepository;
 import ge.freeuni.informatics.server.contestroom.IContestRoomManager;
 import ge.freeuni.informatics.server.task.ITaskManager;
@@ -47,7 +45,7 @@ public class ContestManager implements IContestManager {
         Contest contest = ContestDTO.fromDTO(contestDTO);
         contest.setStatus(ContestStatus.FUTURE);
         ContestRoom room = contestRoomManager.getRoom(contest.getRoomId());
-        if (!room.getTeachers().contains(UserDTO.fromDTO(userManager.getAuthenticatedUser()))) {
+        if (!room.getTeachers().contains(userManager.getAuthenticatedUser().getId())) {
             throw new InformaticsServerException("This user can not create contest in this room");
         }
         contestRepository.addContest(contest);

@@ -68,8 +68,10 @@ public class TaskManager implements ITaskManager {
         taskDTO.setContestId(contestId);
         Task task = TaskDTO.fromDTO(taskDTO);
         taskRepository.addTask(task);
-        contest.getTasks().add(task);
-        contestRepository.addContest(contest);
+        if (!contest.getTasks().contains(task)) {
+            contest.getTasks().add(task);
+            contestRepository.addContest(contest);
+        }
         judgeIntegration.addTask(TaskDTO.toDTO(task));
     }
 

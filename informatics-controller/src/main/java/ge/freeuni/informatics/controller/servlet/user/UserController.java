@@ -32,6 +32,7 @@ public class UserController {
         UserDTO userDTO = new UserDTO();
         userDTO.setUsername(registerDTO.getUsername());
         userDTO.setFirstName(registerDTO.getFirstName());
+        userDTO.setEmail(registerDTO.getEmail());
         userDTO.setLastName(registerDTO.getLastName());
         userDTO.setPassword(registerDTO.getPassword());
         InformaticsResponse response = new InformaticsResponse();
@@ -98,7 +99,7 @@ public class UserController {
         return new InformaticsResponse("SUCCESS", null);
     }
 
-    @GetMapping("/recover/request")
+    @PostMapping("/recover/request")
     public InformaticsResponse requestRecovery(@RequestBody AddRecoveryRequest request) {
         try {
             userManager.addPasswordRecoveryQuery(request.getUsername());
@@ -108,7 +109,7 @@ public class UserController {
         return new InformaticsResponse("SUCCESS", null);
     }
 
-    @PostMapping("/recover/{link}")
+    @PostMapping("/recover/update-password/{link}")
     public InformaticsResponse recover(@PathVariable String link, @RequestBody RecoverPasswordRequest request) {
         try {
             userManager.recoverPassword(link, request.getNewPassword());

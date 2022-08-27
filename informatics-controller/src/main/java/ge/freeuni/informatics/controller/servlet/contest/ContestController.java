@@ -70,9 +70,9 @@ public class ContestController {
     }
 
     @PostMapping("/contests/{contestId}/register")
-    public InformaticsResponse register(@PathVariable String contestId) {
+    public InformaticsResponse register(@PathVariable Long contestId) {
         try {
-            contestManager.registerUser(Long.parseLong(contestId));
+            contestManager.registerUser(contestId);
         } catch (InformaticsServerException ex) {
             return new InformaticsResponse("FAIL", ex.getCode());
         }

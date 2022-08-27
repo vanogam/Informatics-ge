@@ -74,6 +74,7 @@ public class Submission {
         this.taskId = taskId;
     }
 
+    @Column(length = 20000)
     public String getText() {
         return text;
     }

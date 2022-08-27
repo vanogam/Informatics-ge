@@ -176,6 +176,9 @@ public class Task {
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof Task) {
+            if (id == null) {
+                return false;
+            }
             return id.equals(((Task) obj).id);
         }
         return false;

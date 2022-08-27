@@ -1,12 +1,9 @@
 package ge.freeuni.informatics.controller.servlet.submission;
 
-import ge.freeuni.informatics.controller.model.GetLanguagesResponse;
-import ge.freeuni.informatics.controller.model.InformaticsResponse;
-import ge.freeuni.informatics.controller.model.CodeLanguageDTO;
+import ge.freeuni.informatics.controller.model.*;
 import ge.freeuni.informatics.common.dto.SubmissionDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.CodeLanguage;
-import ge.freeuni.informatics.controller.model.TextSubmitRequest;
 import ge.freeuni.informatics.server.submission.ISubmissionManager;
 import ge.freeuni.informatics.server.user.IUserManager;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +43,7 @@ public class SubmissionController {
         submissionDTO.setLanguage(request.getLanguage().toString());
         submissionDTO.setTaskId(request.getTaskId());
         submissionDTO.setSubmissionTime(new Date());
+        submissionDTO.setText(request.getSubmissionText());
         submissionDTO.setContestId(request.getContestId());
         try {
             submissionManager.addSubmissionViaText(SubmissionDTO.fromDTO(submissionDTO), request.getSubmissionText());

@@ -1,8 +1,6 @@
-package ge.freeuni.informatics.common;
+package ge.freeuni.informatics.common.events;
 
 import org.springframework.context.ApplicationEvent;
-
-import java.time.Clock;
 
 public class SubmissionEvent extends ApplicationEvent {
 
@@ -10,7 +8,4 @@ public class SubmissionEvent extends ApplicationEvent {
         super(source);
     }
 
-    public SubmissionEvent(Object source, Clock clock) {
-        super(source, clock);
-    }
 }

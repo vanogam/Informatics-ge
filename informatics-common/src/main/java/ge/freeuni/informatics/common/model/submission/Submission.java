@@ -14,6 +14,8 @@ public class Submission {
 
     private long userId;
 
+    String text;
+
     private Integer taskId;
 
     private long contestId;
@@ -70,6 +72,14 @@ public class Submission {
 
     public void setTaskId(Integer taskId) {
         this.taskId = taskId;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
     }
 
     public long getContestId() {

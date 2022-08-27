@@ -4,14 +4,20 @@ import ge.freeuni.informatics.common.Language;
 import ge.freeuni.informatics.common.dto.TaskDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.task.Task;
+import ge.freeuni.informatics.common.model.task.TaskInfo;
 
 import java.io.File;
+import java.util.List;
 
 public interface ITaskManager {
 
     Task getTask(int taskId);
 
     void addTask(TaskDTO task, long contestId) throws InformaticsServerException;
+
+    List<TaskInfo> getUpsolvingTasks(long roomId, int offset, int limit) throws InformaticsServerException;
+
+    List<TaskInfo> getContestTasks(long contestId, int offset, int limit) throws InformaticsServerException;
 
     void removeTask(int taskId, long contest);
 

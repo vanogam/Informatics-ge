@@ -10,4 +10,13 @@ public class Standings {
     public List<ContestantResult> getStandings() {
         return standings;
     }
+
+    public ContestantResult getContestantResult(long userId) {
+        for (ContestantResult result : standings) {
+            if (result.getContestantId() == userId) {
+                return result;
+            }
+        }
+        return null;
+    }
 }

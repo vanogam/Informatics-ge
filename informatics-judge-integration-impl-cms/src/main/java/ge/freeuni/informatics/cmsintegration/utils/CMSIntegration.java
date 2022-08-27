@@ -25,6 +25,7 @@ public class CMSIntegration implements IJudgeIntegration {
 
     @Override
     public void addTask(TaskDTO taskDTO) throws InformaticsServerException {
+        Task task = TaskDTO.fromDTO(taskDTO);
         String configFolder = builder.name(taskDTO.getCode())
             .title(getTitle(taskDTO))
             .timeLimit(taskDTO.getTimeLimitMillis())
@@ -34,8 +35,8 @@ public class CMSIntegration implements IJudgeIntegration {
             .scoreMode(taskDTO.getTaskScoreParameter())
             .build();
 
-        taskDTO.setConfigAddress(configFolder);
-        Task task = cmsIntegrationRepository.updateTask(TaskDTO.fromDTO(taskDTO));
+        task.setConfigAddress(configFolder);
+        task = cmsIntegrationRepository.updateTask(task);
         cmsCommunicationManager.addTask(task);
     }
 

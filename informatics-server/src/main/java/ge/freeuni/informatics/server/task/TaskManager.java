@@ -5,8 +5,11 @@ import ge.freeuni.informatics.common.dto.TaskDTO;
 import ge.freeuni.informatics.common.dto.UserDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.contest.Contest;
+import ge.freeuni.informatics.common.model.contest.ContestStatus;
+import ge.freeuni.informatics.common.model.contest.ContestantResult;
 import ge.freeuni.informatics.common.model.contestroom.ContestRoom;
 import ge.freeuni.informatics.common.model.task.Task;
+import ge.freeuni.informatics.common.model.task.TaskInfo;
 import ge.freeuni.informatics.common.model.task.TestCase;
 import ge.freeuni.informatics.judgeintegration.IJudgeIntegration;
 import ge.freeuni.informatics.repository.contest.IContestRepository;
@@ -60,6 +63,50 @@ public class TaskManager implements ITaskManager {
     }
 
     @Override
+    public List<TaskInfo> getUpsolvingTasks(long roomId, int offset, int limit) throws InformaticsServerException {
+        ContestRoom room = roomManager.getRoom(roomId);
+        UserDTO currentUser = userManager.getAuthenticatedUser();
+        if (!room.isMember(currentUser.getId())) {
+            throw new InformaticsServerException("permissionDenied");
+        }
+        List<Contest> contests = contestRepository.getContests(roomId, null, Arrays.asList(ContestStatus.PAST), true, null, null);
+        List<TaskInfo> result = new ArrayList<>();
+        for (Contest contest : contests) {
+            for (Task task : contest.getTasks()) {
+                TaskDTO taskDTO = TaskDTO.toDTO(task);
+                ContestantResult contestantResult = contest.getStandings().getContestantResult(currentUser.getId());
+                if (contestantResult == null) {
+                    result.add(new TaskInfo(taskDTO, 0F));
+                } else {
+                    result.add(new TaskInfo(taskDTO, contestantResult.getTaskScore(task.getCode())));
+                }
+            }
+        }
+        return result;
+    }
+
+   @Override
+    public List<TaskInfo> getContestTasks(long contestId, int offset, int limit) throws InformaticsServerException {
+        Contest contest = contestRepository.getContest(contestId);
+        ContestRoom room = roomManager.getRoom(contest.getRoomId());
+        UserDTO currentUser = userManager.getAuthenticatedUser();
+        if (!room.isMember(currentUser.getId())) {
+            throw new InformaticsServerException("permissionDenied");
+        }
+        List<TaskInfo> result = new ArrayList<>();
+        for (Task task : contest.getTasks()) {
+            TaskDTO taskDTO = TaskDTO.toDTO(task);
+            ContestantResult contestantResult = contest.getStandings().getContestantResult(currentUser.getId());
+            if (contestantResult == null) {
+                result.add(new TaskInfo(taskDTO, 0F));
+            } else {
+                result.add(new TaskInfo(taskDTO, contestantResult.getTaskScore(task.getCode())));
+            }
+        }
+        return result;
+    }
+
+    @Override
     public void addTask(TaskDTO taskDTO, long contestId) throws InformaticsServerException {
         Contest contest = contestRepository.getContest(contestId);
         if (contest == null || !checkAddTaskPermission(contest)) {
@@ -67,7 +114,7 @@ public class TaskManager implements ITaskManager {
         }
         taskDTO.setContestId(contestId);
         Task task = TaskDTO.fromDTO(taskDTO);
-        taskRepository.addTask(task);
+        task = taskRepository.addTask(task);
         if (!contest.getTasks().contains(task)) {
             contest.getTasks().add(task);
             contestRepository.addContest(contest);

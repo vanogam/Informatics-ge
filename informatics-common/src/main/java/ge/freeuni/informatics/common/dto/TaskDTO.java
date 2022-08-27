@@ -19,8 +19,6 @@ public class TaskDTO {
 
     Map<String, String> title = new HashMap<>();
 
-    String configAddress;
-
     TaskType taskType;
 
     TaskScoreType taskScoreType;
@@ -41,6 +39,9 @@ public class TaskDTO {
     String inputTemplate;
 
     String outputTemplate;
+
+    Map<String, String> statements;
+
 
     public Integer getId() {
         return id;
@@ -72,14 +73,6 @@ public class TaskDTO {
 
     public void setTitle(Map<String, String> title) {
         this.title = title;
-    }
-
-    public String getConfigAddress() {
-        return configAddress;
-    }
-
-    public void setConfigAddress(String configAddress) {
-        this.configAddress = configAddress;
     }
 
     public TaskType getTaskType() {
@@ -138,6 +131,14 @@ public class TaskDTO {
         this.outputTemplate = outputTemplate;
     }
 
+    public Map<String, String> getStatements() {
+        return statements;
+    }
+
+    public void setStatements(Map<String, String> statements) {
+        this.statements = statements;
+    }
+
     public static Task fromDTO(TaskDTO taskDTO) {
         Task task = new Task();
 
@@ -147,12 +148,12 @@ public class TaskDTO {
         task.setTaskScoreType(taskDTO.getTaskScoreType());
         task.setId(taskDTO.getId());
         task.setCode(taskDTO.getCode());
-        task.setConfigAddress(taskDTO.getConfigAddress());
         task.setInputTemplate(taskDTO.getInputTemplate());
         task.setOutputTemplate(taskDTO.getOutputTemplate());
         task.setMemoryLimitMB(taskDTO.getMemoryLimitMB());
         task.setTimeLimitMillis(taskDTO.getTimeLimitMillis());
         task.setTitle(taskDTO.getTitle());
+        task.setStatements(taskDTO.getStatements());
 
         return task;
     }
@@ -175,12 +176,12 @@ public class TaskDTO {
         taskDTO.setTaskScoreType(task.getTaskScoreType());
         taskDTO.setId(task.getId());
         taskDTO.setCode(task.getCode());
-        taskDTO.setConfigAddress(task.getConfigAddress());
         taskDTO.setInputTemplate(task.getInputTemplate());
         taskDTO.setOutputTemplate(task.getOutputTemplate());
         taskDTO.setMemoryLimitMB(task.getMemoryLimitMB());
         taskDTO.setTimeLimitMillis(task.getTimeLimitMillis());
         taskDTO.setTitle(task.getTitle());
+        taskDTO.setStatements(task.getStatements());
 
         return taskDTO;
     }

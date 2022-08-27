@@ -14,14 +14,16 @@ public interface IContestManager {
 
     ContestDTO getContest(Long contestId) throws InformaticsServerException;
 
-    List<ContestDTO> getContests(Long roomId, String name, List<ContestStatus> statuses, Date minStartDate, Date maxStartDate);
+    List<ContestDTO> getContests(Long roomId, String name, List<ContestStatus> statuses, Boolean upsolving, Date minStartDate, Date maxStartDate);
 
-    void updateContest(ContestDTO contest);
+    ContestDTO updateContest(ContestDTO contest);
 
-    void deleteContest(long contestId);
+    void deleteContest(long contestId) throws InformaticsServerException;
 
     void registerUser(long contestId) throws InformaticsServerException;
 
-    List<ContestantResult> getStandings(long contestId, int offset, int size) throws InformaticsServerException;
+    void unregisterUser(long contestId) throws InformaticsServerException;
+
+    List<ContestantResult> getStandings(long contestId, Integer offset, Integer size) throws InformaticsServerException;
 
 }

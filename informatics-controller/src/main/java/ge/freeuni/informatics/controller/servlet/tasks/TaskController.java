@@ -3,6 +3,7 @@ package ge.freeuni.informatics.controller.servlet.tasks;
 import ge.freeuni.informatics.common.Language;
 import ge.freeuni.informatics.common.dto.TaskDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
+import ge.freeuni.informatics.common.model.task.TaskInfo;
 import ge.freeuni.informatics.controller.model.*;
 import ge.freeuni.informatics.server.task.ITaskManager;
 import org.slf4j.Logger;
@@ -14,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.util.List;
 
 @RestController
 public class TaskController {
@@ -27,9 +29,28 @@ public class TaskController {
     @Value("${ge.freeuni.informatics.defaultLanguage}")
     String defaultLanguage;
 
-    @GetMapping("/get-tasks")
-    void getTasks(GetTasksRequest tasksRequest) {
+    @GetMapping("/room/{id}/tasks")
+    GetTasksResponse getTasks(@PathVariable Long id, PagingRequest request) {
+        try {
+            List<TaskInfo> taskInfos = taskManager.getUpsolvingTasks(id, request.getOffset(), request.getLimit());
+            GetTasksResponse response = new GetTasksResponse("SUCCESS", null);
+            response.setTasks(taskInfos);
+            return response;
+        } catch (InformaticsServerException ex) {
+            return new GetTasksResponse("FAIL", ex.getCode());
+        }
+    }
 
+    @GetMapping("/contest/{id}/tasks")
+    GetTasksResponse getContestTasks(@PathVariable Long id, PagingRequest request) {
+        try {
+            List<TaskInfo> taskInfos = taskManager.getContestTasks(id, request.getOffset(), request.getLimit());
+            GetTasksResponse response = new GetTasksResponse("SUCCESS", null);
+            response.setTasks(taskInfos);
+            return response;
+        } catch (InformaticsServerException ex) {
+            return new GetTasksResponse("FAIL", ex.getCode());
+        }
     }
 
     @PostMapping("/save-task")

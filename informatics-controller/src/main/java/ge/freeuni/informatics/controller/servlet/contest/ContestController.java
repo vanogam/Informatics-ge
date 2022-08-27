@@ -59,6 +59,16 @@ public class ContestController {
         return response;
     }
 
+    @DeleteMapping("/contests/{contestId}")
+    public InformaticsResponse deleteContest(@PathVariable Long contestId) {
+        try {
+            contestManager.deleteContest(contestId);
+        } catch (InformaticsServerException ex) {
+            return new InformaticsResponse("FAIL", ex.getCode());
+        }
+        return new InformaticsResponse("SUCCESS", null);
+    }
+
     @PostMapping("/contests/{contestId}/register")
     public InformaticsResponse register(@PathVariable String contestId) {
         try {

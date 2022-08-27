@@ -18,7 +18,7 @@ public interface IContestManager {
 
     ContestDTO updateContest(ContestDTO contest);
 
-    void deleteContest(long contestId);
+    void deleteContest(long contestId) throws InformaticsServerException;
 
     void registerUser(long contestId) throws InformaticsServerException;
 

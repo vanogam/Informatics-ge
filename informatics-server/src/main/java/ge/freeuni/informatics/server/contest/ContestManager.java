@@ -76,8 +76,12 @@ public class ContestManager implements IContestManager {
     }
 
     @Override
-    public void deleteContest(long contestId) {
+    public void deleteContest(long contestId) throws InformaticsServerException {
         Contest contest = contestRepository.getContest(contestId);
+        ContestRoom room = contestRoomManager.getRoom(contest.getRoomId());
+        if (!room.isMember(userManager.getAuthenticatedUser().getId())) {
+            throw new InformaticsServerException("permissionDenied");
+        }
         List<Task> tasks = contest.getTasks();
         for (Task task : tasks) {
             taskManager.removeTask(task.getId(), contestId);

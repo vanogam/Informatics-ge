@@ -106,6 +106,24 @@ public class ContestManager implements IContestManager {
     }
 
     @Override
+    public void unregisterUser(long contestId) throws InformaticsServerException {
+        Contest contest = contestRepository.getContest(contestId);
+        UserDTO user = userManager.getAuthenticatedUser();
+        long userId = user.getId();
+        if (contest.getParticipants() == null || !contest.getParticipants().contains(userId)) {
+            return;
+        }
+        contest.getParticipants().remove(userId);
+        for (ContestantResult contestantResult : contest.getStandings().getStandings()) {
+            if (contestantResult.getContestantId() == userId) {
+                contest.getStandings().getStandings().remove(contestantResult);
+                break;
+            }
+        }
+        contestRepository.addContest(contest);
+    }
+
+    @Override
     public List<ContestantResult> getStandings(long contestId, Integer offset, Integer size) throws InformaticsServerException {
         Contest contest = contestRepository.getContest(contestId);
         ContestRoom room = contestRoomManager.getRoom(contest.getRoomId());

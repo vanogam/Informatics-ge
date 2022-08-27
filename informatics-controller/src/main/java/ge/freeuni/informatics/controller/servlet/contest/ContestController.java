@@ -7,7 +7,6 @@ import ge.freeuni.informatics.controller.model.*;
 import ge.freeuni.informatics.server.contest.ContestService;
 import ge.freeuni.informatics.server.contest.IContestManager;
 import ge.freeuni.informatics.server.submission.ISubmissionManager;
-import ge.freeuni.informatics.server.task.ITaskManager;
 import ge.freeuni.informatics.server.user.IUserManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -64,6 +63,16 @@ public class ContestController {
     public InformaticsResponse register(@PathVariable String contestId) {
         try {
             contestManager.registerUser(Long.parseLong(contestId));
+        } catch (InformaticsServerException ex) {
+            return new InformaticsResponse("FAIL", ex.getCode());
+        }
+        return new InformaticsResponse("SUCCESS", null);
+    }
+
+    @PostMapping("/contests/{contestId}/unregister")
+    public InformaticsResponse unregister(@PathVariable String contestId) {
+        try {
+            contestManager.unregisterUser(Long.parseLong(contestId));
         } catch (InformaticsServerException ex) {
             return new InformaticsResponse("FAIL", ex.getCode());
         }

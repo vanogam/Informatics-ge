@@ -29,11 +29,15 @@ public class ContestDTO {
 
     private Standings standings;
 
+    private Standings upsolvingStandings;
+
     private ScoringType scoringType;
 
     private boolean upsolving;
 
     private boolean upsolvingAfterFinish;
+
+    private Integer version;
 
     public long getId() {
         return id;
@@ -131,6 +135,22 @@ public class ContestDTO {
         this.upsolvingAfterFinish = upsolvingAfterFinish;
     }
 
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
+    }
+
+    public Standings getUpsolvingStandings() {
+        return upsolvingStandings;
+    }
+
+    public void setUpsolvingStandings(Standings upsolvingStandings) {
+        this.upsolvingStandings = upsolvingStandings;
+    }
+
     public static ContestDTO toDTO(Contest contest) {
         ContestDTO contestDTO = new ContestDTO();
 
@@ -146,8 +166,10 @@ public class ContestDTO {
         contestDTO.setStandings(contest.getStandings());
         contestDTO.setTasks(TaskDTO.toDTOs(contest.getTasks()));
         contestDTO.setUpsolving(contest.isUpsolving());
-        contestDTO.setUpsolvingAfterFinish(contestDTO.isUpsolvingAfterFinish());
+        contestDTO.setUpsolvingAfterFinish(contest.isUpsolvingAfterFinished());
         contestDTO.setScoringType(contest.getScoringType());
+        contestDTO.setVersion(contest.getVersion());
+        contestDTO.setUpsolvingStandings(contest.getUpsolvingStandings());
         return contestDTO;
     }
 
@@ -168,6 +190,8 @@ public class ContestDTO {
         contest.setUpsolving(contestDTO.isUpsolving());
         contest.setUpsolvingAfterFinished(contestDTO.isUpsolvingAfterFinish());
         contest.setScoringType(contestDTO.getScoringType());
+        contest.setVersion(contestDTO.getVersion());
+        contest.setUpsolvingStandings(contestDTO.getUpsolvingStandings());
         return contest;
     }
 

@@ -4,6 +4,7 @@ import ge.freeuni.informatics.common.dto.ContestDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.contest.ContestantResult;
 import ge.freeuni.informatics.controller.model.*;
+import ge.freeuni.informatics.server.contest.ContestService;
 import ge.freeuni.informatics.server.contest.IContestManager;
 import ge.freeuni.informatics.server.submission.ISubmissionManager;
 import ge.freeuni.informatics.server.task.ITaskManager;
@@ -22,6 +23,9 @@ public class ContestController {
     private IContestManager contestManager;
 
     @Autowired
+    private ContestService contestService;
+
+    @Autowired
     private IUserManager userManager;
 
     @Autowired
@@ -33,7 +37,7 @@ public class ContestController {
     @GetMapping("/contest-list")
     public ContestResponse getContestList(@RequestBody ContestListRequest request) {
         ContestResponse response = new ContestResponse();
-        response.setContests(contestManager.getContests(Long.valueOf(request.getId()), null, null, null, null));
+        response.setContests(contestManager.getContests(Long.valueOf(request.getId()), null, null, null, null, null));
         response.setStatus("SUCCESS");
         return response;
     }
@@ -73,7 +77,7 @@ public class ContestController {
     public StandingsResponse getStandings(@PathVariable String contestId, @RequestBody PagingRequest request) {
         StandingsResponse response = new StandingsResponse("SUCCESS", null);
         try {
-            List<ContestantResult> result = contestManager.getStandings(Long.parseLong(contestId), request.getOffset(), request.getLimit());
+            List<ContestantResult> result = contestService.getStandings(Long.parseLong(contestId), request.getOffset(), request.getLimit());
             response.setStandings(result);
         } catch (InformaticsServerException ex) {
             return new StandingsResponse("FAIL", ex.getCode());

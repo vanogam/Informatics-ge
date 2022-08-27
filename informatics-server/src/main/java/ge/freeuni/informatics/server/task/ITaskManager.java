@@ -13,6 +13,8 @@ public interface ITaskManager {
 
     void addTask(TaskDTO task, long contestId) throws InformaticsServerException;
 
+    void getUpsolvingTasks(long roomId, int offset, int limit);
+
     void removeTask(int taskId, long contest);
 
     File getStatement(int taskId, Language language) throws InformaticsServerException;

@@ -27,8 +27,8 @@ public class TaskController {
     @Value("${ge.freeuni.informatics.defaultLanguage}")
     String defaultLanguage;
 
-    @GetMapping("/get-tasks")
-    void getTasks(GetTasksRequest tasksRequest) {
+    @GetMapping("/room/{id}/get-tasks")
+    void getTasks(@PathVariable String id) {
 
     }
 

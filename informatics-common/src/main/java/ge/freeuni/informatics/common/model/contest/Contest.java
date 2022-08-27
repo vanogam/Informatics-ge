@@ -34,7 +34,11 @@ public class Contest {
 
     private Standings standings;
 
+    private Standings upsolvingStandings;
+
     private ScoringType scoringType;
+
+    private Integer version;
 
     @Id
     @GeneratedValue
@@ -131,11 +135,30 @@ public class Contest {
         this.standings = standings;
     }
 
+    @Type(type = StandingsType.TYPE)
+    @Column(length = Integer.MAX_VALUE)
+    public Standings getUpsolvingStandings() {
+        return upsolvingStandings;
+    }
+
+    public void setUpsolvingStandings(Standings upsolvingStandings) {
+        this.upsolvingStandings = upsolvingStandings;
+    }
+
     public ScoringType getScoringType() {
         return scoringType;
     }
 
     public void setScoringType(ScoringType scoringType) {
         this.scoringType = scoringType;
+    }
+
+    @Version
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
     }
 }

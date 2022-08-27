@@ -42,6 +42,9 @@ public class TaskDTO {
 
     String outputTemplate;
 
+    Map<String, String> statements;
+
+
     public Integer getId() {
         return id;
     }
@@ -138,6 +141,14 @@ public class TaskDTO {
         this.outputTemplate = outputTemplate;
     }
 
+    public Map<String, String> getStatements() {
+        return statements;
+    }
+
+    public void setStatements(Map<String, String> statements) {
+        this.statements = statements;
+    }
+
     public static Task fromDTO(TaskDTO taskDTO) {
         Task task = new Task();
 
@@ -153,6 +164,7 @@ public class TaskDTO {
         task.setMemoryLimitMB(taskDTO.getMemoryLimitMB());
         task.setTimeLimitMillis(taskDTO.getTimeLimitMillis());
         task.setTitle(taskDTO.getTitle());
+        task.setStatements(taskDTO.getStatements());
 
         return task;
     }
@@ -181,6 +193,7 @@ public class TaskDTO {
         taskDTO.setMemoryLimitMB(task.getMemoryLimitMB());
         taskDTO.setTimeLimitMillis(task.getTimeLimitMillis());
         taskDTO.setTitle(task.getTitle());
+        taskDTO.setStatements(task.getStatements());
 
         return taskDTO;
     }

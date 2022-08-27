@@ -19,6 +19,8 @@ public class CreateContestRequest {
 
     private boolean upsolvingAfterFinish;
 
+    private boolean upsolving;
+
     private ScoringType scoringType;
 
     public String getName() {
@@ -67,5 +69,13 @@ public class CreateContestRequest {
 
     public void setScoringType(ScoringType scoringType) {
         this.scoringType = scoringType;
+    }
+
+    public boolean isUpsolving() {
+        return upsolving;
+    }
+
+    public void setUpsolving(boolean upsolving) {
+        this.upsolving = upsolving;
     }
 }

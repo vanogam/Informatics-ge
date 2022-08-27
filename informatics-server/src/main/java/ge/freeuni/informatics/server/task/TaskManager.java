@@ -60,6 +60,11 @@ public class TaskManager implements ITaskManager {
     }
 
     @Override
+    public void getUpsolvingTasks(long roomId, int offset, int limit) {
+
+    }
+
+    @Override
     public void addTask(TaskDTO taskDTO, long contestId) throws InformaticsServerException {
         Contest contest = contestRepository.getContest(contestId);
         if (contest == null || !checkAddTaskPermission(contest)) {

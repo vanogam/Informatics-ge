@@ -88,8 +88,11 @@ public class SubmissionManager implements ISubmissionManager {
         CodeLanguage language = CodeLanguage.valueOf(submission.getLanguage());
         Task task = taskRepository.getTask(submission.getTaskId());
         Contest contest = contestRepository.getContest(task.getContestId());
-        if (contest.getStatus() != ContestStatus.LIVE) {
+        if (contest.getStatus() != ContestStatus.LIVE && !contest.isUpsolving()) {
             throw new InformaticsServerException("contestNotLive");
+        }
+        if (contest.getStatus() == ContestStatus.LIVE && isNotRegistered(contest, userManager.getAuthenticatedUser().getId())) {
+            throw new InformaticsServerException("notRegistered");
         }
         submission.setRoomId(contest.getRoomId());
         submission = submissionRepository.addSubmission(submission);
@@ -125,4 +128,7 @@ public class SubmissionManager implements ISubmissionManager {
         submissionRepository.registerSubmission(submissionId, cmsId);
     }
 
+    private boolean isNotRegistered(Contest contest, long userId) {
+        return !contest.getParticipants().contains(userId);
+    }
 }

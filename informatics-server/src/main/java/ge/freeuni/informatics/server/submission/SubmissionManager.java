@@ -75,7 +75,7 @@ public class SubmissionManager implements ISubmissionManager {
             roomId = contest.getRoomId();
         }
         ContestRoom room = roomManager.getRoom(roomId);
-        if (room.isMember(userManager.getAuthenticatedUser().getId())) {
+        if (!room.isMember(userManager.getAuthenticatedUser().getId())) {
             throw new InformaticsServerException("permissionDenied");
         }
         return SubmissionDTO.toDTOs(submissionRepository.getSubmissions(userId, taskId, contestId, roomId, offset, limit));

@@ -22,6 +22,6 @@ public interface IContestManager {
 
     void registerUser(long contestId) throws InformaticsServerException;
 
-    List<ContestantResult> getStandings(long contestId, int offset, int size) throws InformaticsServerException;
+    List<ContestantResult> getStandings(long contestId, Integer offset, Integer size) throws InformaticsServerException;
 
 }

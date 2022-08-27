@@ -16,6 +16,10 @@ public class SubmissionDTO {
 
     private long userId;
 
+    private String text;
+
+    private Float score;
+
     private int taskId;
 
     private long contestId;
@@ -54,12 +58,28 @@ public class SubmissionDTO {
         this.userId = userId;
     }
 
+    public Float getScore() {
+        return score;
+    }
+
+    public void setScore(Float score) {
+        this.score = score;
+    }
+
     public int getTaskId() {
         return taskId;
     }
 
     public void setTaskId(int taskId) {
         this.taskId = taskId;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
     }
 
     public long getContestId() {
@@ -123,6 +143,8 @@ public class SubmissionDTO {
         submissionDTO.setCompilationMessage(submission.getCompilationMessage());
         submissionDTO.setCompilationResult(submission.getCompilationResult());
         submissionDTO.setResults(submission.getSubmissionTestResultList().getSubmissionTestResults());
+        submissionDTO.setText(submission.getText());
+        submissionDTO.setScore(submission.getScore());
 
         return submissionDTO;
     }
@@ -138,6 +160,8 @@ public class SubmissionDTO {
         submission.setSubmissionTime(submissionDTO.getSubmissionTime());
         submission.setCompilationResult(submissionDTO.getCompilationResult());
         submission.setCompilationMessage(submissionDTO.getCompilationMessage());
+        submission.setText(submissionDTO.getText());
+        submission.setScore(submissionDTO.getScore());
 
         return submission;
     }

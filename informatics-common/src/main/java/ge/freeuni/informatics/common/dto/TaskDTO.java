@@ -19,8 +19,6 @@ public class TaskDTO {
 
     Map<String, String> title = new HashMap<>();
 
-    String configAddress;
-
     TaskType taskType;
 
     TaskScoreType taskScoreType;
@@ -75,14 +73,6 @@ public class TaskDTO {
 
     public void setTitle(Map<String, String> title) {
         this.title = title;
-    }
-
-    public String getConfigAddress() {
-        return configAddress;
-    }
-
-    public void setConfigAddress(String configAddress) {
-        this.configAddress = configAddress;
     }
 
     public TaskType getTaskType() {
@@ -158,7 +148,6 @@ public class TaskDTO {
         task.setTaskScoreType(taskDTO.getTaskScoreType());
         task.setId(taskDTO.getId());
         task.setCode(taskDTO.getCode());
-        task.setConfigAddress(taskDTO.getConfigAddress());
         task.setInputTemplate(taskDTO.getInputTemplate());
         task.setOutputTemplate(taskDTO.getOutputTemplate());
         task.setMemoryLimitMB(taskDTO.getMemoryLimitMB());
@@ -187,7 +176,6 @@ public class TaskDTO {
         taskDTO.setTaskScoreType(task.getTaskScoreType());
         taskDTO.setId(task.getId());
         taskDTO.setCode(task.getCode());
-        taskDTO.setConfigAddress(task.getConfigAddress());
         taskDTO.setInputTemplate(task.getInputTemplate());
         taskDTO.setOutputTemplate(task.getOutputTemplate());
         taskDTO.setMemoryLimitMB(task.getMemoryLimitMB());

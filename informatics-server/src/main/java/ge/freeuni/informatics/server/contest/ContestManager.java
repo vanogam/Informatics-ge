@@ -13,6 +13,7 @@ import ge.freeuni.informatics.repository.contest.IContestRepository;
 import ge.freeuni.informatics.server.contestroom.IContestRoomManager;
 import ge.freeuni.informatics.server.task.ITaskManager;
 import ge.freeuni.informatics.server.user.IUserManager;
+import ge.freeuni.informatics.utils.ArrayUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Component;
@@ -105,7 +106,7 @@ public class ContestManager implements IContestManager {
     }
 
     @Override
-    public List<ContestantResult> getStandings(long contestId, int offset, int size) throws InformaticsServerException {
+    public List<ContestantResult> getStandings(long contestId, Integer offset, Integer size) throws InformaticsServerException {
         Contest contest = contestRepository.getContest(contestId);
         ContestRoom room = contestRoomManager.getRoom(contest.getRoomId());
         long userId = userManager.getAuthenticatedUser().getId();
@@ -113,7 +114,6 @@ public class ContestManager implements IContestManager {
             throw new InformaticsServerException("permissionDenied");
         }
         List<ContestantResult> fullStandings = contest.getStandings().getStandings();
-        return fullStandings.subList(Math.min(offset, fullStandings.size() - 1),
-                Math.min(fullStandings.size() - 1, offset + size));
+        return ArrayUtils.getPage(fullStandings, offset, size);
     }
 }

@@ -29,9 +29,6 @@ public class ContestController {
     private IUserManager userManager;
 
     @Autowired
-    private ITaskManager taskManager;
-
-    @Autowired
     private ISubmissionManager submissionManager;
 
     @GetMapping("/contest-list")
@@ -73,8 +70,8 @@ public class ContestController {
         return new InformaticsResponse("SUCCESS", null);
     }
 
-    @PostMapping("/contests/{contestId}/standings")
-    public StandingsResponse getStandings(@PathVariable String contestId, @RequestBody PagingRequest request) {
+    @GetMapping("/contest/{contestId}/standings")
+    public StandingsResponse getStandings(@PathVariable String contestId, @RequestParam PagingRequest request) {
         StandingsResponse response = new StandingsResponse("SUCCESS", null);
         try {
             List<ContestantResult> result = contestService.getStandings(Long.parseLong(contestId), request.getOffset(), request.getLimit());
@@ -85,29 +82,17 @@ public class ContestController {
         return response;
     }
 
-    @GetMapping("/contests/{contestId}/tasks")
-    public TasksResponse getContestTasks(@PathVariable String contestId) {
-        TasksResponse response = new TasksResponse("SUCCESS", null);
-        try {
-            response.setTasks(contestManager.getContest(Long.parseLong(contestId)).getTasks());
-        } catch (InformaticsServerException ex) {
-            return new TasksResponse("FAIL", ex.getCode());
-        }
-        return response;
-    }
-
-    @GetMapping("/contests/{contestId}/submissions")
+    @GetMapping("/contest/{contestId}/submissions")
     public SubmissionListResponse getSubmissionsList(@PathVariable String contestId,
-                                                     @RequestParam(required = false) Long taskId,
-                                                     @RequestParam(defaultValue = "1") Integer page) {
+                                                     GetSubmissionsRequest request) {
         SubmissionListResponse response = new SubmissionListResponse("SUCCESS", null);
         try {
             response.setSubmissions(submissionManager.filter(userManager.getAuthenticatedUser().getId(),
-                    taskId,
+                    request.getTaskId(),
                     Long.parseLong(contestId),
                     null,
-                    20 * (page - 1),
-                    20));
+                    request.getOffset(),
+                    request.getLimit()));
         } catch (InformaticsServerException ex) {
             return new SubmissionListResponse("FAIL", ex.getCode());
         }

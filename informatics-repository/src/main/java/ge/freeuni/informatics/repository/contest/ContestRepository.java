@@ -60,8 +60,13 @@ public class ContestRepository implements IContestRepository {
             params.put("minStartDate", minStartDate);
         }
         if (maxStartDate != null) {
-            sql.append(" AND startDate = :maxStartDate");
+            sql.append(" AND startDate <= :maxStartDate");
             params.put("maxStartDate", maxStartDate);
+        }
+
+        if (upsolving != null) {
+            sql.append(" AND upsolving = :upsolving");
+            params.put("upsolving", upsolving);
         }
         TypedQuery<Contest> query = em.createQuery(sql.toString(), Contest.class);
         for (String code : params.keySet()) {

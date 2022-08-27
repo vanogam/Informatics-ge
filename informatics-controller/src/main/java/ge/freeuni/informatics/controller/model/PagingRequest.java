@@ -2,23 +2,23 @@ package ge.freeuni.informatics.controller.model;
 
 public class PagingRequest {
 
-    private int offset;
+    private Integer offset;
 
-    private int limit;
+    private Integer limit;
 
-    public int getOffset() {
+    public Integer getOffset() {
         return offset;
     }
 
-    public void setOffset(int offset) {
+    public void setOffset(Integer offset) {
         this.offset = offset;
     }
 
-    public int getLimit() {
+    public Integer getLimit() {
         return limit;
     }
 
-    public void setLimit(int limit) {
+    public void setLimit(Integer limit) {
         this.limit = limit;
     }
 }

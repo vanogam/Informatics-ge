@@ -10,6 +10,7 @@ import ge.freeuni.informatics.common.model.contest.ContestantResult;
 import ge.freeuni.informatics.common.model.submission.Submission;
 import ge.freeuni.informatics.repository.contest.IContestRepository;
 import ge.freeuni.informatics.server.task.ITaskManager;
+import ge.freeuni.informatics.utils.ArrayUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
@@ -53,12 +54,11 @@ public class ContestService {
         manageLiveContests(liveContests);
     }
 
-    public List<ContestantResult> getStandings(long contestId, int offset, int size) throws InformaticsServerException {
+    public List<ContestantResult> getStandings(long contestId, Integer offset, Integer size) throws InformaticsServerException {
         List<ContestantResult> pastStandings = contestManager.getStandings(contestId, offset, size);
         if (liveContests.containsKey(contestId)) {
             List<ContestantResult> standings = liveContests.get(contestId).getStandings().getStandings();
-            return standings.subList(Math.min(offset, standings.size() - 1),
-                    Math.min(standings.size() - 1, offset + size));
+            return ArrayUtils.getPage(standings, offset, size);
         }
         return pastStandings;
     }

@@ -32,6 +32,9 @@ public class TaskController {
     @GetMapping("/room/{id}/tasks")
     GetTasksResponse getTasks(@PathVariable Long id, PagingRequest request) {
         try {
+            if (request == null) {
+                request = new PagingRequest();
+            }
             List<TaskInfo> taskInfos = taskManager.getUpsolvingTasks(id, request.getOffset(), request.getLimit());
             GetTasksResponse response = new GetTasksResponse("SUCCESS", null);
             response.setTasks(taskInfos);
@@ -44,6 +47,9 @@ public class TaskController {
     @GetMapping("/contest/{id}/tasks")
     GetTasksResponse getContestTasks(@PathVariable Long id, PagingRequest request) {
         try {
+            if (request == null) {
+                request = new PagingRequest();
+            }
             List<TaskInfo> taskInfos = taskManager.getContestTasks(id, request.getOffset(), request.getLimit());
             GetTasksResponse response = new GetTasksResponse("SUCCESS", null);
             response.setTasks(taskInfos);

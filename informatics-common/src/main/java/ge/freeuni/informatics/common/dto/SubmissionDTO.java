@@ -2,6 +2,7 @@ package ge.freeuni.informatics.common.dto;
 
 
 import ge.freeuni.informatics.common.model.submission.Submission;
+import ge.freeuni.informatics.common.model.submission.SubmissionStatus;
 import ge.freeuni.informatics.common.model.submission.SubmissionTestResult;
 
 import java.util.ArrayList;
@@ -17,6 +18,10 @@ public class SubmissionDTO {
     private long userId;
 
     private String text;
+
+    private SubmissionStatus status;
+
+    private Integer currentTest;
 
     private Float score;
 
@@ -64,6 +69,22 @@ public class SubmissionDTO {
 
     public void setScore(Float score) {
         this.score = score;
+    }
+
+    public SubmissionStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(SubmissionStatus status) {
+        this.status = status;
+    }
+
+    public Integer getCurrentTest() {
+        return currentTest;
+    }
+
+    public void setCurrentTest(Integer currentTest) {
+        this.currentTest = currentTest;
     }
 
     public int getTaskId() {
@@ -145,6 +166,8 @@ public class SubmissionDTO {
         submissionDTO.setResults(submission.getSubmissionTestResultList().getSubmissionTestResults());
         submissionDTO.setText(submission.getText());
         submissionDTO.setScore(submission.getScore());
+        submissionDTO.setStatus(submission.getStatus());
+        submissionDTO.setCurrentTest(submission.getCurrentTest());
 
         return submissionDTO;
     }
@@ -162,6 +185,8 @@ public class SubmissionDTO {
         submission.setCompilationMessage(submissionDTO.getCompilationMessage());
         submission.setText(submissionDTO.getText());
         submission.setScore(submissionDTO.getScore());
+        submission.setStatus(submissionDTO.getStatus());
+        submission.setCurrentTest(submissionDTO.getCurrentTest());
 
         return submission;
     }

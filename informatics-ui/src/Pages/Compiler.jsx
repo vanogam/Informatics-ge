@@ -53,7 +53,7 @@ export default function Compiler() {
 					fontSize: '20',
 				}}
 			>
-				<p sx={{ color: 'purple' }}>შეიყვანე კოდი: </p>
+				<p style = {{color:'#452c54', fontWeight: 'bold'}}>შეიყვანე კოდი: </p>
 				<Editor
 					value={code}
 					onValueChange={(code) => setCode(code)}
@@ -85,7 +85,7 @@ export default function Compiler() {
 			</Box>
 
 			<Box sx={boxStyle} component="form">
-				<p>შემავალი მონაცემები: </p>
+				<p style = {{color:'#452c54', fontWeight: 'bold'}}>შემავალი მონაცემები: </p>
 				<TextField
 					id="outlined-multiline-static"
 					multiline
@@ -106,7 +106,7 @@ export default function Compiler() {
 					ფაილის ატვირთვა
 				</Button>
 
-				<p>გამომავალი მონაცემები: </p>
+				<p style = {{color:'#452c54', fontWeight: 'bold'}}>გამომავალი მონაცემები: </p>
 				<TextField
 					id="outlined-multiline-static"
 					multiline

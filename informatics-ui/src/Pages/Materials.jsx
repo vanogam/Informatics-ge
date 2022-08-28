@@ -22,7 +22,8 @@ export default function Materials() {
 	
 	return (
 		<main>
-			<Typography variant="h5" fontWeight="bold" mt="1rem" align="center">
+			<Typography variant="h6" fontWeight="bold" mt="1rem" align="center"
+			sx = {{color:'#452c54', fontWeight: 'bold'}}>
 				მასალები
 			</Typography>
 			<Typography
@@ -31,6 +32,7 @@ export default function Materials() {
 				pt="0.5rem"
 				pb="1rem"
 				borderBottom="2px dashed #aaa"
+				sx = {{color: '#281d2e'}}
 			>
 				აქ შეგიძლიათ გაეცნოთ სხვადასხვა მასალებს 
 			</Typography>

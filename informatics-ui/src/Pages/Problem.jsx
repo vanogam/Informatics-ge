@@ -10,7 +10,7 @@ import {
 	TableRow,
     Box
 } from '@mui/material'
-import React from 'react'
+import React, { useState } from 'react'
 import Editor from 'react-simple-code-editor'
 import { highlight, languages } from 'prismjs/components/prism-core'
 import 'prismjs/components/prism-clike'
@@ -22,7 +22,9 @@ import './numbers.css'
 import { Button } from '@mui/material'
 import TextField from '@mui/material/TextField'
 import { NavLink } from "react-router-dom";
-import Pdf from "../Components/Problem.pdf"
+import axios from 'axios';
+import { useEffect } from 'react';
+// import Pdf from "../../home/u/informatics/statements/passw/statement_KA.pdf"
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
 const boxStyle = {
@@ -38,16 +40,60 @@ const boxStyle = {
 
 	fontSize: '20',
 }
+function submitProblem(){
+	// const body = {
+	// 		"contestId" : 218,
+	// 		"taskId" : 219,
+	// 		"submissionText" : {{submissionText}},
+	// 		"language" : "CPP"
+	// }
+	// axios
+	// 		.post('http://localhost:8080/submit', {
+	// 		})
+	// 		.then((response) => handleLoginResponse(response))
+	// 		.catch((error) => console.log(error))
+}
 const hightlightWithLineNumbers = (input, grammar, language) =>
 	highlight(input, grammar, language)
 		.split('\n')
 		.map((line, i) => `<span class='editorLineNumber'>${i + 1}</span>${line}`)
 		.join('\n')
+
+function handleProblemResponse(response, setPDF){
+	console.log(response)
+	setPDF(response.data)
+}
+
 export default function Problem(){
     const {problem_id} = useParams()
     const [code, setCode] = React.useState(
 		`#include <iostream>\nusing namespace std;\nint main()\n{\ncout << "Hello, World!";\nreturn 0; \n}\n`
 	)
+	const [pdf, setPDF] = useState("")
+	// useEffect(() => {
+	// 	axios
+	// 		.get(`http://localhost:8080/statements/219/KA`)
+	// 		.then((response) =>  {handleProblemResponse(response, setPDF)})
+	// 		.catch((error) => console.log(error))
+	// }, [])
+	
+	useEffect(() => {
+		
+    
+          fetch(new Request(`http://localhost:8080/statements/${problem_id}/KA`,
+		  {
+			method: "GET",
+			mode: "cors",
+			cache: "default",
+		  }
+		))
+            .then((response) => response.blob())
+            .then((blob) => {              
+              const file = window.URL.createObjectURL(blob);
+             setPDF(file)
+            })
+           
+	}, [])
     return (
         <Box sx={{
             display: 'flex',
@@ -55,16 +101,13 @@ export default function Problem(){
             marginLeft: '10%'
         }}>
               <Box sx={{ marginLeft:'2%', marginTop: '5%',width: '80%', maxWidth: 500 }}>
-        <Typography variant="h5" gutterBottom>
+        <Typography variant="h7" gutterBottom>
         ამოცანა {problem_id}
         </Typography>
-        <Document file={Pdf}>
+        <Document file={pdf}>
             <Page pageNumber={1} />
         </Document>
         
-      
-
-      
        
       </Box>
 
@@ -105,6 +148,7 @@ export default function Problem(){
 						marginTop: '5%',
 						background: '#3c324e',
 					}}
+					onClick={() => submitProblem()}
 					variant="contained"
 				>
 					ამოხსნის გაგზავნა

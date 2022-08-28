@@ -134,7 +134,7 @@ export default function Register() {
 						<TextField
 							style={{ alignItems: 'center', justifyContent: 'center' }}
 							id="username"
-							label="username"
+							label="მომხმარებლის სახელი"
 							type="Nickname"
 							autoComplete="nickname"
 							inputRef={nickname}

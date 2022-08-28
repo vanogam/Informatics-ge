@@ -33,7 +33,7 @@ public class ContestController {
     @GetMapping("/contest-list")
     public ContestResponse getContestList(ContestListRequest request) {
         ContestResponse response = new ContestResponse();
-        response.setContests(contestManager.getContests(Long.valueOf(request.getId()), null, null, null, null, null));
+        response.setContests(contestManager.getContests(Long.valueOf(request.getRoomId()), null, null, null, null, null));
         response.setStatus("SUCCESS");
         return response;
     }

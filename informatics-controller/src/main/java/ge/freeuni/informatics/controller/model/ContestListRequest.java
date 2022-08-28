@@ -2,13 +2,13 @@ package ge.freeuni.informatics.controller.model;
 
 public class ContestListRequest {
 
-    Integer id;
+    private Integer roomId;
 
-    public Integer getId() {
-        return id;
+    public Integer getRoomId() {
+        return roomId;
     }
 
-    public void setId(Integer id) {
-        this.id = id;
+    public void setRoomId(Integer roomId) {
+        this.roomId = roomId;
     }
 }

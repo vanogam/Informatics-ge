@@ -31,7 +31,7 @@ public class ContestController {
     private ISubmissionManager submissionManager;
 
     @GetMapping("/contest-list")
-    public ContestResponse getContestList(@RequestBody ContestListRequest request) {
+    public ContestResponse getContestList(ContestListRequest request) {
         ContestResponse response = new ContestResponse();
         response.setContests(contestManager.getContests(Long.valueOf(request.getId()), null, null, null, null, null));
         response.setStatus("SUCCESS");

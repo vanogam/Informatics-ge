@@ -59,7 +59,7 @@ public class ContestController {
         return response;
     }
 
-    @DeleteMapping("/contests/{contestId}")
+    @DeleteMapping("/contest/{contestId}")
     public InformaticsResponse deleteContest(@PathVariable Long contestId) {
         try {
             contestManager.deleteContest(contestId);
@@ -69,7 +69,7 @@ public class ContestController {
         return new InformaticsResponse("SUCCESS", null);
     }
 
-    @PostMapping("/contests/{contestId}/register")
+    @PostMapping("/contest/{contestId}/register")
     public InformaticsResponse register(@PathVariable Long contestId) {
         try {
             contestManager.registerUser(contestId);
@@ -79,7 +79,7 @@ public class ContestController {
         return new InformaticsResponse("SUCCESS", null);
     }
 
-    @PostMapping("/contests/{contestId}/unregister")
+    @PostMapping("/contest/{contestId}/unregister")
     public InformaticsResponse unregister(@PathVariable String contestId) {
         try {
             contestManager.unregisterUser(Long.parseLong(contestId));

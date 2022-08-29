@@ -92,7 +92,7 @@ export default function Contest(){
 									{problem.category}
 
 								</TableCell>
-								<TableCell ><NavLink to ={`/problem/${problem.id}`} exact>{problem.name} </NavLink></TableCell>
+								<TableCell ><NavLink to ={problem.id} exact>{problem.name} </NavLink></TableCell>
 							
 							</TableRow>
 						))}

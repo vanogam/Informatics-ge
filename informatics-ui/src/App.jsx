@@ -15,7 +15,6 @@ function App() {
 			<Box display="flex" flexDirection="column">
 				<Navbar />
 
-
 				<Routes>
 					<Route path="/" element={<Main />} />
 					<Route path="/compiler" element={<Compiler />} />
@@ -30,12 +29,13 @@ function App() {
 					<Route path="/resetSuccess" element={<ResetSuccess />} />
 					<Route path="/materials" element={<Materials />} />
 					<Route path="/contests" element={<Contests />} />
-					<Route path="contest">
-							<Route path=":contest_id" element={<Contest />} />
+					<Route path="/contest">
+						<Route path=":contest_id" element={<Contest />} />
 					</Route>
-					<Route path="problem">
-							<Route path=":problem_id" element={<Problem />} />
-					</Route>
+					<Route
+						path="/contest/:contest_id/:problem_id"
+						element={<Problem />}
+					/>
 				</Routes>
 			</Box>
 		</div>

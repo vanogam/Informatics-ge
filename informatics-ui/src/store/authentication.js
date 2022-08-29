@@ -22,12 +22,14 @@ export const AuthContextProvider = (props) => {
 
 	const logoutHandler = useCallback(() => {
 		localStorage.removeItem('username')
+		localStorage.removeItem('roles')
 		setIsLoggedIn(false)
 		setUsername('')
 	}, [])
 
-	const loginHandler = useCallback((username) => {
+	const loginHandler = useCallback(({ username, roles }) => {
 		localStorage.setItem('username', username)
+		localStorage.setItem('roles', roles)
 		setIsLoggedIn(true)
 		setUsername(localStorage.getItem('username'))
 	}, [])

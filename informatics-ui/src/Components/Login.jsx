@@ -13,12 +13,15 @@ export default function Login() {
 	const password = useRef('')
 	const authContext = useContext(AuthContext)
 
-	const handleLoginResponse = (response) => {
+	const handleLoginResponse = async (response) => {
 		if (response.data.status === 'SUCCESS') {
-			setPopUp(false)
-			toast.success('Login Success')
-			setCredentialsError(false)
-			authContext.login(response.data.message)
+			axios.get('http://localhost:8080/get-user').then((res) => {
+				let roles = res.data.roles
+				setPopUp(false)
+				toast.success('Login Success')
+				setCredentialsError(false)
+				authContext.login({ username: response.data.message, roles: roles })
+			})
 		} else if (response.data.status === 'FAIL') {
 			setCredentialsError(true)
 			toast.error('Login Error')

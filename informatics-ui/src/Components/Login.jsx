@@ -65,7 +65,7 @@ export default function Login() {
 						top: '50%',
 						left: '50%',
 						transform: 'translate(-50%, -50%)',
-						width: 400,
+						width: '350px',
 						bgcolor: 'white',
 						border: `2px solid ;`,
 						borderRadius: '0.5rem',
@@ -97,7 +97,7 @@ export default function Login() {
 							inputRef={password}
 						/>
 						<Button
-							sx={{ background: '#3c324e' }}
+							sx={{ background: '#3c324e' , marginLeft: '5%', marginBottom: '15%'}}
 							onClick={() => handleLoginSubmit()}
 							variant="contained"
 							color="success"

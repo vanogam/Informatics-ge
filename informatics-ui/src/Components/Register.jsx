@@ -215,7 +215,7 @@ export default function Register() {
 		თქვენ წარმატებით დარეგისტრირდით </Typography> </Box> )} */}
 					</Box>
 					<Button
-						sx={{ background: '#3c324e', marginLeft: '2%', marginTop: '2%' }}
+						sx={{ background: '#3c324e', marginLeft: '26%', marginTop: '2%' }}
 						onClick={() => handleRegistrationSubmit()}
 						variant="contained"
 					>

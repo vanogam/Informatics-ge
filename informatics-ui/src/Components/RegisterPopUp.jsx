@@ -43,7 +43,7 @@ function RegisterPopUp({
 					top: '50%',
 					left: '50%',
 					transform: 'translate(-50%, -50%)',
-					width: 400,
+					width: '200px',
 					bgcolor: 'white',
 					border: `2px solid ${blue[700]}`,
 					borderRadius: '0.5rem',
@@ -55,7 +55,7 @@ function RegisterPopUp({
 				<Box
 					component="form"
 					sx={{
-						'& .MuiTextField-root': { m: 1, width: '30ch' },
+						'& .MuiTextField-root': { m: 1, width: '20ch' },
 					}}
 					noValidate
 					autoComplete="off"

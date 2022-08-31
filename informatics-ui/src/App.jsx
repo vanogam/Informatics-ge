@@ -9,6 +9,7 @@ import ResetPassword from './Pages/ResetPassword'
 import Materials from './Pages/Materials'
 import Contest from './Pages/Contest'
 import Problem from './Pages/Problem'
+import NewContest from './Pages/NewContest'
 function App() {
 	return (
 		<div className="App">
@@ -36,6 +37,7 @@ function App() {
 						path="/contest/:contest_id/:problem_id"
 						element={<Problem />}
 					/>
+					<Route path="/addContest" element={<NewContest />} />
 				</Routes>
 			</Box>
 		</div>

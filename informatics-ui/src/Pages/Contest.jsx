@@ -32,7 +32,7 @@ export default function Contest(){
 	const [problems , setProblems] = useState([])
 	useEffect(() => {
 		axios
-			.get(`http://localhost:8080/contest/218/tasks`, {
+			.get(`http://localhost:8080/contest/${contest_id}/tasks`, {
 				params:{
 					offset : 0 , 
 					limit: 20
@@ -92,8 +92,8 @@ export default function Contest(){
 									{problem.category}
 
 								</TableCell>
-								<TableCell ><NavLink to ={problem.id} exact>{problem.name} </NavLink></TableCell>
-							
+								<TableCell ><NavLink to={`${problem.id}`}exact>{problem.name} </NavLink></TableCell>
+
 							</TableRow>
 						))}
 					</TableBody>

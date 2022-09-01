@@ -13,7 +13,7 @@ import {
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
 import { useRef, useState } from 'react'
 import axios from 'axios'
-import NewTaskCard from '../Components/NewTaskCard'
+import NewTaskCard from './NewTaskCard'
 
 export default function NewContest() {
 	// DELETE ME

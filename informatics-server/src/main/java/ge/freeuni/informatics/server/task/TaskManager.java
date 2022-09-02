@@ -133,7 +133,7 @@ public class TaskManager implements ITaskManager {
         Contest contest = contestRepository.getContest(task.getContestId());
         ContestRoom room = roomManager.getRoom(contest.getRoomId());
         Long currentUser = userManager.getAuthenticatedUser().getId();
-        if (!room.isOpen() && !room.getTeachers().contains(currentUser) && !room.getParticipants().contains(currentUser)) {
+        if (!room.isOpen() && !room.isMember(currentUser)) {
             throw new InformaticsServerException("permissionDenied");
         }
         if (!task.getStatements().containsKey(language.name())) {

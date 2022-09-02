@@ -7,7 +7,7 @@ import java.util.Set;
 public class ContestRoom {
 
     @Transient
-    public static final String GLOBAL_ROOM_NAME = "GLOBAL ROOM";
+    public static final Integer GLOBAL_ROOM_ID = 1;
 
     private long id;
 
@@ -76,6 +76,6 @@ public class ContestRoom {
 
     @Transient
     public boolean isMember(long userId) {
-        return participants.contains(userId) || teachers.contains(userId);
+        return participants.contains(userId) || teachers.contains(userId) || id == GLOBAL_ROOM_ID;
     }
 }

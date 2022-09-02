@@ -9,15 +9,15 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class ApiConfiguration {
 
-    @Value("${ge.freeuni.informatics.host}")
-    String host;
+//    @Value("${ge.freeuni.informatics.host}")
+//    String host;
 
     @Bean
     public WebMvcConfigurer corsConfigurer() {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**").allowedOrigins(host);
+                registry.addMapping("/**").allowedOrigins("*");
             }
         };
     }

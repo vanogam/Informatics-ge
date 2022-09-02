@@ -96,7 +96,7 @@ public class ContestManager implements IContestManager {
         UserDTO user = userManager.getAuthenticatedUser();
         long userId = user.getId();
         ContestRoom room = contestRoomManager.getRoom(contest.getRoomId());
-        if (!room.getParticipants().contains(userId) && !room.getTeachers().contains(userId)) {
+        if (!room.isMember(userId)) {
             throw new InformaticsServerException("permissionDenied");
         }
         if (contest.getParticipants() == null) {

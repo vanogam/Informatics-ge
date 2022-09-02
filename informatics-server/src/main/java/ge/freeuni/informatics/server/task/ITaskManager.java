@@ -13,7 +13,7 @@ public interface ITaskManager {
 
     Task getTask(int taskId);
 
-    void addTask(TaskDTO task, long contestId) throws InformaticsServerException;
+    TaskDTO addTask(TaskDTO task, long contestId) throws InformaticsServerException;
 
     List<TaskInfo> getUpsolvingTasks(long roomId, int offset, int limit) throws InformaticsServerException;
 

@@ -107,7 +107,7 @@ public class TaskManager implements ITaskManager {
     }
 
     @Override
-    public void addTask(TaskDTO taskDTO, long contestId) throws InformaticsServerException {
+    public TaskDTO addTask(TaskDTO taskDTO, long contestId) throws InformaticsServerException {
         Contest contest = contestRepository.getContest(contestId);
         if (contest == null || !checkAddTaskPermission(contest)) {
             throw new InformaticsServerException("permissionDenied");
@@ -120,6 +120,7 @@ public class TaskManager implements ITaskManager {
             contestRepository.addContest(contest);
         }
         judgeIntegration.addTask(TaskDTO.toDTO(task));
+        return TaskDTO.toDTO(task);
     }
 
     @Override

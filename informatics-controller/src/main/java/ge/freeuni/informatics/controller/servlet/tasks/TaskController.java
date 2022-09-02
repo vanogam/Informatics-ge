@@ -60,7 +60,7 @@ public class TaskController {
     }
 
     @PostMapping("/save-task")
-    InformaticsResponse saveTask(@RequestBody AddTaskRequest request) {
+    SaveTaskResponse saveTask(@RequestBody AddTaskRequest request) {
         TaskDTO taskDTO = new TaskDTO();
         taskDTO.setId(request.getTaskId());
         taskDTO.setTaskType(request.getTaskType());
@@ -74,11 +74,10 @@ public class TaskController {
         taskDTO.setInputTemplate(request.getInputTemplate());
         taskDTO.setOutputTemplate(request.getOutputTemplate());
         try {
-            taskManager.addTask(taskDTO, request.getContestId());
+            return new SaveTaskResponse("SUCCESS", null, taskManager.addTask(taskDTO, request.getContestId()));
         } catch (InformaticsServerException ex) {
-            return new InformaticsResponse("FAIL", ex.getCode());
+            return new SaveTaskResponse("FAIL", ex.getCode(), null);
         }
-        return new InformaticsResponse("SUCCESS", null);
     }
 
     @PostMapping("/add-testcase")

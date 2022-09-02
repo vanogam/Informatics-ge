@@ -40,18 +40,17 @@ const boxStyle = {
 
 	fontSize: '20',
 }
-function submitProblem(){
-	// const body = {
-	// 		"contestId" : 218,
-	// 		"taskId" : 219,
-	// 		"submissionText" : {{submissionText}},
-	// 		"language" : "CPP"
-	// }
-	// axios
-	// 		.post('http://localhost:8080/submit', {
-	// 		})
-	// 		.then((response) => handleLoginResponse(response))
-	// 		.catch((error) => console.log(error))
+function submitProblem(code, contest_id, task_id){
+	const body = {
+			"contestId" : contest_id,
+			"taskId" : task_id,
+			"submissionText" : code,
+			"language" : "CPP"
+	}
+	console.log(body)
+	axios
+			.post('http://localhost:8080/submit', body)
+			.then((response) =>  {console.log(response)})
 }
 const hightlightWithLineNumbers = (input, grammar, language) =>
 	highlight(input, grammar, language)
@@ -65,11 +64,13 @@ function handleProblemResponse(response, setPDF){
 }
 
 export default function Problem(){
-    const {problem_id} = useParams()
+    const {contest_id, problem_id} = useParams()
+	// console.log("Contest_id", contest_id, "Problem id", problem_id)
     const [code, setCode] = React.useState(
 		`#include <iostream>\nusing namespace std;\nint main()\n{\ncout << "Hello, World!";\nreturn 0; \n}\n`
 	)
 	const [pdf, setPDF] = useState("")
+	const [submission, setSubmission] = useState("")
 	// useEffect(() => {
 	// 	axios
 	// 		.get(`http://localhost:8080/statements/219/KA`)
@@ -148,11 +149,11 @@ export default function Problem(){
 						marginTop: '5%',
 						background: '#3c324e',
 					}}
-					onClick={() => submitProblem()}
+					onClick={() => submitProblem(code, contest_id, problem_id)}
 					variant="contained"
 				>
 					ამოხსნის გაგზავნა
-				</Button>
+				</Button >
 
                 
 			</Box>

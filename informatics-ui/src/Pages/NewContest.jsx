@@ -16,16 +16,15 @@ import axios from 'axios'
 import NewTaskCard from './NewTaskCard'
 
 export default function NewContest() {
-	// DELETE ME
 	const [contestId, setContestId] = useState(null)
-	//
-	//
+	const [contestName, setContestName] = useState(null)
 
 	const [value, setValue] = useState(dayjs('2014-08-18T21:11:54'))
 	const [durationType, setDurationType] = useState('Minutes')
+	const [tasks, setTasks] = useState([])
 	const nameRef = useRef(null)
 	const durationRef = useRef(null)
-
+	const [showNewTaskCard, setShowNewTaskCard] = useState(false)
 	const durationTypes = ['Hours', 'Minutes']
 
 	const handleAddContest = () => {
@@ -38,11 +37,16 @@ export default function NewContest() {
 					: durationRef?.current.value * 3600,
 			roomId: 1,
 		}
+		setContestName(nameRef?.current.value)
 		setContestId(5)
 		// axios
 		// 	.post(endpoint, params)
 		// 	.then((res) => setContestId(res.data.contestId))
-		console.log(params)
+	}
+
+	const handleSubmit = (title) => {
+		setTasks((prevState) => [...prevState, title])
+		setShowNewTaskCard(false)
 	}
 
 	return (
@@ -106,16 +110,58 @@ export default function NewContest() {
 						) : (
 							<>
 								<Typography variant="h4" align="center">
-									{nameRef?.current?.value}
+									{contestName}
 								</Typography>
-								<Typography>ContestID: {contestId}</Typography>
 							</>
 						)}
 					</Paper>
 					{contestId && (
-						<Stack>
-							<NewTaskCard />
-						</Stack>
+						<>
+							<Paper
+								elevation={4}
+								sx={{ padding: '1rem', marginBottom: '0.5rem' }}
+							>
+								<Typography
+									textAlign="center"
+									variant="h5"
+									marginBottom="0.5rem"
+								>
+									Contest Tasks
+								</Typography>
+								<Stack>
+									{tasks?.map((task, index) => (
+										<Paper
+											elevation={4}
+											sx={{ padding: '1rem', marginBottom: '0.5rem' }}
+											key={task}
+										>
+											<Typography>
+												<span style={{ fontWeight: 700 }}>
+													#{index + 1} task:{' '}
+												</span>
+												{tasks}
+											</Typography>
+										</Paper>
+									))}
+									{showNewTaskCard ? (
+										<NewTaskCard handleSubmit={handleSubmit} />
+									) : (
+										<Paper elevation={4} sx={{ padding: '1rem' }}>
+											<Button
+												fullWidth
+												variant="contained"
+												onClick={() => setShowNewTaskCard(true)}
+											>
+												ADD NEW TASK
+											</Button>
+										</Paper>
+									)}
+								</Stack>
+							</Paper>
+							<Button variant="contained" size="large" color="success">
+								DONE
+							</Button>
+						</>
 					)}
 				</Stack>
 			</Container>

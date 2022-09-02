@@ -80,7 +80,7 @@ export default function Contests() {
 						color="secondary"
 						sx={{ backgroundColor: '#2f2d47' }}
 						component={NavLink}
-						to="/new-contest"
+						to="/addContest"
 					>
 						დაამატე კონტესტი
 					</Button>

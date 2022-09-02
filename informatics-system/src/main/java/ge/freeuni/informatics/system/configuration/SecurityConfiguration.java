@@ -10,6 +10,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 
+import javax.servlet.http.HttpServletResponse;
+
 @EnableWebSecurity
 public class SecurityConfiguration {
 
@@ -34,7 +36,10 @@ public class SecurityConfiguration {
                     .permitAll()
                     .antMatchers(ALL_ACCOUNT_ADDRESSES)
                     .hasAnyAuthority(UserRole.ADMIN.name(), UserRole.TEACHER.name(), UserRole.STUDENT.name())
-                    .and().csrf().disable();
+                    .and().logout(logout -> logout
+                    .permitAll()
+                    .logoutSuccessHandler((request, response, authentication) -> response.setStatus(HttpServletResponse.SC_OK)
+                    )).csrf().disable();
         }
     }
 

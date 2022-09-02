@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface IContestManager {
 
-    void createContest(ContestDTO contest) throws InformaticsServerException;
+    ContestDTO createContest(ContestDTO contest) throws InformaticsServerException;
 
     ContestDTO getContest(Long contestId) throws InformaticsServerException;
 

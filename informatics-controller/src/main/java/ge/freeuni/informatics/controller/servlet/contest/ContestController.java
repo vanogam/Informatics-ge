@@ -39,7 +39,7 @@ public class ContestController {
     }
 
     @PostMapping("/create-contest")
-    public InformaticsResponse createContest(@RequestBody CreateContestRequest contestRequest) {
+    public CreateContestResponse createContest(@RequestBody CreateContestRequest contestRequest) {
         ContestDTO contestDTO = new ContestDTO();
         contestDTO.setName(contestRequest.getName());
         contestDTO.setRoomId(contestRequest.getRoomId());
@@ -48,10 +48,10 @@ public class ContestController {
         contestDTO.setUpsolvingAfterFinish(contestRequest.isUpsolvingAfterFinish());
         contestDTO.setUpsolving(false);
         contestDTO.setScoringType(contestRequest.getScoringType());
-        InformaticsResponse response = new InformaticsResponse();
+        CreateContestResponse response = new CreateContestResponse();
         try {
             contestManager.createContest(contestDTO);
-            response.setStatus("SUCCESS");
+            return new CreateContestResponse("SUCCESS", null, contestManager.createContest(contestDTO));
         } catch (InformaticsServerException ex) {
             response.setStatus("FAIL");
             response.setMessage(ex.getCode());

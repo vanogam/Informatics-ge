@@ -43,7 +43,7 @@ public class ContestManager implements IContestManager {
 
     @Secured({"TEACHER", "ADMIN"})
     @Override
-    public void createContest(ContestDTO contestDTO) throws InformaticsServerException {
+    public ContestDTO createContest(ContestDTO contestDTO) throws InformaticsServerException {
         Contest contest = ContestDTO.fromDTO(contestDTO);
         contest.setStatus(ContestStatus.FUTURE);
         contest.setStandings(new Standings());
@@ -52,7 +52,8 @@ public class ContestManager implements IContestManager {
         if (!room.getTeachers().contains(userManager.getAuthenticatedUser().getId())) {
             throw new InformaticsServerException("This user can not create contest in this room");
         }
-        contestRepository.addContest(contest);
+        contest = contestRepository.addContest(contest);
+        return ContestDTO.toDTO(contest);
     }
 
     @Override

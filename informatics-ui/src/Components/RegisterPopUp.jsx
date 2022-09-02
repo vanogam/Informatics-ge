@@ -43,7 +43,7 @@ function RegisterPopUp({
 					top: '50%',
 					left: '50%',
 					transform: 'translate(-50%, -50%)',
-					width: '200px',
+					width: '300px',
 					bgcolor: 'white',
 					border: `2px solid ${blue[700]}`,
 					borderRadius: '0.5rem',

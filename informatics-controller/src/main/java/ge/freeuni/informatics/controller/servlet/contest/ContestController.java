@@ -109,7 +109,7 @@ public class ContestController {
     }
 
     @GetMapping("/contest/{contestId}/standings")
-    public StandingsResponse getStandings(@PathVariable String contestId, @RequestParam PagingRequest request) {
+    public StandingsResponse getStandings(@PathVariable String contestId, PagingRequest request) {
         StandingsResponse response = new StandingsResponse("SUCCESS", null);
         try {
             List<ContestantResult> result = contestService.getStandings(Long.parseLong(contestId), request.getOffset(), request.getLimit());

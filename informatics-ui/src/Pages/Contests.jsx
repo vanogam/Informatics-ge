@@ -7,11 +7,16 @@ import {
 	TableHead,
 	TableRow,
 	Button,
+	Modal,
+	Box
 } from '@mui/material'
 import { NavLink } from 'react-router-dom'
 import axios from 'axios'
 import { useState, useEffect, useContext } from 'react'
 import { AuthContext } from '../store/authentication'
+import * as React from 'react';
+import ContestRegisterPopUp from '../Components/ContestRegisterPopUp'
+
 
 function handleContestsResponse(response, setRows, isLoggedIn) {
 	var curRows = []
@@ -22,6 +27,10 @@ function handleContestsResponse(response, setRows, isLoggedIn) {
 		const contestStartDate = contest.startDate
 		const contestDuration = (contest.durationInSeconds / 3600).toFixed(2)
 		const contestStatus = contest.status
+		// axios
+		// 	.get(`http://localhost:8080/contest/${contest.id}/is-registered`, {
+		// 	})
+		// 	.then((response) =>{registered= response.data.registered})
 		var curContest = {
 			id: contestId,
 			name: contestName,
@@ -31,16 +40,19 @@ function handleContestsResponse(response, setRows, isLoggedIn) {
 			status: contestStatus,
 			results: 'results',
 		}
+		console.log("curCOnt", curContest)
 		curRows.push(curContest)
 	}
 	setRows(curRows)
 }
 
 export default function Contests() {
+	const [popUp, setPopUp] = useState(false)
 	const authContext = useContext(AuthContext)
 	const isLoggedIn = authContext.isLoggedIn
 	const [rows, setRows] = useState([])
 	const [roles, setRoles] = useState()
+	const [selectedContestId, setSelectedContestId] = useState("")
 	useEffect(() => {
 		axios
 			.get('http://localhost:8080/contest-list', {
@@ -55,6 +67,24 @@ export default function Contests() {
 
 	return (
 		<main>
+			<Modal open={popUp} onClose={() => setPopUp(false)}>
+				<Box
+					sx={{
+						position: 'absolute',
+						top: '50%',
+						left: '50%',
+						transform: 'translate(-50%, -50%)',
+						width: '350px',
+						bgcolor: 'white',
+						border: `2px solid ;`,
+						borderRadius: '0.5rem',
+						boxShadow: 24,
+						p: 4,
+					}}
+				>
+				<ContestRegisterPopUp contestId = {selectedContestId} />
+				</Box>
+				</Modal>
 			<Typography
 				variant="h6"
 				fontWeight="bold"
@@ -126,13 +156,14 @@ export default function Contests() {
 										</Button>
 									</TableCell>
 								)}
-								{(roles !== 'ADMIN') && (
+								{(isLoggedIn && roles !== 'ADMIN') && (
 									<TableCell>
 										<Button
-											variant="contained"
-											color="secondary"
-											sx={{ backgroundColor: '#2f2d47' }}
-											onClick = {() => axios.post(`http://localhost:8080/contest/${row.id}/register`, {})}
+											className="items"
+											variant="contained"	
+											color = "success"
+											sx={{ 	background: '#3c324e' }}
+											onClick = {() => {setPopUp(true); setSelectedContestId(row.id)}}
 										
 										>
 											რეგისტრაცია

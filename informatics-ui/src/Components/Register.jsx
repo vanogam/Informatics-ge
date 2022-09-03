@@ -222,6 +222,7 @@ export default function Register() {
 						sx={{ background: '#3c324e', marginLeft: '26%', marginTop: '2%' }}
 						onClick={() => handleRegistrationSubmit()}
 						variant="contained"
+						color = "success"
 					>
 						რეგისტრაცია
 					</Button>

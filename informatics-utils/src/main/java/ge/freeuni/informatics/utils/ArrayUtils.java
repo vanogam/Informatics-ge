@@ -1,5 +1,6 @@
 package ge.freeuni.informatics.utils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ArrayUtils {
@@ -11,7 +12,13 @@ public class ArrayUtils {
         if (limit == null) {
             limit = list.size();
         }
-        return list.subList(Math.min(offset, list.size() - 1),
-                Math.min(list.size() - 1, offset + limit));
+        if (offset >= list.size()) {
+            return new ArrayList<>();
+        }
+        if (offset < 0) {
+            offset = 0;
+        }
+        return list.subList(offset,
+                Math.min(list.size(), offset + limit));
     }
 }

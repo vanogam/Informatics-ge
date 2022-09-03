@@ -1,8 +1,8 @@
 package ge.freeuni.informatics.controller.servlet.contest;
 
 import ge.freeuni.informatics.common.dto.ContestDTO;
+import ge.freeuni.informatics.common.dto.ContestantResultDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
-import ge.freeuni.informatics.common.model.contest.ContestantResult;
 import ge.freeuni.informatics.controller.model.*;
 import ge.freeuni.informatics.server.contest.ContestService;
 import ge.freeuni.informatics.server.contest.IContestManager;
@@ -112,7 +112,7 @@ public class ContestController {
     public StandingsResponse getStandings(@PathVariable String contestId, PagingRequest request) {
         StandingsResponse response = new StandingsResponse("SUCCESS", null);
         try {
-            List<ContestantResult> result = contestService.getStandings(Long.parseLong(contestId), request.getOffset(), request.getLimit());
+            List<ContestantResultDTO> result = contestService.getStandings(Long.parseLong(contestId), request.getOffset(), request.getLimit());
             response.setStandings(result);
         } catch (InformaticsServerException ex) {
             return new StandingsResponse("FAIL", ex.getCode());

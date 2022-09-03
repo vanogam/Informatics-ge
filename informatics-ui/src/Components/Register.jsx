@@ -46,6 +46,10 @@ export default function Register() {
 					})
 					.then((response) => {
 						if (response.data.status === 'SUCCESS') {
+								axios.get('http://localhost:8080/get-user').then((res) => {
+									let roles = res.data.roles
+									authContext.login({ username: response.data.message, roles: roles })
+								})
 							setPopUp(false)
 							toast.success('Login Success')
 							authContext.login(response.data.message)

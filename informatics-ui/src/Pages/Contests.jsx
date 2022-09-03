@@ -10,9 +10,10 @@ import {
 } from '@mui/material'
 import { NavLink } from 'react-router-dom'
 import axios from 'axios'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useContext } from 'react'
+import { AuthContext } from '../store/authentication'
 
-function handleContestsResponse(response, setRows) {
+function handleContestsResponse(response, setRows, isLoggedIn) {
 	var curRows = []
 	const contests = response.data.contests
 	for (const contest of contests) {
@@ -21,7 +22,7 @@ function handleContestsResponse(response, setRows) {
 		const contestStartDate = contest.startDate
 		const contestDuration = (contest.durationInSeconds / 3600).toFixed(2)
 		const contestStatus = contest.status
-		const curContest = {
+		var curContest = {
 			id: contestId,
 			name: contestName,
 			status: contestStatus,
@@ -36,9 +37,10 @@ function handleContestsResponse(response, setRows) {
 }
 
 export default function Contests() {
+	const authContext = useContext(AuthContext)
+	const isLoggedIn = authContext.isLoggedIn
 	const [rows, setRows] = useState([])
 	const [roles, setRoles] = useState()
-
 	useEffect(() => {
 		axios
 			.get('http://localhost:8080/contest-list', {
@@ -46,7 +48,7 @@ export default function Contests() {
 					roomId: 1,
 				},
 			})
-			.then((response) => handleContestsResponse(response, setRows))
+			.then((response) => handleContestsResponse(response, setRows, isLoggedIn))
 			.catch((error) => console.log(error))
 		setRoles(() => localStorage.getItem('roles'))
 	}, [])
@@ -124,14 +126,14 @@ export default function Contests() {
 										</Button>
 									</TableCell>
 								)}
-								{roles !== 'ADMIN' && (
+								{(roles !== 'ADMIN') && (
 									<TableCell>
 										<Button
 											variant="contained"
 											color="secondary"
 											sx={{ backgroundColor: '#2f2d47' }}
-											component={NavLink}
-											to={`/edit-contest/${row.id}`}
+											onClick = {() => axios.post(`http://localhost:8080/contest/${row.id}/register`, {})}
+										
 										>
 											რეგისტრაცია
 										</Button>

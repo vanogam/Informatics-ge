@@ -151,7 +151,7 @@ public class ContestManager implements IContestManager {
     public List<UserSimpleDTO> getRegistrants(long contestId) throws InformaticsServerException {
         Contest contest = contestRepository.getContest(contestId);
         ContestRoom room = contestRoomManager.getRoom(contest.getRoomId());
-        if (!room.isMember(userManager.getAuthenticatedUser().getId())) {
+        if (room.isOpen() || !room.isMember(userManager.getAuthenticatedUser().getId())) {
             throw new InformaticsServerException("permissionDenied");
         }
         List<UserSimpleDTO> registrants = new ArrayList<>();

@@ -13,6 +13,7 @@ import ge.freeuni.informatics.common.model.submission.Submission;
 import ge.freeuni.informatics.repository.contest.IContestRepository;
 import ge.freeuni.informatics.repository.submission.ISubmissionRepository;
 import ge.freeuni.informatics.repository.task.ITaskRepository;
+import ge.freeuni.informatics.server.contest.ContestService;
 import ge.freeuni.informatics.server.contestroom.IContestRoomManager;
 import ge.freeuni.informatics.server.user.IUserManager;
 import ge.freeuni.informatics.utils.FileUtils;
@@ -26,6 +27,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -46,6 +48,8 @@ public class SubmissionManager implements ISubmissionManager {
 
     private final IContestRoomManager roomManager;
 
+    private final ContestService contestService;
+
     private final Logger log;
 
     @Autowired
@@ -55,12 +59,14 @@ public class SubmissionManager implements ISubmissionManager {
                              ITaskRepository taskRepository,
                              IContestRepository contestRepository,
                              IContestRoomManager roomManager,
+                             ContestService contestService,
                              Logger log) {
         this.submissionRepository = submissionRepository;
         this.userManager = userManager;
         this.judgeIntegration = judgeIntegration;
         this.taskRepository = taskRepository;
         this.contestRepository = contestRepository;
+        this.contestService = contestService;
         this.roomManager = roomManager;
         this.log = log;
     }
@@ -70,13 +76,26 @@ public class SubmissionManager implements ISubmissionManager {
         if (contestId == null && roomId == null) {
             throw new InformaticsServerException("invalidRequest");
         }
+        boolean isContestLive = false;
+        List<Long> liveContests = new ArrayList<>();
         if (roomId == null) {
             Contest contest = contestRepository.getContest(contestId);
             roomId = contest.getRoomId();
+            isContestLive = contest.getStatus() == ContestStatus.LIVE;
+        } else {
+            liveContests = contestService.getLiveContests();
         }
         ContestRoom room = roomManager.getRoom(roomId);
-        if (!room.isMember(userManager.getAuthenticatedUser().getId())) {
+        Long currentUserId = userManager.getAuthenticatedUser().getId();
+        if (!room.isMember(currentUserId)) {
             throw new InformaticsServerException("permissionDenied");
+        }
+
+        List<SubmissionDTO> submissions = SubmissionDTO.toDTOs(submissionRepository.getSubmissions(userId, taskId, contestId, roomId, offset, limit));
+        for (SubmissionDTO submissionDTO : submissions) {
+            if ((isContestLive || liveContests.contains(submissionDTO.getContestId())) && submissionDTO.getUserId() != currentUserId) {
+                submissionDTO.setText(null);
+            }
         }
         return SubmissionDTO.toDTOs(submissionRepository.getSubmissions(userId, taskId, contestId, roomId, offset, limit));
     }

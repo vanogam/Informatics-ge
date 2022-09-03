@@ -38,6 +38,25 @@ public class ContestController {
         return response;
     }
 
+
+    @GetMapping("/contest/{id}/is-registered")
+    public IsRegisteredResponse isRegistered(@PathVariable Long id) {
+        try {
+            return new IsRegisteredResponse("SUCCESS", null, contestManager.isCurrentUserRegistered(id));
+        } catch (InformaticsServerException ex) {
+            return new IsRegisteredResponse("FAIL", ex.getCode(), null);
+        }
+    }
+
+    @GetMapping("/contest/{id}/registrants")
+    public RegistrantsResponse getRegistrants(@PathVariable Long id) {
+        try {
+            return new RegistrantsResponse("SUCCESS", null, contestManager.getRegistrants(id));
+        } catch (InformaticsServerException ex) {
+            return new RegistrantsResponse("FAIL", ex.getCode(), null);
+        }
+    }
+
     @PostMapping("/create-contest")
     public CreateContestResponse createContest(@RequestBody CreateContestRequest contestRequest) {
         ContestDTO contestDTO = new ContestDTO();

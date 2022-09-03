@@ -1,6 +1,8 @@
 package ge.freeuni.informatics.server.contest;
 
 import ge.freeuni.informatics.common.dto.ContestDTO;
+import ge.freeuni.informatics.common.dto.UserDTO;
+import ge.freeuni.informatics.common.dto.UserSimpleDTO;
 import ge.freeuni.informatics.common.model.contest.ContestStatus;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.contest.ContestantResult;
@@ -26,4 +28,7 @@ public interface IContestManager {
 
     List<ContestantResult> getStandings(long contestId, Integer offset, Integer size) throws InformaticsServerException;
 
+    boolean isCurrentUserRegistered(long contestId) throws InformaticsServerException;
+
+    List<UserSimpleDTO> getRegistrants(long contestId) throws InformaticsServerException;
 }

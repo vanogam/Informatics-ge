@@ -111,9 +111,9 @@ function Navbar() {
 								color: '#e1dce6',
 							}}
 							component={NavLink}
-							to="/materials"
+							to="/archive"
 						>
-							მასალები
+							არქივი
 						</Button>
 					</Box>
 

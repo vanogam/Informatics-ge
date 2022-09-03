@@ -6,10 +6,11 @@ import Contests from './Pages/Contests'
 import Main from './Pages/Main'
 import ResetSuccess from './Pages/ResetSuccess'
 import ResetPassword from './Pages/ResetPassword'
-import Materials from './Pages/Materials'
+import Archive from './Pages/Archive'
 import Contest from './Pages/Contest'
 import Problem from './Pages/Problem'
 import NewContest from './Pages/NewContest'
+import EditContest from './Pages/EditContest'
 function App() {
 	return (
 		<div className="App">
@@ -28,7 +29,7 @@ function App() {
 						</Route>
 					</Route>
 					<Route path="/resetSuccess" element={<ResetSuccess />} />
-					<Route path="/materials" element={<Materials />} />
+					<Route path="/archive" element={<Archive />} />
 					<Route path="/contests" element={<Contests />} />
 					<Route path="/contest">
 						<Route path=":contest_id" element={<Contest />} />
@@ -38,6 +39,7 @@ function App() {
 						element={<Problem />}
 					/>
 					<Route path="/addContest" element={<NewContest />} />
+					<Route path="/editContest/:contest_id" element={<EditContest />} />
 				</Routes>
 			</Box>
 		</div>

@@ -118,12 +118,26 @@ export default function Contests() {
 											color="secondary"
 											sx={{ backgroundColor: '#2f2d47' }}
 											component={NavLink}
-											to={`/edit-contest/${row.id}`}
+											to={`/editContest/${row.id}`}
 										>
 											რედაქტირება
 										</Button>
 									</TableCell>
 								)}
+								{roles !== 'ADMIN' && (
+									<TableCell>
+										<Button
+											variant="contained"
+											color="secondary"
+											sx={{ backgroundColor: '#2f2d47' }}
+											component={NavLink}
+											to={`/edit-contest/${row.id}`}
+										>
+											რეგისტრაცია
+										</Button>
+									</TableCell>
+								)}
+
 							</TableRow>
 						))}
 					</TableBody>

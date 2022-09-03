@@ -1,5 +1,6 @@
 package ge.freeuni.informatics.server.contest;
 
+import ge.freeuni.informatics.common.dto.ContestantResultDTO;
 import ge.freeuni.informatics.common.events.ContestChangeEvent;
 import ge.freeuni.informatics.common.events.SubmissionEvent;
 import ge.freeuni.informatics.common.dto.ContestDTO;
@@ -9,6 +10,7 @@ import ge.freeuni.informatics.common.model.contest.ContestStatus;
 import ge.freeuni.informatics.common.model.contest.ContestantResult;
 import ge.freeuni.informatics.common.model.submission.Submission;
 import ge.freeuni.informatics.repository.contest.IContestRepository;
+import ge.freeuni.informatics.repository.user.IUserRepository;
 import ge.freeuni.informatics.server.task.ITaskManager;
 import ge.freeuni.informatics.utils.ArrayUtils;
 import org.slf4j.Logger;
@@ -42,6 +44,9 @@ public class ContestService {
     @Autowired
     private IContestRepository contestRepository;
 
+    @Autowired
+    IUserRepository userRepository;
+
     private final ConcurrentHashMap<Long, ContestDTO> liveContests = new ConcurrentHashMap<>();
 
     private final ConcurrentHashMap<Long, ContestDTO> upsolvingContests = new ConcurrentHashMap<>();
@@ -55,13 +60,22 @@ public class ContestService {
         manageLiveContests(liveContests);
     }
 
-    public List<ContestantResult> getStandings(long contestId, Integer offset, Integer size) throws InformaticsServerException {
-        List<ContestantResult> pastStandings = contestManager.getStandings(contestId, offset, size);
+    public List<ContestantResultDTO> getStandings(long contestId, Integer offset, Integer size) throws InformaticsServerException {
+        List<ContestantResult> standings = contestManager.getStandings(contestId, offset, size);
         if (liveContests.containsKey(contestId)) {
-            List<ContestantResult> standings = liveContests.get(contestId).getStandings().getStandings();
-            return ArrayUtils.getPage(standings, offset, size);
+            standings = liveContests.get(contestId).getStandings().getStandings();
         }
-        return pastStandings;
+        List<ContestantResultDTO> standingsDTO = new ArrayList<>();
+        for (ContestantResult result : standings) {
+            ContestantResultDTO contestantResultDTO = ContestantResultDTO.toDTO(result);
+            try {
+                contestantResultDTO.setUsername(userRepository.getUser(result.getContestantId()).getUsername());
+                standingsDTO.add(contestantResultDTO);
+            } catch (Exception ignored) {
+
+            }
+        }
+        return ArrayUtils.getPage(standingsDTO, offset, size);
     }
 
     public List<Long> getLiveContests() {

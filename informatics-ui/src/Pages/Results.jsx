@@ -14,23 +14,20 @@ import { useState, useEffect } from 'react';
 
 function handleResults(response, setResults){
     console.log(response)
-	// var curTasks = []
-	// const tasks = response.data.tasks
-	// for(const task of tasks){
-	// 	const taskId = task.task.id
-	// 	const taskName = task.task.title.KA
-	// 	const taskItem = {
-	// 		id: taskId, 
-	// 		name: taskName,
-	// 		category: "A"
-	// 	}
-	// 	curTasks.push(taskItem)
-	// }
-	// setProblems(curTasks)
+	var curResults =  []
+	const standings = response.data.standings
+	for(const standing of standings){
+		const standingItem = {
+			name: standing.username,
+			score: standing.totalScore
+		}
+		curResults.push(standingItem)
+	}
+	console.log(curResults)
+	setResults(curResults)
 }
 export default function Results(){
     const {contest_id} = useParams()
-    console.log("YAAAY", contest_id)
 	const [results, setResults] = useState([])
 	useEffect(() => {
 		axios
@@ -78,7 +75,7 @@ export default function Results(){
 							>
 								
                                 <TableCell component="th" scope="row">
-									{result.username}
+									{result.name}
 
 								</TableCell>
 								<TableCell component="th" scope="row">

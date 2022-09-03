@@ -100,6 +100,9 @@ public class ContestManager implements IContestManager {
         if (!room.isMember(userId)) {
             throw new InformaticsServerException("permissionDenied");
         }
+        if (contest.getStatus() == ContestStatus.PAST) {
+            throw new InformaticsServerException("contestAlreadyOver");
+        }
         if (contest.getParticipants() == null) {
             contest.setParticipants(new ArrayList<>());
         }

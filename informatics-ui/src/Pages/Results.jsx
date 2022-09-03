@@ -34,7 +34,11 @@ export default function Results(){
 	const [results, setResults] = useState([])
 	useEffect(() => {
 		axios
-			.get(`http://localhost:8080/contest/${contest_id}/submissions`)
+			.get(`http://localhost:8080/contest/${contest_id}/standings?offset=0&limit=20`,
+			{params: {
+				offset : 0 , 
+				limit: 20
+			}})
 			.then((response) =>  handleResults(response, setResults))
 			.catch((error) => console.log(error))
 	}, [])
@@ -61,11 +65,8 @@ export default function Results(){
 					<TableHead>
 						<TableRow>
 							
-							<TableCell>მომხმარებელი</TableCell>
-							<TableCell >ამოცანა</TableCell>
-                            <TableCell>ამოცანა</TableCell>
-							<TableCell >სტატუსი</TableCell>
-                            <TableCell >შედეგი</TableCell>
+							<TableCell>მომხმარებელი 👨‍💻</TableCell>
+                            <TableCell>შედეგი 🏆</TableCell>
 						</TableRow>
 					</TableHead>
 					<TableBody>
@@ -77,10 +78,13 @@ export default function Results(){
 							>
 								
                                 <TableCell component="th" scope="row">
-									{result.category}
+									{result.username}
 
 								</TableCell>
-								<TableCell ><NavLink to={`${result.id}`}exact>{result.name} </NavLink></TableCell>
+								<TableCell component="th" scope="row">
+									{result.score}
+
+								</TableCell>
 
 							</TableRow>
 						))}

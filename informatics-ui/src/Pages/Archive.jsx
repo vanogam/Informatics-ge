@@ -57,7 +57,11 @@ export default function Archive(){
     // ]
     return (
        <main>
-			<Typography variant="h5" fontWeight="bold" mt="1rem" align="center">
+			<Typography  variant="h6"
+				fontWeight="bold"
+				mt="1rem"
+				align="center"
+				sx={{ color: '#452c54', fontWeight: 'bold' }}>
 				არქივი
 			</Typography>
 			<Typography

@@ -44,6 +44,7 @@ function App() {
 						path="/contest/:contest_id/:problem_id"
 						element={<Problem />}
 					/>
+
 					<Route path="/addContest" element={<NewContest />} />
 					<Route path="/editContest/:contest_id" element={<EditContest />} />
 				</Routes>

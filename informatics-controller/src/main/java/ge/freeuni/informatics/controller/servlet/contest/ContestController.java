@@ -137,6 +137,23 @@ public class ContestController {
         return response;
     }
 
+    @GetMapping("/contest/{contestId}/status")
+    public SubmissionListResponse getStatus(@PathVariable String contestId,
+                                                     GetSubmissionsRequest request) {
+        SubmissionListResponse response = new SubmissionListResponse("SUCCESS", null);
+        try {
+            response.setSubmissions(submissionManager.filter(null,
+                    request.getTaskId(),
+                    Long.parseLong(contestId),
+                    null,
+                    request.getOffset(),
+                    request.getLimit()));
+        } catch (InformaticsServerException ex) {
+            return new SubmissionListResponse("FAIL", ex.getCode());
+        }
+        return response;
+    }
+
     public Date convertToDate(LocalDateTime dateToConvert) {
         return java.sql.Timestamp.valueOf(dateToConvert);
     }

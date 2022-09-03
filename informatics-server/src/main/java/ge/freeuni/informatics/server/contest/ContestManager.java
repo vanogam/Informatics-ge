@@ -2,6 +2,7 @@ package ge.freeuni.informatics.server.contest;
 
 import ge.freeuni.informatics.common.dto.ContestDTO;
 import ge.freeuni.informatics.common.dto.UserDTO;
+import ge.freeuni.informatics.common.dto.UserSimpleDTO;
 import ge.freeuni.informatics.common.model.contest.Contest;
 import ge.freeuni.informatics.common.model.contest.ContestStatus;
 import ge.freeuni.informatics.common.model.contest.ContestantResult;
@@ -138,5 +139,25 @@ public class ContestManager implements IContestManager {
         }
         List<ContestantResult> fullStandings = contest.getStandings().getStandings();
         return ArrayUtils.getPage(fullStandings, offset, size);
+    }
+
+    @Override
+    public boolean isCurrentUserRegistered(long contestId) throws InformaticsServerException {
+        Contest contest = contestRepository.getContest(contestId);
+        return contest.getParticipants().contains(userManager.getAuthenticatedUser().getId());
+    }
+
+    @Override
+    public List<UserSimpleDTO> getRegistrants(long contestId) throws InformaticsServerException {
+        Contest contest = contestRepository.getContest(contestId);
+        ContestRoom room = contestRoomManager.getRoom(contest.getRoomId());
+        if (!room.isMember(userManager.getAuthenticatedUser().getId())) {
+            throw new InformaticsServerException("permissionDenied");
+        }
+        List<UserSimpleDTO> registrants = new ArrayList<>();
+        for (Long userId : contest.getParticipants()) {
+            registrants.add(UserSimpleDTO.toSimpleDTO(userManager.getUser(userId)));
+        }
+        return registrants;
     }
 }

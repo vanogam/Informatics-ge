@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.PostConstruct;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Service
 @Scope("singleton")
@@ -61,6 +62,10 @@ public class ContestService {
             return ArrayUtils.getPage(standings, offset, size);
         }
         return pastStandings;
+    }
+
+    public List<Long> getLiveContests() {
+        return new ArrayList<>(liveContests.keySet());
     }
 
     private void scheduleFutureContests(List<ContestDTO> futureContests) {

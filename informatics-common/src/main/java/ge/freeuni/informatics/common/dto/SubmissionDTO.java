@@ -17,6 +17,8 @@ public class SubmissionDTO {
 
     private long userId;
 
+    private String username;
+
     private String text;
 
     private SubmissionStatus status;
@@ -149,6 +151,14 @@ public class SubmissionDTO {
 
     public void setResults(List<SubmissionTestResult> results) {
         this.results = results;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public static SubmissionDTO toDTO(Submission submission) {

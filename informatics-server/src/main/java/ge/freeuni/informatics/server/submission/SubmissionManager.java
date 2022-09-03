@@ -86,7 +86,11 @@ public class SubmissionManager implements ISubmissionManager {
             liveContests = contestService.getLiveContests();
         }
         ContestRoom room = roomManager.getRoom(roomId);
-        Long currentUserId = userManager.getAuthenticatedUser().getId();
+        Long currentUserId = -1L;
+        try {
+            currentUserId = userManager.getAuthenticatedUser().getId();
+        } catch (InformaticsServerException ignored) {
+        }
         if (!room.isMember(currentUserId)) {
             throw new InformaticsServerException("permissionDenied");
         }

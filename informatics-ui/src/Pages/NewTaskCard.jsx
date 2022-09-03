@@ -33,7 +33,7 @@ export default function NewTaskCard({ contestId, handleSubmit }) {
 		const kaTitle = titleKAref?.current.value
 		const taskType = taskTypeRef?.current.value
 		const taskScoreType = taskScoreTypeRef?.current.value
-		const taskScoreParameter = taskScoreParameterRef?.current.value
+		const taskScoreParameter = taskScoreParameterRef?.current.value.toString()
 		const timeLimitMillis = timeLimitMillisRef?.current.value
 		const memoryLimitMB = memoryLimitMBref?.current.value
 		const inputTemplate = inputTemplateRef?.current.value
@@ -102,25 +102,30 @@ export default function NewTaskCard({ contestId, handleSubmit }) {
 			  })
 				.then(function (response) {
 				  //handle success
-				var bodyFormData = new FormData();
-				bodyFormData.append("taskId", res.data.taskDTO.id)
-				bodyFormData.append("file",testCases)
-				console.log("BodyFromData", bodyFormData)
-				axios({
-					method: "post",
-					url: 'http://localhost:8080/add-testcases',
-					data: bodyFormData,
-					headers: { "Content-Type": 'multipart/form-data; boundary=<calculated when request is sent></calculated>'},
-					})
-					.then(function (response) {
-						//handle success
+				console.log(testCases)
+				for(const testCase of testCases){
+					var bodyFormData = new FormData();
+					bodyFormData.append("taskId", res.data.taskDTO.id)
+					bodyFormData.append("file",testCase["testCaseFile"])
+					console.log("BodyFromData", bodyFormData)
+					console.log("TestCases", testCases)
+					console.log("TestCase", testCase)
+					axios({
+						method: "post",
+						url: 'http://localhost:8080/add-testcases',
+						data: bodyFormData,
+						headers: { "Content-Type": 'multipart/form-data; boundary=<calculated when request is sent></calculated>'},
+						})
+						.then(function (response) {
+							//handle success
+							console.log(response);
+						})
+						.catch(function (response) {
+							//handle error
+							console.log(response);
+						});
 						console.log(response);
-					})
-					.catch(function (response) {
-						//handle error
-						console.log(response);
-					});
-				  console.log(response);
+				}
 				})
 				.catch(function (response) {
 				  //handle error

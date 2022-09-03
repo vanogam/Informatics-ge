@@ -101,7 +101,16 @@ public class SubmissionManager implements ISubmissionManager {
                 submissionDTO.setText(null);
             }
         }
-        return SubmissionDTO.toDTOs(submissionRepository.getSubmissions(userId, taskId, contestId, roomId, offset, limit));
+        List<SubmissionDTO> submissionDTOS = SubmissionDTO.toDTOs(submissionRepository.getSubmissions(userId, taskId, contestId, roomId, offset, limit));
+
+        for (SubmissionDTO submissionDTO : submissionDTOS) {
+            try {
+                submissionDTO.setUsername(userManager.getUser(submissionDTO.getUserId()).getUsername());
+            } catch (Exception ignored) {
+                submissionDTO.setUsername("[DELETED]");
+            }
+        }
+        return submissionDTOS;
     }
 
     @Override

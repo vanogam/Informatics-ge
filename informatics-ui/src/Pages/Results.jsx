@@ -12,7 +12,7 @@ import { NavLink } from "react-router-dom";
 import axios from 'axios';
 import { useState, useEffect } from 'react';
 
-function handleSubmissions(response, setProblems){
+function handleResults(response, setResults){
     console.log(response)
 	// var curTasks = []
 	// const tasks = response.data.tasks
@@ -28,14 +28,14 @@ function handleSubmissions(response, setProblems){
 	// }
 	// setProblems(curTasks)
 }
-export default function Submissions(){
+export default function Results(){
     const {contest_id} = useParams()
     console.log("YAAAY", contest_id)
-	const [submissions, setSubmissions] = useState([])
+	const [results, setResults] = useState([])
 	useEffect(() => {
 		axios
 			.get(`http://localhost:8080/contest/${contest_id}/submissions`)
-			.then((response) =>  handleSubmissions(response, setSubmissions))
+			.then((response) =>  handleResults(response, setResults))
 			.catch((error) => console.log(error))
 	}, [])
 
@@ -69,18 +69,18 @@ export default function Submissions(){
 						</TableRow>
 					</TableHead>
 					<TableBody>
-						{submissions.map((submission) => (
+						{results.map((result) => (
 							<TableRow
 							
-								key={submission.name}
+								key={result.name}
 								sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
 							>
 								
                                 <TableCell component="th" scope="row">
-									{submission.category}
+									{result.category}
 
 								</TableCell>
-								<TableCell ><NavLink to={`${submission.id}`}exact>{submission.name} </NavLink></TableCell>
+								<TableCell ><NavLink to={`${result.id}`}exact>{result.name} </NavLink></TableCell>
 
 							</TableRow>
 						))}

@@ -120,10 +120,10 @@ export default function Contests() {
 					<TableHead>
 						<TableRow>
 							<TableCell>სახელი</TableCell>
-							<TableCell align="right">დასაწყისი</TableCell>
+							<TableCell align="right">დასაწყების დრო</TableCell>
 							<TableCell align="right">ხანგრძლივობა</TableCell>
 							<TableCell align="right">სტატუსი</TableCell>
-							<TableCell align="right">შედეგები</TableCell>
+							<TableCell align="right"></TableCell>
 							{roles === 'ADMIN' ? <TableCell></TableCell> : null}
 						</TableRow>
 					</TableHead>
@@ -142,7 +142,7 @@ export default function Contests() {
 								<TableCell align="right">{row.duration}</TableCell>
 								<TableCell align="right">{row.status}</TableCell>
 								<TableCell component="th" scope="row">
-									<NavLink to={`/submissions/${row.id}`} exact>
+									<NavLink to={`/results/${row.id}`} exact>
 										{row.results}{' '}
 									</NavLink>
 								</TableCell>

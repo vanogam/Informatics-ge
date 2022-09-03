@@ -21,7 +21,7 @@ import 'prismjs/themes/prism.css' //Example style, you can use another
 import './numbers.css'
 import { Button } from '@mui/material'
 import TextField from '@mui/material/TextField'
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import axios from 'axios';
 import { useEffect } from 'react';
 // import Pdf from "../../home/u/informatics/statements/passw/statement_KA.pdf"
@@ -40,18 +40,7 @@ const boxStyle = {
 
 	fontSize: '20',
 }
-function submitProblem(code, contest_id, task_id){
-	const body = {
-			"contestId" : contest_id,
-			"taskId" : task_id,
-			"submissionText" : code,
-			"language" : "CPP"
-	}
-	console.log(body)
-	axios
-			.post('http://localhost:8080/submit', body)
-			.then((response) =>  {console.log(response)})
-}
+
 const hightlightWithLineNumbers = (input, grammar, language) =>
 	highlight(input, grammar, language)
 		.split('\n')
@@ -64,6 +53,20 @@ function handleProblemResponse(response, setPDF){
 }
 
 export default function Problem(){
+	let navigate = useNavigate();
+	function submitProblem(code, contest_id, task_id){
+		const body = {
+				"contestId" : contest_id,
+				"taskId" : task_id,
+				"submissionText" : code,
+				"language" : "CPP"
+		}
+		console.log(body)
+		axios
+				.post('http://localhost:8080/submit', body)
+				.then((response) =>  {console.log(response)})
+		navigate(`/contest/${contest_id}/submissions`, { replace: true });
+	}
     const {contest_id, problem_id} = useParams()
 	// console.log("Contest_id", contest_id, "Problem id", problem_id)
     const [code, setCode] = React.useState(

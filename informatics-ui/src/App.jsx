@@ -12,6 +12,7 @@ import Problem from './Pages/Problem'
 import NewContest from './Pages/NewContest'
 import EditContest from './Pages/EditContest'
 import Results from './Pages/Results'
+import Submissions from './Pages/Submissions'
 function App() {
 	return (
 		<div className="App">
@@ -44,7 +45,10 @@ function App() {
 						path="/contest/:contest_id/:problem_id"
 						element={<Problem />}
 					/>
-
+					<Route
+						path="/contest/:contest_id/submissions"
+						element={<Submissions />}
+					/>
 					<Route path="/addContest" element={<NewContest />} />
 					<Route path="/editContest/:contest_id" element={<EditContest />} />
 				</Routes>

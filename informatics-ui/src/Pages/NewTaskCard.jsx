@@ -1,8 +1,9 @@
 import { Button, Paper, Stack, TextField, Typography } from '@mui/material'
 import { useRef, useState } from 'react'
 import NewTestCaseCard from './NewTestCaseCard'
-
-export default function NewTaskCard({ handleSubmit }) {
+import axios from 'axios'
+export default function NewTaskCard({ contestId, handleSubmit }) {
+	console.log("CONTESTID", contestId)
 	const codeRef = useRef(null)
 	const titleENref = useRef(null)
 	const titleKAref = useRef(null)
@@ -18,13 +19,14 @@ export default function NewTaskCard({ handleSubmit }) {
 
 	const [showNewTestCaseCard, setShowNewTestCaseCard] = useState(false)
 	const [testCases, setTestCases] = useState([])
+	const [taskId, setTaskId] = useState("")
 	const handleTestCaseSubmit = (params) => {
 		setTestCases((prevState) => [...prevState, params])
 		setShowNewTestCaseCard(false)
 	}
 
 	const handleNewTask = () => {
-		const code = codeRef?.current.value
+		const code = codeRef?.current.value.toString()
 		const enStatement = enStatementRef?.current.files[0]
 		const kaStatement = kaStatementRef?.current.files[0]
 		const enTitle = titleENref?.current.value
@@ -54,6 +56,21 @@ export default function NewTaskCard({ handleSubmit }) {
 		// Axios To ADD NEW TASK
 		// Axios To UPLOAD STATEMENT
 		// then for loop over testCases and for each one Axios to addTestCases
+		const params = {
+				"contestId": contestId,
+				"code": code.toString(),
+				"title" : {
+					"KA": kaTitle.toString(),
+					"EN": enTitle.toString()
+				},
+				"taskType": taskType.toString(),
+				"taskScoreType": taskScoreType.toString(),
+				"taskScoreParameter": parseFloat(taskScoreParameter),
+				"timeLimitMillis": parseInt(timeLimitMillis),
+				"memoryLimitMB":parseInt(memoryLimitMB),
+				"inputTemplate":inputTemplate.toString(),
+				"outputTemplate": outputTemplate.toString()
+		}
 		console.log({
 			code,
 			enStatement,
@@ -68,7 +85,47 @@ export default function NewTaskCard({ handleSubmit }) {
 			inputTemplate,
 			outputTemplate,
 		})
-
+		axios
+		.post('http://localhost:8080/save-task', params)
+		.then((res) => {setTaskId(res.data.taskDTO.id);
+			console.log("NOW UPLOAD STATEMENT")
+			var bodyFormData = new FormData();
+			bodyFormData.append("taskId", res.data.taskDTO.id)
+			bodyFormData.append("language", "KA")
+			bodyFormData.append("statement", kaStatement)
+			console.log("BodyFromData", bodyFormData)
+			axios({
+				method: "post",
+				url: 'http://localhost:8080/upload-statement',
+				data: bodyFormData,
+				headers: { "Content-Type": 'multipart/form-data; boundary=<calculated when request is sent></calculated>'},
+			  })
+				.then(function (response) {
+				  //handle success
+				var bodyFormData = new FormData();
+				bodyFormData.append("taskId", res.data.taskDTO.id)
+				bodyFormData.append("file",testCases)
+				console.log("BodyFromData", bodyFormData)
+				axios({
+					method: "post",
+					url: 'http://localhost:8080/add-testcases',
+					data: bodyFormData,
+					headers: { "Content-Type": 'multipart/form-data; boundary=<calculated when request is sent></calculated>'},
+					})
+					.then(function (response) {
+						//handle success
+						console.log(response);
+					})
+					.catch(function (response) {
+						//handle error
+						console.log(response);
+					});
+				  console.log(response);
+				})
+				.catch(function (response) {
+				  //handle error
+				  console.log(response);
+				});})
 		handleSubmit(enTitle)
 	}
 	return (
@@ -146,7 +203,7 @@ export default function NewTaskCard({ handleSubmit }) {
 				</Paper>
 			))}
 			{showNewTestCaseCard ? (
-				<NewTestCaseCard handleTestCaseSubmit={handleTestCaseSubmit} />
+				<NewTestCaseCard taskId = {taskId} handleTestCaseSubmit={handleTestCaseSubmit} />
 			) : (
 				<Paper elevation={4} sx={{ padding: '1rem', marginBottom: '0.5rem' }}>
 					<Button
@@ -154,7 +211,7 @@ export default function NewTaskCard({ handleSubmit }) {
 						variant="contained"
 						onClick={() => setShowNewTestCaseCard(true)}
 					>
-						ADD NEW TEST CASE
+						ADD NEW TEST CASES
 					</Button>
 				</Paper>
 			)}
@@ -164,7 +221,8 @@ export default function NewTaskCard({ handleSubmit }) {
 				color="success"
 				size="large"
 				sx={{ marginTop: '1rem' }}
-				onClick={handleNewTask}
+				onClick={() => {
+					handleNewTask()}}
 			>
 				Add Task
 			</Button>

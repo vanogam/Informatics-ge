@@ -28,6 +28,7 @@ export default function NewContest() {
 	const durationTypes = ['Hours', 'Minutes']
 
 	const handleAddContest = () => {
+		console.log("HI")
 		const params = {
 			name: nameRef?.current.value,
 			startDate: value.format('DD/MM/YYYY HH:mm'),
@@ -35,13 +36,16 @@ export default function NewContest() {
 				durationType === 'Minutes'
 					? durationRef?.current.value * 60
 					: durationRef?.current.value * 3600,
-			roomId: 1,
+			roomId: "1",
 		}
+		params["durationInSeconds"] = params["durationInSeconds"].toString()
+		console.log(params)
 		setContestName(nameRef?.current.value)
-		setContestId(5)
-		// axios
-		// 	.post(endpoint, params)
-		// 	.then((res) => setContestId(res.data.contestId))
+		axios
+			.post('http://localhost:8080/create-contest', params)
+			.then((res) => {setContestId(res.data.contest.id); 	axios.post(`http://localhost:8080/contest/${res.data.contest.id}/register`,{})})
+	
+
 	}
 
 	const handleSubmit = (title) => {
@@ -144,7 +148,7 @@ export default function NewContest() {
 										</Paper>
 									))}
 									{showNewTaskCard ? (
-										<NewTaskCard handleSubmit={handleSubmit} />
+										<NewTaskCard contestId={contestId} handleSubmit={handleSubmit} />
 									) : (
 										<Paper elevation={4} sx={{ padding: '1rem' }}>
 											<Button

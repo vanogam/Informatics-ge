@@ -38,9 +38,8 @@ function handleContestsResponse(response, setRows, isLoggedIn) {
 			startDate: contestStartDate,
 			duration: contestDuration.toString() + ' სთ',
 			status: contestStatus,
-			results: 'results',
+			results:' 📊',
 		}
-		console.log("curCOnt", curContest)
 		curRows.push(curContest)
 	}
 	setRows(curRows)
@@ -142,7 +141,11 @@ export default function Contests() {
 								<TableCell align="right">{row.startDate}</TableCell>
 								<TableCell align="right">{row.duration}</TableCell>
 								<TableCell align="right">{row.status}</TableCell>
-								<TableCell align="right">{row.results}</TableCell>
+								<TableCell component="th" scope="row">
+									<NavLink to={`/submissions/${row.id}`} exact>
+										{row.results}{' '}
+									</NavLink>
+								</TableCell>
 								{roles === 'ADMIN' && (
 									<TableCell>
 										<Button

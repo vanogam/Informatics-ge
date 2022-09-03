@@ -15,14 +15,17 @@ import { useState, useEffect } from 'react';
 function handleContestResponse(response, setProblems){
 	var curTasks = []
 	const tasks = response.data.tasks
+	var curCategory = 1
 	for(const task of tasks){
+		
 		const taskId = task.task.id
 		const taskName = task.task.title.KA
 		const taskItem = {
 			id: taskId, 
 			name: taskName,
-			category: "A"
+			category: curCategory
 		}
+		curCategory += 1
 		curTasks.push(taskItem)
 	}
 	setProblems(curTasks)
@@ -57,8 +60,12 @@ export default function Contest(){
     // ]
     return (
        <main>
-			<Typography variant="h5" fontWeight="bold" mt="1rem" align="center">
-				კონტესტები
+			<Typography variant="h6"
+				fontWeight="bold"
+				mt="1rem"
+				align="center"
+				sx={{ color: '#452c54', fontWeight: 'bold' }}>
+				კონტესტის ამოცანები
 			</Typography>
 			<Typography
 				paragraph
@@ -67,8 +74,7 @@ export default function Contest(){
 				pb="1rem"
 				borderBottom="2px dashed #aaa"
 			>
-				ამ გვერდზე შეგიძლიათ იხილოთ ჩვენი კონტესტები და მიიღოთ მათში
-				მონაწილეობა.
+				
 			</Typography>
 			<Container maxWidth="lg">
 				<Table sx={{ marginX: 'auto' }}>

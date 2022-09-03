@@ -124,7 +124,7 @@ function Navbar() {
 					>
 						{isLoggedIn ? (
 							<div style={{ display: 'flex', alignItems: 'center' }}>
-								<Typography variant="button">{authContext.username}</Typography>
+								<Typography variant="button">👨‍💻{ authContext.username}</Typography>
 								<Button
 									className="items"
 									sx={{

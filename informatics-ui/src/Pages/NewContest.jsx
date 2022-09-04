@@ -164,8 +164,9 @@ export default function NewContest() {
 								</Stack>
 							</Paper>
 							<Button 
-								sx = {{background: '#3c324e'}}variant="contained" size="large">
-								DONE
+								sx = {{background: '#3c324e'}}variant="contained" size="large"
+								to="/contests"
+								>DONE
 							</Button>
 						</>
 					)}

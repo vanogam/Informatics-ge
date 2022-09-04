@@ -41,7 +41,7 @@ export default function Contest(){
 	const [roles, setRoles] = useState()
     const {contest_id} = useParams()
 	const [problems , setProblems] = useState([])
-	const [registered, setIsRegistered] = useState(false)
+	const [registered, setIsRegistered] = useState(true)
 	useEffect(() => {
 		axios
 			.get(`http://localhost:8080/contest/${contest_id}/tasks`, {
@@ -54,8 +54,8 @@ export default function Contest(){
 				axios
 			.get(`http://localhost:8080/contest/${contest_id}/is-registered`)
 			.then((response) => {
-                if (response.data.registered){
-                    setIsRegistered(true)
+                if (!response.data.registered){
+                    setIsRegistered(false)
                 }})
 				handleContestResponse(response, setProblems)})
 			.catch((error) => console.log(error))
@@ -125,7 +125,13 @@ export default function Contest(){
 											variant="contained"	
 											color = "success"
 											sx={{ 	background: '#3c324e' }}
-											onClick = {() => setPopUp(true)}
+											onClick = {() => {
+												axios
+                    .post(`http://localhost:8080/contest/${contest_id}/register`, {
+                    })
+                    .then((response) => {setPopUp(true)})
+												
+												}}
 			
 										>
 											რეგისტრაცია

@@ -42,7 +42,9 @@ function handleResults(response, setResults, response2){
 			}
 		  }
 		  console.log(standingItem)
-		curResults.push(standingItem)
+		if (standingItem.name!=="admin"){
+			curResults.push(standingItem)
+		}
 	}
 	setResults(curResults)
 }

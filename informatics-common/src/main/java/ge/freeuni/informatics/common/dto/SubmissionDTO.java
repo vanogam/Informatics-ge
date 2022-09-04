@@ -173,7 +173,9 @@ public class SubmissionDTO {
         submissionDTO.setSubmissionTime(submission.getSubmissionTime());
         submissionDTO.setCompilationMessage(submission.getCompilationMessage());
         submissionDTO.setCompilationResult(submission.getCompilationResult());
-        submissionDTO.setResults(submission.getSubmissionTestResultList().getSubmissionTestResults());
+        if (submission.getSubmissionTestResultList() != null) {
+            submissionDTO.setResults(submission.getSubmissionTestResultList().getSubmissionTestResults());
+        }
         submissionDTO.setText(submission.getText());
         submissionDTO.setScore(submission.getScore());
         submissionDTO.setStatus(submission.getStatus());

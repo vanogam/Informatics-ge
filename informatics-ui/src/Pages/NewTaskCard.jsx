@@ -135,11 +135,11 @@ export default function NewTaskCard({ contestId, handleSubmit }) {
 	}
 	return (
 		<Paper elevation={4} sx={{ padding: '1rem' }}>
-			<Typography align="center" variant="h4" mb="1rem">
+			<Typography align="center" variant="h5" mb="1rem">
 				New Task
 			</Typography>
 			<Stack gap="1rem" maxWidth="25rem" mx="auto" mb="1rem">
-				<TextField label="Code" inputRef={codeRef} variant="outlined" />
+				<TextField 	size = "small" label="Code" inputRef={codeRef} variant="outlined" />
 				<Stack flexDirection="row" gap="1rem">
 					<Button fullWidth variant="contained" component="label">
 						EN Statement
@@ -155,11 +155,13 @@ export default function NewTaskCard({ contestId, handleSubmit }) {
 						label="Title (en)"
 						inputRef={titleENref}
 						variant="outlined"
+						size = "small"
 					/>
 					<TextField
 						label="Title (ka)"
 						inputRef={titleKAref}
 						variant="outlined"
+						size = "small"
 					/>
 				</Stack>
 				{/* <TextField type="file" variant="outlined" /> */}
@@ -168,31 +170,37 @@ export default function NewTaskCard({ contestId, handleSubmit }) {
 					label="taskScoreType"
 					inputRef={taskScoreTypeRef}
 					variant="outlined"
+					size = "small"
 				/>
 				<TextField
 					label="taskScoreParameter"
 					inputRef={taskScoreParameterRef}
 					variant="outlined"
+					size = "small"
 				/>
 				<TextField
 					label="timeLimitMillis"
 					inputRef={timeLimitMillisRef}
 					variant="outlined"
+					size = "small"
 				/>
 				<TextField
 					label="memoryLimitMB"
 					inputRef={memoryLimitMBref}
 					variant="outlined"
+					size = "small"
 				/>
 				<TextField
 					label="inputTemplate"
 					inputRef={inputTemplateRef}
 					variant="outlined"
+					size = "small"
 				/>
 				<TextField
 					label="outputTemplate"
 					inputRef={outputTemplateRef}
 					variant="outlined"
+					size = "small"
 				/>
 			</Stack>
 			{testCases?.map((testCase, index) => (

@@ -26,11 +26,11 @@ export default function NewTestCaseCard({ handleTestCaseSubmit }) {
 	}
 	return (
 		<Paper elevation={4} sx={{ padding: '1rem' }}>
-			<Typography align="center" variant="h5" mb="1rem">
+			<Typography align="center" variant="h6" mb="1rem">
 				New Test Case
 			</Typography>
 			<Stack direction="row" gap="1rem">
-				<Button fullWidth variant="contained" component="label">
+				<Button fullWidth  variant="contained" component="label">
 					{fileName ? fileName : 'Upload Test Case'}
 					<input
 						ref={testCaseRef}
@@ -40,6 +40,7 @@ export default function NewTestCaseCard({ handleTestCaseSubmit }) {
 					/>
 				</Button>
 				<TextField
+					size = "small"
 					select
 					value={selectedLanguage}
 					onChange={(e) => {
@@ -58,7 +59,7 @@ export default function NewTestCaseCard({ handleTestCaseSubmit }) {
 				fullWidth
 				variant="contained"
 				size="large"
-				sx={{ background: '#3c324e',marginTop: '1rem' }}
+				sx={{ marginTop: '1rem' }}
 				onClick={handleNewTestCase}
 			>
 				Add Test Case

@@ -50,7 +50,6 @@ public class ContestManager implements IContestManager {
         Contest contest = ContestDTO.fromDTO(contestDTO);
         contest.setStatus(ContestStatus.FUTURE);
         contest.setStandings(new Standings());
-        contest.setVersion(1);
         ContestRoom room = contestRoomManager.getRoom(contest.getRoomId());
         if (!room.getTeachers().contains(userManager.getAuthenticatedUser().getId())) {
             throw new InformaticsServerException("This user can not create contest in this room");

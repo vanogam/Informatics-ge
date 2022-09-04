@@ -40,7 +40,7 @@ export default function Main() {
         component="img"
         height="200"
         image={news1} 
-        alt="green iguana"
+       
       />
       <CardContent>
         <Typography gutterBottom variant="h5" component="div">
@@ -63,7 +63,7 @@ export default function Main() {
         component="img"
         height="200"
         image={news2} 
-        alt="green iguana"
+      
       />
       <CardContent>
         <Typography gutterBottom variant="h5" component="div">
@@ -85,7 +85,7 @@ export default function Main() {
         component="img"
         height="200"
         image={news3} 
-        alt="green iguana"
+
       />
       <CardContent>
         <Typography gutterBottom variant="h5" component="div">

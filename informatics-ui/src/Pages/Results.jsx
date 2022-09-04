@@ -12,14 +12,14 @@ import { NavLink } from "react-router-dom";
 import axios from 'axios';
 import { useState, useEffect } from 'react';
 
-function handleResults(response, setResults){
+function handleResults(response, setResults, taskNames){
     console.log(response)
 	var curResults =  []
 	const standings = response.data.standings
 	for(const standing of standings){
 		const standingItem = {
 			name: standing.username,
-			score: standing.totalScore
+			score: standing.totalScore,
 		}
 		curResults.push(standingItem)
 	}
@@ -29,14 +29,21 @@ function handleResults(response, setResults){
 export default function Results(){
     const {contest_id} = useParams()
 	const [results, setResults] = useState([])
+	const [taskNames, setTaskNames] = useState([])
 	useEffect(() => {
 		axios
-			.get(`http://localhost:8080/contest/${contest_id}/standings?offset=0&limit=20`,
+			.get(`http://localhost:8080/contest/${contest_id}/standings`,
 			{params: {
 				offset : 0 , 
 				limit: 20
 			}})
-			.then((response) =>  handleResults(response, setResults))
+			.then((response1) =>  
+			{
+				axios
+			.get(`http://localhost:8080/contest/${contest_id}/task-names`)
+			.then((response2) =>  {setTaskNames(response2.data.taskNames); handleResults(response1, setResults, taskNames)})
+			})
+			
 			.catch((error) => console.log(error))
 	}, [])
 
@@ -62,8 +69,11 @@ export default function Results(){
 					<TableHead>
 						<TableRow>
 							
-							<TableCell>მომხმარებელი 👨‍💻</TableCell>
-                            <TableCell>შედეგი 🏆</TableCell>
+							<TableCell >მომხმარებელი 👨‍💻</TableCell>
+                            <TableCell>ამოცანა "{taskNames[0]? taskNames[0]: "-"}" </TableCell>
+							<TableCell> ამოცანა "{taskNames[1]? taskNames[0]: "-"}"</TableCell>
+							<TableCell>საბოლოო შედეგი 🏆</TableCell>
+			
 						</TableRow>
 					</TableHead>
 					<TableBody>

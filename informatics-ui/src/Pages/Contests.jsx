@@ -120,7 +120,8 @@ export default function Contests() {
 								</TableCell>
 								<TableCell align="right">{row.startDate}</TableCell>
 								<TableCell align="right">{row.duration}</TableCell>
-								<TableCell align="right">{row.status}</TableCell>
+								<TableCell align="right" sx ={{color:
+                          row.status === "LIVE" ? "green" : "black"}} >{row.status==="LIVE"?"მიმდინარე" :"წარსული"}</TableCell>
 								<TableCell align="right" component="th" scope="row">
 									<NavLink to={`/results/${row.id}`} exact>
 										{row.results}{' '}

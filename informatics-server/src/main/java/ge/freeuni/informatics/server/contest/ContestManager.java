@@ -56,9 +56,9 @@ public class ContestManager implements IContestManager {
             contest = getContestInternal(contestDTO.getId());
             updateContest(contest, contestDTO);
         } else {
+            contest = ContestDTO.fromDTO(contestDTO);
             contest.setStatus(ContestStatus.FUTURE);
             contest.setStandings(new Standings());
-
         }
         contest = contestRepository.addContest(contest);
         return ContestDTO.toDTO(contest);

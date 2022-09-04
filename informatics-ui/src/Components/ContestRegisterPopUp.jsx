@@ -19,12 +19,7 @@ export default function ContestRegisterPopUp({contestId}){
     //         }), []}
 
     useEffect(() => {
-		axios
-			.get(`http://localhost:8080/contest/${contestId}/is-registered`)
-			.then((response) => {
-                if (response.data.registered){
-                    setText("უკვე დარეგისტრირებული ხარ კონტესტზე! 💪")
-                }else{
+
                     axios
                     .post(`http://localhost:8080/contest/${contestId}/register`, {
                     })
@@ -32,10 +27,10 @@ export default function ContestRegisterPopUp({contestId}){
                         if(response.status == "SUCCESS"){
                             setText("  წარმატებით დარეგისტრირდი! 🎉")
                         }else{
-                            setText("🛑 კონტესტზე რეგისტრაცია დასრულებულია ")
+                            setText("🛑 შეცდომა რეგისტრაციისას ")
                         }
                         })
-                }})
+
 			.catch((error) => console.log(error))
 	}, [])
     return (<>{text}</>)

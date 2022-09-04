@@ -7,11 +7,15 @@ import {
 	TableCell,
 	TableHead,
 	TableRow,
+	Button,
+	Modal,
+	Box
 } from '@mui/material'
 import { NavLink } from "react-router-dom";
 import axios from 'axios';
-import { useState, useEffect } from 'react';
-
+import { useState, useEffect, useContext } from 'react';
+import { AuthContext } from '../store/authentication'
+import ContestRegisterPopUp from '../Components/ContestRegisterPopUp'
 function handleContestResponse(response, setProblems){
 	var curTasks = []
 	const tasks = response.data.tasks
@@ -31,8 +35,13 @@ function handleContestResponse(response, setProblems){
 	setProblems(curTasks)
 }
 export default function Contest(){
+	const [popUp, setPopUp] = useState(false)
+	const authContext = useContext(AuthContext)
+	const isLoggedIn = authContext.isLoggedIn
+	const [roles, setRoles] = useState()
     const {contest_id} = useParams()
 	const [problems , setProblems] = useState([])
+	const [registered, setIsRegistered] = useState(false)
 	useEffect(() => {
 		axios
 			.get(`http://localhost:8080/contest/${contest_id}/tasks`, {
@@ -41,8 +50,16 @@ export default function Contest(){
 					limit: 20
 				}
 			})
-			.then((response) =>  handleContestResponse(response, setProblems))
+			.then((response) =>  {
+				axios
+			.get(`http://localhost:8080/contest/${contest_id}/is-registered`)
+			.then((response) => {
+                if (response.data.registered){
+                    setIsRegistered(true)
+                }})
+				handleContestResponse(response, setProblems)})
 			.catch((error) => console.log(error))
+			setRoles(() => localStorage.getItem('roles'))
 	}, [])
 
     // const rows = [
@@ -60,6 +77,24 @@ export default function Contest(){
     // ]
     return (
        <main>
+		<Modal open={popUp} onClose={() => setPopUp(false)}>
+				<Box
+					sx={{
+						position: 'absolute',
+						top: '50%',
+						left: '50%',
+						transform: 'translate(-50%, -50%)',
+						width: '350px',
+						bgcolor: 'white',
+						border: `2px solid ;`,
+						borderRadius: '0.5rem',
+						boxShadow: 24,
+						p: 4,
+					}}
+				>
+				<ContestRegisterPopUp contestId = {contest_id} />
+				</Box>
+				</Modal>
 			<Typography variant="h6"
 				fontWeight="bold"
 				mt="1rem"
@@ -83,7 +118,20 @@ export default function Contest(){
 							
 							<TableCell>კატეგორია</TableCell>
 							<TableCell >სახელი</TableCell>
-					
+							{(isLoggedIn && roles !== 'ADMIN' && registered === false) && (
+									<TableCell>
+										<Button
+											className="items"
+											variant="contained"	
+											color = "success"
+											sx={{ 	background: '#3c324e' }}
+											onClick = {() => setPopUp(true)}
+			
+										>
+											რეგისტრაცია
+										</Button>
+									</TableCell>
+								)}
 						</TableRow>
 					</TableHead>
 					<TableBody>
@@ -108,6 +156,4 @@ export default function Contest(){
 		</main>
 	)
     
-    
-
 };

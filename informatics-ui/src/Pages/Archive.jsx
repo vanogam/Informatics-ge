@@ -32,7 +32,7 @@ export default function Archive(){
 	const [problems , setProblems] = useState([])
 	useEffect(() => {
 		axios
-			.get(`localhost:8080/room/1/tasks?offset=0&limit=20`, {
+			.get(`http://localhost:8080/room/1/tasks?offset=0&limit=20`, {
 				params:{
 					offset : 0 , 
 					limit: 20
@@ -95,7 +95,7 @@ export default function Archive(){
 									{problem.category}
 
 								</TableCell>
-								<TableCell ><NavLink to={`${problem.id}`}exact>{problem.name} </NavLink></TableCell>
+								<TableCell ><NavLink to={`/contest/${contest_id}/${problem.id}`}exact>{problem.name} </NavLink></TableCell>
 
 							</TableRow>
 						))}

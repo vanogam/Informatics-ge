@@ -9,6 +9,7 @@ import {
 	Stack,
 	TextField,
 	Typography,
+	Box
 } from '@mui/material'
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
 import { useRef, useState } from 'react'
@@ -16,7 +17,9 @@ import axios from 'axios'
 import NewTaskCard from './NewTaskCard'
 import { useParams } from 'react-router-dom'
 import { NavLink } from 'react-router-dom'
-
+import FormGroup from '@mui/material/FormGroup';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Checkbox from '@mui/material/Checkbox'
 export default function EditContest() {
 	const contestId = useParams()
 	const [contestName, setContestName] = useState(null)
@@ -28,7 +31,9 @@ export default function EditContest() {
 	const durationRef = useRef(null)
 	const [showNewTaskCard, setShowNewTaskCard] = useState(false)
 	const durationTypes = ['Hours', 'Minutes']
-
+	const[archive, setArchive] = useState(false)
+	const[autoArchive, setAutoArchive] = useState(false)
+	console.log(archive)
 	const handleAddContest = () => {
 		console.log("HI")
 		const params = {
@@ -39,7 +44,9 @@ export default function EditContest() {
 					? durationRef?.current.value * 60
 					: durationRef?.current.value * 3600,
 			roomId: "1",
-            contestId: parseInt(contestId.contest_id)
+            contestId: parseInt(contestId.contest_id),
+			upsolving: archive, 
+			upsolvingAfterFinish : autoArchive
 		}
 		params["durationInSeconds"] = params["durationInSeconds"].toString()
 		console.log(params)
@@ -53,7 +60,12 @@ export default function EditContest() {
 		setTasks((prevState) => [...prevState, title])
 		setShowNewTaskCard(false)
 	}
-
+	const handleChange = (event) => {
+		setArchive(event.target.checked);
+	  };
+	const handleChange2 = (event) => {
+		setAutoArchive(event.target.checked);
+	};
 	return (
 		<LocalizationProvider dateAdapter={AdapterDayjs}>
 			<Container maxWidth="xs">
@@ -61,15 +73,33 @@ export default function EditContest() {
 					<Paper elevation={4} sx={{ padding: '1rem' }}>
 						{!saved ?(
 							<>
-								<Typography variant="h4" align="center" pb="1rem">
-									Edit Contest
+								<Typography variant="h5" align="center" pb="1rem">
+									Edit Contest {contestId.contest_id}
 								</Typography>
 								<Stack gap="1rem" maxWidth="25rem" mx="auto">
 									<TextField
 										label="Contest Name"
 										inputRef={nameRef}
 										variant="outlined"
+									
 									/>
+									<Box sx ={{	display: 'flex',
+					flexDirection: 'row'}}>
+									<FormGroup>
+										<FormControlLabel control={<Checkbox
+										 checked={archive}
+										 onChange={handleChange}
+										inputProps={{ 'aria-label': 'controlled' }}
+										
+										   />} label="დაარქივება" />
+										</FormGroup>
+										<FormGroup>
+										<FormControlLabel control={<Checkbox checked={autoArchive}
+										 onChange={handleChange2}
+										inputProps={{ 'aria-label': 'controlled' }} />} label="ავტომატური დაარქივება" />
+										</FormGroup>
+									</Box>
+									  
 									<DateTimePicker
 										label="Start Date"
 										value={value}
@@ -101,7 +131,10 @@ export default function EditContest() {
 												</MenuItem>
 											))}
 										</TextField>
+										
+
 									</Stack>
+									
 									<Button
 										onClick={handleAddContest}
 										variant="contained"

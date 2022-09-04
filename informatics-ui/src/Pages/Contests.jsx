@@ -143,6 +143,7 @@ export default function Contests() {
 										>
 											რედაქტირება
 										</Button>
+										
 									</TableCell>
 								)}
 							</TableRow>

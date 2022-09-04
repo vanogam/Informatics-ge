@@ -64,6 +64,7 @@ public class ContestController {
     @PostMapping("/create-contest")
     public CreateContestResponse createContest(@RequestBody CreateContestRequest contestRequest) {
         ContestDTO contestDTO = new ContestDTO();
+        contestDTO.setId(contestRequest.getContestId());
         contestDTO.setName(contestRequest.getName());
         contestDTO.setRoomId(contestRequest.getRoomId());
         contestDTO.setDurationInSeconds(contestRequest.getDurationInSeconds());

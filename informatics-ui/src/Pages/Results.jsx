@@ -12,18 +12,38 @@ import { NavLink } from "react-router-dom";
 import axios from 'axios';
 import { useState, useEffect } from 'react';
 
-function handleResults(response, setResults, taskNames){
+function handleResults(response, setResults, response2){
     console.log(response)
 	var curResults =  []
 	const standings = response.data.standings
+	const taskNameMap = response.data.taskNameMap
+	const taskNames = response2.data.taskNames
 	for(const standing of standings){
-		const standingItem = {
+		const scores = standing.scores
+		var standingItem = {
 			name: standing.username,
 			score: standing.totalScore,
+			a: "-",
+			b: "-"
 		}
+		console.log("TaskNames", taskNames)
+		console.log("Scoes", scores)
+		console.log("Map", taskNameMap)
+		for (const [key, value] of Object.entries(scores)) {
+			console.log(key, value);
+			for (const [key2, value2] of Object.entries(taskNameMap)){
+				if(key + ":KA" == key2) {
+				  if (taskNames[0] && (taskNames[0] == value2)){
+					  standingItem["a"] = value
+				  }else if( taskNames[1] && (taskNames[1] == value2)){
+					  standingItem["b"]= value
+				  }
+				}
+			}
+		  }
+		  console.log(standingItem)
 		curResults.push(standingItem)
 	}
-	console.log(curResults)
 	setResults(curResults)
 }
 export default function Results(){
@@ -41,7 +61,7 @@ export default function Results(){
 			{
 				axios
 			.get(`http://localhost:8080/contest/${contest_id}/task-names`)
-			.then((response2) =>  {setTaskNames(response2.data.taskNames); handleResults(response1, setResults, taskNames)})
+			.then((response2) =>  {setTaskNames(response2.data.taskNames); handleResults(response1, setResults, response2)})
 			})
 			
 			.catch((error) => console.log(error))
@@ -86,6 +106,14 @@ export default function Results(){
 								
                                 <TableCell component="th" scope="row">
 									{result.name}
+
+								</TableCell>
+								<TableCell component="th" scope="row">
+									{result.a}
+
+								</TableCell>
+								<TableCell component="th" scope="row">
+									{result.b}
 
 								</TableCell>
 								<TableCell component="th" scope="row">

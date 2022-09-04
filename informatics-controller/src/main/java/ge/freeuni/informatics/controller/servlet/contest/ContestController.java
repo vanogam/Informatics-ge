@@ -70,7 +70,7 @@ public class ContestController {
         contestDTO.setDurationInSeconds(contestRequest.getDurationInSeconds());
         contestDTO.setStartDate(convertToDate(contestRequest.getStartDate()));
         contestDTO.setUpsolvingAfterFinish(contestRequest.isUpsolvingAfterFinish());
-        contestDTO.setUpsolving(false);
+        contestDTO.setUpsolving(contestDTO.isUpsolving());
         contestDTO.setScoringType(contestRequest.getScoringType());
         CreateContestResponse response = new CreateContestResponse();
         try {

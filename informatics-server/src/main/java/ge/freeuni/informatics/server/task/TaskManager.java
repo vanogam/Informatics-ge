@@ -26,6 +26,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 public class TaskManager implements ITaskManager {
@@ -71,7 +72,7 @@ public class TaskManager implements ITaskManager {
         } catch (Exception ex) {
             throw new InformaticsServerException("contestNotFound");
         }
-        return (List<String>) contest.getTasks().stream().map(task -> task.getTitle().getOrDefault(language, task.getCode()));
+        return contest.getTasks().stream().map(task -> task.getTitle().getOrDefault(language, task.getCode())).collect(Collectors.toList());
     }
 
     @Override

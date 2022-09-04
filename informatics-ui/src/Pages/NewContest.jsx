@@ -104,7 +104,7 @@ export default function NewContest() {
 									<Button
 										onClick={handleAddContest}
 										variant="contained"
-										color="success"
+										sx = {{background: '#3c324e'}}
 										size="large"
 									>
 										Add Contest
@@ -154,6 +154,7 @@ export default function NewContest() {
 											<Button
 												fullWidth
 												variant="contained"
+												sx = {{background: '#3c324e'}}
 												onClick={() => setShowNewTaskCard(true)}
 											>
 												ADD NEW TASK
@@ -162,7 +163,8 @@ export default function NewContest() {
 									)}
 								</Stack>
 							</Paper>
-							<Button variant="contained" size="large" color="success">
+							<Button 
+								sx = {{background: '#3c324e'}}variant="contained" size="large">
 								DONE
 							</Button>
 						</>

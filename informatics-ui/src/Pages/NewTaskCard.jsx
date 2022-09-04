@@ -214,6 +214,7 @@ export default function NewTaskCard({ contestId, handleSubmit }) {
 					<Button
 						fullWidth
 						variant="contained"
+						sx ={{background: '#3c324e'}}
 						onClick={() => setShowNewTestCaseCard(true)}
 					>
 						ADD NEW TEST CASES
@@ -223,9 +224,8 @@ export default function NewTaskCard({ contestId, handleSubmit }) {
 			<Button
 				fullWidth
 				variant="contained"
-				color="success"
 				size="large"
-				sx={{ marginTop: '1rem' }}
+				sx={{ marginTop: '1rem' , background: '#3c324e',}}
 				onClick={() => {
 					handleNewTask()}}
 			>

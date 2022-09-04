@@ -57,9 +57,8 @@ export default function NewTestCaseCard({ handleTestCaseSubmit }) {
 			<Button
 				fullWidth
 				variant="contained"
-				color="success"
 				size="large"
-				sx={{ marginTop: '1rem' }}
+				sx={{ background: '#3c324e',marginTop: '1rem' }}
 				onClick={handleNewTestCase}
 			>
 				Add Test Case

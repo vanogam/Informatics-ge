@@ -61,7 +61,7 @@ export default function EditContest() {
 						{!saved ?(
 							<>
 								<Typography variant="h4" align="center" pb="1rem">
-									
+									Edit Contest
 								</Typography>
 								<Stack gap="1rem" maxWidth="25rem" mx="auto">
 									<TextField
@@ -104,10 +104,10 @@ export default function EditContest() {
 									<Button
 										onClick={handleAddContest}
 										variant="contained"
-										color="success"
+                                        sx = {{background: '#3c324e'}}
 										size="large"
 									>
-										Add Contest
+										Edit Contest
 									</Button>
 								</Stack>
 							</>
@@ -154,6 +154,7 @@ export default function EditContest() {
 											<Button
 												fullWidth
 												variant="contained"
+                                                sx = {{background: '#3c324e'}}
 												onClick={() => setShowNewTaskCard(true)}
 											>
 												ADD NEW TASK
@@ -162,7 +163,7 @@ export default function EditContest() {
 									)}
 								</Stack>
 							</Paper>
-							<Button variant="contained" size="large" color="success">
+							<Button variant="contained" size="large" 	sx = {{background: '#3c324e'}}>
 								DONE
 							</Button>
 						</>

@@ -42,7 +42,9 @@ function handleContestsResponse(response, setRows, isLoggedIn) {
 		}
 		curRows.push(curContest)
 	}
-	setRows(curRows)
+	var rows = [...curRows].sort((a, b) =>
+    a.status > b.status ? 1 : -1, );
+	setRows(rows)
 }
 
 export default function Contests() {

@@ -159,6 +159,11 @@ public class ContestService {
                 liveContests.put(contest.getId(), contest);
                 liveContest = contest;
             }
+            for (ContestantResult result : contest.getStandings().getStandings()) {
+                if (liveContest.getStandings().getContestantResult(result.getContestantId()) == null) {
+                    liveContest.getStandings().getStandings().add(result);
+                }
+            }
             contest.setStandings(liveContest.getStandings());
             contest.setUpsolvingStandings(liveContest.getUpsolvingStandings());
             liveContests.put(contest.getId(), contest);

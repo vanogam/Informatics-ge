@@ -11,7 +11,7 @@ import java.util.List;
 
 public class ContestDTO {
 
-    private long id;
+    private Long id;
 
     private String name;
 
@@ -39,7 +39,7 @@ public class ContestDTO {
 
     private Integer version;
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

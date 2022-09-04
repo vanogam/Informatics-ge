@@ -113,7 +113,7 @@ export default function NewContest() {
 							</>
 						) : (
 							<>
-								<Typography variant="h4" align="center">
+								<Typography variant="h5" align="center">
 									{contestName}
 								</Typography>
 							</>

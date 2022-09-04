@@ -7,7 +7,7 @@ import ge.freeuni.informatics.common.model.task.Task;
 import ge.freeuni.informatics.common.model.task.TaskInfo;
 
 import java.io.File;
-import java.util.List;
+import java.util.*;
 
 public interface ITaskManager {
 
@@ -18,6 +18,9 @@ public interface ITaskManager {
     TaskDTO addTask(TaskDTO task, long contestId) throws InformaticsServerException;
 
     List<TaskInfo> getUpsolvingTasks(long roomId, int offset, int limit) throws InformaticsServerException;
+
+
+    Map<String, String> fillTaskNames(Long contestId);
 
     List<TaskInfo> getContestTasks(long contestId, int offset, int limit) throws InformaticsServerException;
 

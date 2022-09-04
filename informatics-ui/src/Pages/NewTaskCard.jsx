@@ -165,7 +165,7 @@ export default function NewTaskCard({ contestId, handleSubmit }) {
 					/>
 				</Stack>
 				{/* <TextField type="file" variant="outlined" /> */}
-				<TextField label="taskType" inputRef={taskTypeRef} variant="outlined" />
+				<TextField size = "small" label="taskType" inputRef={taskTypeRef} variant="outlined" />
 				<TextField
 					label="taskScoreType"
 					inputRef={taskScoreTypeRef}

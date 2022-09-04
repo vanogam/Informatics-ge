@@ -10,6 +10,8 @@ export default function ContestRegisterPopUp({contestId}){
                     .then((response) => {
                         if(response.status == "SUCCESS"){
                             setText(" წარმატებით დარეგისტრირდი! 🎉")
+                        }else{
+                            setText("  კონტესტი უკვე დასრულებულია 🚫")
                         }
                         })
 			.catch((error) => console.log(error))

@@ -14,7 +14,7 @@ import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
 import { useRef, useState } from 'react'
 import axios from 'axios'
 import NewTaskCard from './NewTaskCard'
-
+import { NavLink } from 'react-router-dom'
 export default function NewContest() {
 	const [contestId, setContestId] = useState(null)
 	const [contestName, setContestName] = useState(null)
@@ -79,7 +79,7 @@ export default function NewContest() {
 									/>
 									<Stack direction="row" gap="1rem">
 										<TextField
-											label="Contest Duration (seconds)"
+											label="Contest Duration (minutes)"
 											variant="outlined"
 											type="number"
 											inputRef={durationRef}
@@ -163,11 +163,15 @@ export default function NewContest() {
 									)}
 								</Stack>
 							</Paper>
-							<Button 
-								sx = {{background: '#3c324e'}}variant="contained" size="large"
-								to="/contests"
-								>DONE
-							</Button>
+						
+
+						<Button
+							sx = {{background: '#3c324e'}}variant="contained" size="large"
+							component={NavLink}
+							to="/contests"
+						>
+							Done
+						</Button>
 						</>
 					)}
 				</Stack>

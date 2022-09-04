@@ -15,6 +15,7 @@ import { useRef, useState } from 'react'
 import axios from 'axios'
 import NewTaskCard from './NewTaskCard'
 import { useParams } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 
 export default function EditContest() {
 	const contestId = useParams()
@@ -38,7 +39,7 @@ export default function EditContest() {
 					? durationRef?.current.value * 60
 					: durationRef?.current.value * 3600,
 			roomId: "1",
-            contestId: contestId
+            contestId: parseInt(contestId.contest_id)
 		}
 		params["durationInSeconds"] = params["durationInSeconds"].toString()
 		console.log(params)
@@ -148,7 +149,7 @@ export default function EditContest() {
 										</Paper>
 									))}
 									{showNewTaskCard ? (
-										<NewTaskCard contestId={contestId} handleSubmit={handleSubmit} />
+										<NewTaskCard contestId={parseInt(contestId.contest_id)} handleSubmit={handleSubmit} />
 									) : (
 										<Paper elevation={4} sx={{ padding: '1rem' }}>
 											<Button
@@ -163,9 +164,13 @@ export default function EditContest() {
 									)}
 								</Stack>
 							</Paper>
-							<Button variant="contained" size="large" 	sx = {{background: '#3c324e'}}>
-								DONE
-							</Button>
+							<Button
+							sx = {{background: '#3c324e'}}variant="contained" size="large"
+							component={NavLink}
+							to="/contests"
+						>
+							Done
+						</Button>
 						</>
 					)}
 				</Stack>

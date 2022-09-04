@@ -132,6 +132,9 @@ public class ContestManager implements IContestManager {
         if (contest.getParticipants() == null || !contest.getParticipants().contains(userId)) {
             return;
         }
+        if (contest.getStatus() == ContestStatus.LIVE || contest.getStatus() == ContestStatus.PAST) {
+            throw new InformaticsServerException("actionNotAvailable");
+        }
         contest.getParticipants().remove(userId);
         for (ContestantResult contestantResult : contest.getStandings().getStandings()) {
             if (contestantResult.getContestantId() == userId) {

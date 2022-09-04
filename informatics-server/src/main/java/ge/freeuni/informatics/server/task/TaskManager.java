@@ -98,6 +98,18 @@ public class TaskManager implements ITaskManager {
         return result;
     }
 
+
+    public Map<String, String> fillTaskNames(Long contestId) {
+        Contest contest = contestRepository.getContest(contestId);
+        Map<String, String> nameMap = new HashMap<>();
+        for (Task task : contest.getTasks()) {
+            for (String lang : task.getTitle().keySet()) {
+                nameMap.put(task.getCode() + ":" + lang, task.getTitle().get(lang));
+            }
+        }
+        return nameMap;
+    }
+
    @Override
     public List<TaskInfo> getContestTasks(long contestId, int offset, int limit) throws InformaticsServerException {
         Contest contest = contestRepository.getContest(contestId);

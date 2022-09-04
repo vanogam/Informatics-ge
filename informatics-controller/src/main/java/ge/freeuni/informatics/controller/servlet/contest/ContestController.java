@@ -7,6 +7,7 @@ import ge.freeuni.informatics.controller.model.*;
 import ge.freeuni.informatics.server.contest.ContestService;
 import ge.freeuni.informatics.server.contest.IContestManager;
 import ge.freeuni.informatics.server.submission.ISubmissionManager;
+import ge.freeuni.informatics.server.task.ITaskManager;
 import ge.freeuni.informatics.server.user.IUserManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -26,6 +27,9 @@ public class ContestController {
 
     @Autowired
     private IUserManager userManager;
+
+    @Autowired
+    private ITaskManager taskManager;
 
     @Autowired
     private ISubmissionManager submissionManager;
@@ -108,10 +112,11 @@ public class ContestController {
     }
 
     @GetMapping("/contest/{contestId}/standings")
-    public StandingsResponse getStandings(@PathVariable String contestId, PagingRequest request) {
+    public StandingsResponse getStandings(@PathVariable Long contestId, PagingRequest request) {
         StandingsResponse response = new StandingsResponse("SUCCESS", null);
         try {
-            List<ContestantResultDTO> result = contestService.getStandings(Long.parseLong(contestId), request.getOffset(), request.getLimit());
+            List<ContestantResultDTO> result = contestService.getStandings(contestId, request.getOffset(), request.getLimit());
+            response.setTaskNameMap(taskManager.fillTaskNames(contestId));
             response.setStandings(result);
         } catch (InformaticsServerException ex) {
             return new StandingsResponse("FAIL", ex.getCode());

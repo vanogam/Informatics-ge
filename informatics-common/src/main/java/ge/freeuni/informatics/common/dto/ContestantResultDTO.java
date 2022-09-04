@@ -15,6 +15,8 @@ public class ContestantResultDTO {
 
     private Map<String, Float> scores;
 
+    private Map<String, String> taskNames;
+
     private ScoringType type;
 
     public Float getTotalScore() {
@@ -47,6 +49,14 @@ public class ContestantResultDTO {
 
     public void setScores(Map<String, Float> scores) {
         this.scores = scores;
+    }
+
+    public Map<String, String> getTaskNames() {
+        return taskNames;
+    }
+
+    public void setTaskNames(Map<String, String> taskNames) {
+        this.taskNames = taskNames;
     }
 
     public ScoringType getType() {

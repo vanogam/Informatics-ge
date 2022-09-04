@@ -69,7 +69,6 @@ public class ContestController {
         contestDTO.setScoringType(contestRequest.getScoringType());
         CreateContestResponse response = new CreateContestResponse();
         try {
-            contestManager.createContest(contestDTO);
             return new CreateContestResponse("SUCCESS", null, contestManager.createContest(contestDTO));
         } catch (InformaticsServerException ex) {
             response.setStatus("FAIL");

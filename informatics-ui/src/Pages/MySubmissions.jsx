@@ -15,7 +15,7 @@ import Typography from "@mui/material/Typography";
 import TableContainer from "@mui/material/TableContainer";
 import { useParams } from "react-router-dom";
 import { useEffect } from "react";
-export default function Submissions() {
+export default function MySubmissions() {
   const [submissions, setSubmissions] = useState([]);
   const [selectedSubmission, setSelectedSubmission] = useState({});
   const [popUp, setPopUp] = useState(false);
@@ -47,11 +47,11 @@ export default function Submissions() {
         <Table sx={{ minWidth: 650 }} aria-label="simple table">
           <TableHead>
             <TableRow>
-              <TableCell>Contest | Task</TableCell>
-              <TableCell align="right">Username</TableCell>
-              <TableCell align="right">Submission Time</TableCell>
-              <TableCell align="right">Language</TableCell>
-              <TableCell align="right">Status</TableCell>
+              <TableCell>კონტესტი | ამოცანა</TableCell>
+              <TableCell align="right">მომხარებელი</TableCell>
+              <TableCell align="right">გაშვების დრო</TableCell>
+              <TableCell align="right">ენა</TableCell>
+              <TableCell align="right">სტატუსი</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -76,8 +76,8 @@ export default function Submissions() {
                 <TableCell align="right">{submission.language}</TableCell>
                 <TableCell align="right">
                   {submission.status === "FINISHED"
-                    ? submission.status +" |Score: " +submission.score
-                    : submission.statuss}
+                    ? " ქულა: " +submission.score
+                    : submission.status === "RUNNING" ? "გაშვებულია " + submission.currentTest + " ტესტზე" : "კომპილაცია.."}
                 </TableCell>
               </TableRow>
             ))}
@@ -103,13 +103,13 @@ export default function Submissions() {
         >
           <Paper elevation={4} sx={{ padding: "1rem", marginBottom: "1rem" }}>
             <Typography sx={{ fontSize: "10px", fontWeight: "400" }}>
-              User: {selectedSubmission.username}
+              მომხმარებელი: {selectedSubmission.username}
             </Typography>
             <Typography sx={{ fontSize: "10px", fontWeight: "400" }}>
-              Lang: {selectedSubmission.language}
+              ენა: {selectedSubmission.language}
             </Typography>
             <Typography sx={{ fontSize: "10px", fontWeight: "400" }}>
-              Submission Time: {selectedSubmission.submissionTime}
+              გაშვების დრო: {selectedSubmission.submissionTime}
             </Typography>
           </Paper>
           <Paper elevation={4} sx={{ padding: "1rem", marginBottom: "1rem" }}>
@@ -130,16 +130,16 @@ export default function Submissions() {
           </Paper>
           <Paper elevation={4} sx={{ padding: "1rem", marginBottom: "1rem" }}>
             <Typography sx={{ fontSize: "13px", fontWeight: "400" }}>
-              Compilation Result: {selectedSubmission.compilationResult}
+              კომპილაციის შედეგი: {selectedSubmission.compilationResult}
               <br />
-              Compilation Message: {selectedSubmission.compilationMessage}
+              კომპილაციის მესიჯი: {selectedSubmission.compilationMessage}
             </Typography>
           </Paper>
           {selectedSubmission.compilationResult === "ok" ? (
             selectedSubmission.status === "FINISHED" ? (
               <Paper elevation={4} sx={{ padding: "1rem" }}>
                 <Typography align="center" variant="h6" mb="1rem">
-                  Test cases
+                  ტესტ ქეისები
                 </Typography>
                 {selectedSubmission?.results?.map((testCase) => (
                   <Paper elevation={4} sx={{ padding: "1rem" , marginBottom: "1rem",
@@ -149,21 +149,21 @@ export default function Submissions() {
                     <Typography sx={{fontSize: "15px"}}>#{testCase.idx}</Typography>
                     <Box sx={{display: "flex", justifyContent: "space-between"}}>
                         <Typography sx={{fontSize: "15px"}} >
-                          Status:{" "}
+                          სტატუსი:{" "}
                           <span style={{ fontWeight: 700 }}>
                             {testCase.outcome}
                           </span>
                         </Typography>
                         <Typography sx={{fontSize: "15px"}}>
-                          Message:{" "}
+                          მესიჯი:{" "}
                           <span style={{ fontWeight: 700 }}>{testCase.text}</span>
                         </Typography>
                         <Typography sx={{fontSize: "15px"}}>
-                          Time:{" "}
+                          დრო:{" "}
                           <span style={{ fontWeight: 700 }}>{testCase.time}</span>
                         </Typography>
                         <Typography sx={{fontSize: "15px"}}>
-                          Memory:{" "}
+                          მეხსიერება:{" "}
                           <span style={{ fontWeight: 700 }}>{parseInt(testCase.memory/1000) + "KB"}</span>
                         </Typography>
                     </Box>
@@ -173,13 +173,13 @@ export default function Submissions() {
             ) : (
               <Paper elevation={4} sx={{ padding: "1rem" }}>
                 <Typography>
-                  Running on test: {selectedSubmission.currentTest}
+                  გაშვებულია: {selectedSubmission.currentTest} ტესტზე
                 </Typography>
               </Paper>
             )
           ) : (
             <Paper elevation={4} sx={{ padding: "1rem" }}>
-              <Typography>Error Compiling</Typography>
+              <Typography>კომპილაციის ერორი</Typography>
             </Paper>
           )}
         </Box>

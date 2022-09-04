@@ -65,7 +65,7 @@ export default function Problem(){
 		axios
 				.post('http://localhost:8080/submit', body)
 				.then((response) =>  {console.log(response)})
-		navigate(`/contest/${contest_id}/submissions`, { replace: true });
+		navigate(`/contest/${contest_id}/mySubmissions`, { replace: true });
 	}
     const {contest_id, problem_id} = useParams()
 	// console.log("Contest_id", contest_id, "Problem id", problem_id)

@@ -35,6 +35,7 @@ function handleContestsResponse(response, setRows, isLoggedIn) {
 			duration: contestDuration.toString() + ' სთ',
 			status: contestStatus,
 			results:' 📊',
+			submissions: "🗃️"
 		}
 		curRows.push(curContest)
 	}
@@ -101,7 +102,8 @@ export default function Contests() {
 							<TableCell align="right">დასაწყების დრო</TableCell>
 							<TableCell align="right">ხანგრძლივობა</TableCell>
 							<TableCell align="right">სტატუსი</TableCell>
-							<TableCell align="right"></TableCell>
+							<TableCell align="right">შედეგები</TableCell>
+							<TableCell align="right">მცდელობები</TableCell>
 							{roles === 'ADMIN' ? <TableCell></TableCell> : null}
 						</TableRow>
 					</TableHead>
@@ -119,9 +121,14 @@ export default function Contests() {
 								<TableCell align="right">{row.startDate}</TableCell>
 								<TableCell align="right">{row.duration}</TableCell>
 								<TableCell align="right">{row.status}</TableCell>
-								<TableCell component="th" scope="row">
+								<TableCell align="right" component="th" scope="row">
 									<NavLink to={`/results/${row.id}`} exact>
 										{row.results}{' '}
+									</NavLink>
+								</TableCell>
+								<TableCell align="right" component="th" scope="row">
+									<NavLink to={`/contest/${row.id}/submissions`} exact>
+										{row.submissions}{' '}
 									</NavLink>
 								</TableCell>
 								{roles === 'ADMIN' && (

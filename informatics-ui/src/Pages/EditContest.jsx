@@ -74,7 +74,7 @@ export default function EditContest() {
 						{!saved ?(
 							<>
 								<Typography variant="h5" align="center" pb="1rem">
-									Edit Contest {contestId.contest_id}
+									კონტესტის რედაქტირება: {contestId.contest_id}
 								</Typography>
 								<Stack gap="1rem" maxWidth="25rem" mx="auto">
 									<TextField
@@ -110,7 +110,7 @@ export default function EditContest() {
 									/>
 									<Stack direction="row" gap="1rem">
 										<TextField
-											label="Contest Duration (seconds)"
+											label="ხანგრძლივობა (წთ)"
 											variant="outlined"
 											type="number"
 											inputRef={durationRef}
@@ -141,7 +141,7 @@ export default function EditContest() {
                                         sx = {{background: '#3c324e'}}
 										size="large"
 									>
-										Edit Contest
+										რედაქტირება
 									</Button>
 								</Stack>
 							</>
@@ -164,7 +164,7 @@ export default function EditContest() {
 									variant="h5"
 									marginBottom="0.5rem"
 								>
-									Contest Tasks
+									ამოცანები
 								</Typography>
 								<Stack>
 									{tasks?.map((task, index) => (
@@ -191,7 +191,7 @@ export default function EditContest() {
                                                 sx = {{background: '#3c324e'}}
 												onClick={() => setShowNewTaskCard(true)}
 											>
-												ADD NEW TASK
+												ახალი ამოცანის დამატება
 											</Button>
 										</Paper>
 									)}
@@ -202,7 +202,7 @@ export default function EditContest() {
 							component={NavLink}
 							to="/contests"
 						>
-							Done
+							დასრულება
 						</Button>
 						</>
 					)}

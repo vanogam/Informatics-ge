@@ -136,17 +136,17 @@ export default function NewTaskCard({ contestId, handleSubmit }) {
 	return (
 		<Paper elevation={4} sx={{ padding: '1rem' }}>
 			<Typography align="center" variant="h5" mb="1rem">
-				New Task
+				ახალი ამოცანა
 			</Typography>
 			<Stack gap="1rem" maxWidth="25rem" mx="auto" mb="1rem">
 				<TextField 	size = "small" label="Code" inputRef={codeRef} variant="outlined" />
 				<Stack flexDirection="row" gap="1rem">
 					<Button fullWidth variant="contained" component="label">
-						EN Statement
+						EN პირობა
 						<input ref={enStatementRef} type="file" hidden />
 					</Button>
 					<Button fullWidth variant="contained" component="label">
-						KA Statement
+						KA პირობა
 						<input ref={kaStatementRef} type="file" hidden />
 					</Button>
 				</Stack>
@@ -225,7 +225,7 @@ export default function NewTaskCard({ contestId, handleSubmit }) {
 						sx ={{background: '#3c324e'}}
 						onClick={() => setShowNewTestCaseCard(true)}
 					>
-						ADD NEW TEST CASES
+						ახალი ტესტ-ქეისები
 					</Button>
 				</Paper>
 			)}
@@ -237,7 +237,7 @@ export default function NewTaskCard({ contestId, handleSubmit }) {
 				onClick={() => {
 					handleNewTask()}}
 			>
-				Add Task
+				ამოცანის დამატება
 			</Button>
 		</Paper>
 	)

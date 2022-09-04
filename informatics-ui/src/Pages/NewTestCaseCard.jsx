@@ -27,11 +27,11 @@ export default function NewTestCaseCard({ handleTestCaseSubmit }) {
 	return (
 		<Paper elevation={4} sx={{ padding: '1rem' }}>
 			<Typography align="center" variant="h6" mb="1rem">
-				New Test Case
+				ახალი ტესტ-ქეისები
 			</Typography>
 			<Stack direction="row" gap="1rem">
 				<Button fullWidth  variant="contained" component="label">
-					{fileName ? fileName : 'Upload Test Case'}
+					{fileName ? fileName : 'ქეისების ატვირთვა'}
 					<input
 						ref={testCaseRef}
 						onChange={handleFileUpload}
@@ -62,7 +62,7 @@ export default function NewTestCaseCard({ handleTestCaseSubmit }) {
 				sx={{ marginTop: '1rem' }}
 				onClick={handleNewTestCase}
 			>
-				Add Test Case
+				დაამატე ტესტ-ქეისები
 			</Button>
 		</Paper>
 	)

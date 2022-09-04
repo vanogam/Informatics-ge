@@ -60,17 +60,17 @@ export default function NewContest() {
 					<Paper elevation={4} sx={{ padding: '1rem' }}>
 						{!contestId ? (
 							<>
-								<Typography variant="h4" align="center" pb="1rem">
-									New Contest
+								<Typography variant="h5" align="center" pb="1rem">
+									ახალი კონტესტი
 								</Typography>
 								<Stack gap="1rem" maxWidth="25rem" mx="auto">
 									<TextField
-										label="Contest Name"
+										label="სახელი"
 										inputRef={nameRef}
 										variant="outlined"
 									/>
 									<DateTimePicker
-										label="Start Date"
+										label="დაწყების დრო"
 										value={value}
 										onChange={setValue}
 										renderInput={(params) => (
@@ -79,7 +79,7 @@ export default function NewContest() {
 									/>
 									<Stack direction="row" gap="1rem">
 										<TextField
-											label="Contest Duration (minutes)"
+											label="ხანგრძლივობა (წთ)"
 											variant="outlined"
 											type="number"
 											inputRef={durationRef}
@@ -107,7 +107,7 @@ export default function NewContest() {
 										sx = {{background: '#3c324e'}}
 										size="large"
 									>
-										Add Contest
+										დაამატე კონტესტი
 									</Button>
 								</Stack>
 							</>
@@ -130,7 +130,7 @@ export default function NewContest() {
 									variant="h5"
 									marginBottom="0.5rem"
 								>
-									Contest Tasks
+									 ამოცანები
 								</Typography>
 								<Stack>
 									{tasks?.map((task, index) => (
@@ -157,7 +157,7 @@ export default function NewContest() {
 												sx = {{background: '#3c324e'}}
 												onClick={() => setShowNewTaskCard(true)}
 											>
-												ADD NEW TASK
+												ახალი ამოცანის დამატება
 											</Button>
 										</Paper>
 									)}
@@ -170,7 +170,7 @@ export default function NewContest() {
 							component={NavLink}
 							to="/contests"
 						>
-							Done
+							დასრულება
 						</Button>
 						</>
 					)}

@@ -11,6 +11,8 @@ import java.util.List;
 
 public interface ITaskManager {
 
+    List<String> getTaskNames(long contestId, String language) throws InformaticsServerException;
+
     Task getTask(int taskId);
 
     TaskDTO addTask(TaskDTO task, long contestId) throws InformaticsServerException;

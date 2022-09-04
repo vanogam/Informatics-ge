@@ -62,6 +62,18 @@ public class TaskManager implements ITaskManager {
         return taskRepository.getTask(taskId);
     }
 
+   @Override
+   @SuppressWarnings("unchecked")
+    public List<String> getTaskNames(long contestId, String language) throws InformaticsServerException {
+        Contest contest = null;
+        try {
+            contest = contestRepository.getContest(contestId);
+        } catch (Exception ex) {
+            throw new InformaticsServerException("contestNotFound");
+        }
+        return (List<String>) contest.getTasks().stream().map(task -> task.getTitle().getOrDefault(language, task.getCode()));
+    }
+
     @Override
     public List<TaskInfo> getUpsolvingTasks(long roomId, int offset, int limit) throws InformaticsServerException {
         ContestRoom room = roomManager.getRoom(roomId);

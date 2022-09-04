@@ -59,6 +59,18 @@ public class TaskController {
         }
     }
 
+    @GetMapping("/contest/{id}/task-names")
+    TaskNamesResponse getContestTaskNames(@PathVariable Long id, TaskNamesRequest request) {
+        try {
+            if (request.getLanguage() == null) {
+                request.setLanguage(Language.KA.name());
+            }
+            return new TaskNamesResponse("SUCCESS", null, taskManager.getTaskNames(id, request.getLanguage()));
+        } catch (InformaticsServerException ex) {
+            return new TaskNamesResponse("FAIL", ex.getCode(), null);
+        }
+    }
+
     @PostMapping("/save-task")
     SaveTaskResponse saveTask(@RequestBody AddTaskRequest request) {
         TaskDTO taskDTO = new TaskDTO();

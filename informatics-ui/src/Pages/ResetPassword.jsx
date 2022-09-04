@@ -52,19 +52,19 @@ export default function ResetPassword() {
 		<Box
 			sx={{
 				display: 'flex',
-				width: '100%',
+				width: '50%',
 				height: '100%',
 				justifyContent: 'center',
 				alignItems: 'center',
 				flexDirection: 'row',
 				marginInline: 'auto',
-				marginTop: '3rem',
+				marginTop: '3rem'
 			}}
 		>
 			<Box>
-				<Box >
+				<Box sx={{marginLeft:"20px"}}>
 					<InputLabel>შეიყვანეთ მომხმარებლის სახელი:</InputLabel>
-					<TextField
+					<TextField sx ={{width:"90%", marginLeft:"20px"}}
 						InputProps={{
 							startAdornment: (
 								<InputAdornment position="start">

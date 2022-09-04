@@ -47,13 +47,18 @@ public class ContestManager implements IContestManager {
     @Secured({"TEACHER", "ADMIN"})
     @Override
     public ContestDTO createContest(ContestDTO contestDTO) throws InformaticsServerException {
-        Contest contest = ContestDTO.fromDTO(contestDTO);
-        contest.setStatus(ContestStatus.FUTURE);
-        contest.setStandings(new Standings());
-        contest.setVersion(1);
-        ContestRoom room = contestRoomManager.getRoom(contest.getRoomId());
+        ContestRoom room = contestRoomManager.getRoom(contestDTO.getRoomId());
         if (!room.getTeachers().contains(userManager.getAuthenticatedUser().getId())) {
-            throw new InformaticsServerException("This user can not create contest in this room");
+            throw new InformaticsServerException("permissionDenied");
+        }
+        Contest contest = null;
+        if (contestDTO.getId() != null) {
+            contest = getContestInternal(contestDTO.getId());
+            updateContest(contest, contestDTO);
+        } else {
+            contest.setStatus(ContestStatus.FUTURE);
+            contest.setStandings(new Standings());
+
         }
         contest = contestRepository.addContest(contest);
         return ContestDTO.toDTO(contest);
@@ -61,12 +66,17 @@ public class ContestManager implements IContestManager {
 
     @Override
     public ContestDTO getContest(Long contestId) throws InformaticsServerException {
+
+        return ContestDTO.toDTO(getContestInternal(contestId));
+    }
+
+    private Contest getContestInternal(Long contestId) throws InformaticsServerException {
         Contest contest = contestRepository.getContest(contestId);
         ContestRoom room = contestRoomManager.getRoom(contest.getRoomId());
-        if (room.isMember(userManager.getAuthenticatedUser().getId())) {
+        if (!room.isMember(userManager.getAuthenticatedUser().getId())) {
             throw new InformaticsServerException("permissionDenied");
         }
-        return ContestDTO.toDTO(contest);
+        return contest;
     }
 
     @Override
@@ -175,5 +185,16 @@ public class ContestManager implements IContestManager {
             registrants.add(UserSimpleDTO.toSimpleDTO(userManager.getUser(userId)));
         }
         return registrants;
+    }
+
+    private void updateContest(Contest contest, ContestDTO contestDTO) {
+        contest.setId(contestDTO.getId());
+        contest.setName(contestDTO.getName());
+        contest.setStartDate(contestDTO.getStartDate());
+        contest.setDurationInSeconds(contestDTO.getDurationInSeconds());
+        contest.setUpsolving(contestDTO.isUpsolving());
+        contest.setUpsolvingAfterFinished(contestDTO.isUpsolvingAfterFinish());
+        contest.setScoringType(contestDTO.getScoringType());
+        contest.setUpsolvingStandings(contestDTO.getUpsolvingStandings());
     }
 }

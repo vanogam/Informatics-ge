@@ -14,11 +14,12 @@ import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
 import { useRef, useState } from 'react'
 import axios from 'axios'
 import NewTaskCard from './NewTaskCard'
+import { useParams } from 'react-router-dom'
 
 export default function EditContest() {
-	const [contestId, setContestId] = useState(null)
+	const contestId = useParams()
 	const [contestName, setContestName] = useState(null)
-
+    const [saved, setSaved] = useState(null)
 	const [value, setValue] = useState(dayjs('2014-08-18T21:11:54'))
 	const [durationType, setDurationType] = useState('Minutes')
 	const [tasks, setTasks] = useState([])
@@ -37,15 +38,14 @@ export default function EditContest() {
 					? durationRef?.current.value * 60
 					: durationRef?.current.value * 3600,
 			roomId: "1",
+            contestId: contestId
 		}
 		params["durationInSeconds"] = params["durationInSeconds"].toString()
 		console.log(params)
 		setContestName(nameRef?.current.value)
 		axios
 			.post('http://localhost:8080/create-contest', params)
-			.then((res) => {setContestId(res.data.contest.id); 	axios.post(`http://localhost:8080/contest/${res.data.contest.id}/register`,{})})
-	
-
+			.then((res) =>{setSaved(true)})
 	}
 
 	const handleSubmit = (title) => {
@@ -58,10 +58,10 @@ export default function EditContest() {
 			<Container maxWidth="xs">
 				<Stack gap="1rem" marginTop="2rem">
 					<Paper elevation={4} sx={{ padding: '1rem' }}>
-						{!contestId ? (
+						{!saved ?(
 							<>
 								<Typography variant="h4" align="center" pb="1rem">
-									New Contest
+									
 								</Typography>
 								<Stack gap="1rem" maxWidth="25rem" mx="auto">
 									<TextField
@@ -119,7 +119,7 @@ export default function EditContest() {
 							</>
 						)}
 					</Paper>
-					{contestId && (
+					{saved && (
 						<>
 							<Paper
 								elevation={4}

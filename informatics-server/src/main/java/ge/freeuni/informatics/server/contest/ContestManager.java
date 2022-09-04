@@ -15,7 +15,9 @@ import ge.freeuni.informatics.server.contestroom.IContestRoomManager;
 import ge.freeuni.informatics.server.task.ITaskManager;
 import ge.freeuni.informatics.server.user.IUserManager;
 import ge.freeuni.informatics.utils.ArrayUtils;
+import org.hibernate.StaleStateException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Component;
 
@@ -93,25 +95,33 @@ public class ContestManager implements IContestManager {
 
     @Override
     public void registerUser(long contestId) throws InformaticsServerException {
-        Contest contest = contestRepository.getContest(contestId);
-        UserDTO user = userManager.getAuthenticatedUser();
-        long userId = user.getId();
-        ContestRoom room = contestRoomManager.getRoom(contest.getRoomId());
-        if (!room.isMember(userId)) {
-            throw new InformaticsServerException("permissionDenied");
-        }
-        if (contest.getStatus() == ContestStatus.PAST) {
-            throw new InformaticsServerException("contestAlreadyOver");
-        }
-        if (contest.getParticipants() == null) {
-            contest.setParticipants(new ArrayList<>());
-        }
-        if (!contest.getParticipants().contains(userId)) {
-            contest.getParticipants().add(userId);
-            contest.getStandings().getStandings().add(new ContestantResult(contest.getScoringType(),
-                    (int) userId));
-        }
-        contestRepository.addContest(contest);
+        boolean retry = false;
+        do {
+            Contest contest = contestRepository.getContest(contestId);
+            UserDTO user = userManager.getAuthenticatedUser();
+            long userId = user.getId();
+            ContestRoom room = contestRoomManager.getRoom(contest.getRoomId());
+            if (!room.isMember(userId)) {
+                throw new InformaticsServerException("permissionDenied");
+            }
+            if (contest.getStatus() == ContestStatus.PAST) {
+                throw new InformaticsServerException("contestAlreadyOver");
+            }
+            if (contest.getParticipants() == null) {
+                contest.setParticipants(new ArrayList<>());
+            }
+            if (!contest.getParticipants().contains(userId)) {
+                contest.getParticipants().add(userId);
+                contest.getStandings().getStandings().add(new ContestantResult(contest.getScoringType(),
+                        (int) userId));
+            }
+            try {
+                contestRepository.addContest(contest);
+            } catch (StaleStateException | ObjectOptimisticLockingFailureException ignored) {
+                retry = true;
+            }
+
+        } while (retry);
     }
 
     @Override

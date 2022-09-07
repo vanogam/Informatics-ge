@@ -131,7 +131,7 @@ export default function Problem(){
 					textareaId="codeArea"
 					style={{
 						overflowY: 'auto',
-						height: '50vh',
+						height: '55vh',
 						fontFamily: '"Fira code", "Fira Mono", monospace',
 						fontSize: 12,
 					}}

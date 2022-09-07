@@ -123,11 +123,11 @@ export default function NewContest() {
 						<>
 							<Paper
 								elevation={4}
-								sx={{ padding: '1rem', marginBottom: '0.5rem' }}
+								sx={{height:'200px', padding: '1rem', marginBottom: '0.5rem' }}
 							>
 								<Typography
 									textAlign="center"
-									variant="h5"
+									variant="h6"
 									marginBottom="0.5rem"
 								>
 									 ამოცანები

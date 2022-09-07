@@ -161,7 +161,7 @@ export default function EditContest() {
 							>
 								<Typography
 									textAlign="center"
-									variant="h5"
+									variant="h6"
 									marginBottom="0.5rem"
 								>
 									ამოცანები

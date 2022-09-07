@@ -46,20 +46,22 @@ export default function Contest(){
 	const [registered, setIsRegistered] = useState(false)
 	useEffect(() => {
 		axios
-			.get(`${process.env.REACT_APP_HOST}/contest/${contest_id}/tasks`, {
+			.get(`http://localhost:8080/contest/${contest_id}/tasks`, {
 				params:{
 					offset : 0 , 
 					limit: 20
 				}
 			})
 			.then((response) =>  {
+				handleContestResponse(response, setProblems)
 				axios
-			.get(`${process.env.REACT_APP_HOST}/contest/${contest_id}/is-registered`)
+			.get(`http://localhost:8080/contest/${contest_id}/is-registered`)
 			.then((response) => {
+				
                 if (response.data.registered){
                     setIsRegistered(true)
                 }})
-				handleContestResponse(response, setProblems)})
+				})
 			.catch((error) => console.log(error))
 			setRoles(() => localStorage.getItem('roles'))
 	}, [])

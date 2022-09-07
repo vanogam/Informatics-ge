@@ -4,7 +4,7 @@ export default function ContestRegisterPopUp({contestId}){
     const [text, setText] = useState("")
     useEffect(() => {
                     axios
-                    .post(`http://localhost:8080/contest/${contestId}/register`, {
+                    .post(`${process.env.REACT_APP_HOST}/contest/${contestId}/register`, {
                     })
                     .then((response) => {
                         if(response.data.status == "SUCCESS"){

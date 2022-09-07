@@ -29,7 +29,7 @@ export default function ResetPassword() {
 			username: username.current.value,
 		}
 		axios
-			.post('http://localhost:8080/recover/request', body)
+			.post(`${process.env.REACT_APP_HOST}/recover/request`, body)
 			.then((response) => {
 				if (response.data.status === 'SUCCESS') {
 					setSuccess('True')

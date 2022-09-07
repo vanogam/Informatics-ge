@@ -56,7 +56,7 @@ export default function Results(){
 	const [taskNames, setTaskNames] = useState([])
 	useEffect(() => {
 		axios
-			.get(`http://localhost:8080/contest/${contest_id}/standings`,
+			.get(`${process.env.REACT_APP_HOST}/contest/${contest_id}/standings`,
 			{params: {
 				offset : 0 , 
 				limit: 20
@@ -64,7 +64,7 @@ export default function Results(){
 			.then((response1) =>  
 			{
 				axios
-			.get(`http://localhost:8080/contest/${contest_id}/task-names`)
+			.get(`${process.env.REACT_APP_HOST}/contest/${contest_id}/task-names`)
 			.then((response2) =>  {setTaskNames(response2.data.taskNames); handleResults(response1, setResults, response2)})
 			})
 			

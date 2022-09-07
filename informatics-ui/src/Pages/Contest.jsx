@@ -46,7 +46,7 @@ export default function Contest(){
 	const [registered, setIsRegistered] = useState(false)
 	useEffect(() => {
 		axios
-			.get(`http://localhost:8080/contest/${contest_id}/tasks`, {
+			.get(`${process.env.REACT_APP_HOST}/contest/${contest_id}/tasks`, {
 				params:{
 					offset : 0 , 
 					limit: 20
@@ -54,7 +54,7 @@ export default function Contest(){
 			})
 			.then((response) =>  {
 				axios
-			.get(`http://localhost:8080/contest/${contest_id}/is-registered`)
+			.get(`${process.env.REACT_APP_HOST}/contest/${contest_id}/is-registered`)
 			.then((response) => {
                 if (response.data.registered){
                     setIsRegistered(true)

@@ -52,7 +52,7 @@ export default function EditContest() {
 		console.log(params)
 		setContestName(nameRef?.current.value)
 		axios
-			.post('http://localhost:8080/create-contest', params)
+			.post(`${process.env.REACT_APP_HOST}/create-contest`, params)
 			.then((res) =>{setSaved(true)})
 	}
 

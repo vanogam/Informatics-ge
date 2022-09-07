@@ -35,18 +35,18 @@ export default function Register() {
 		}
 
 		axios
-			.post('http://localhost:8080/register', body)
+			.post(`${process.env.REACT_APP_HOST}/register`, body)
 			.then((response) => {
 				toast.success('Register Success')
 				setPopUp(false)
 				axios
-					.post('http://localhost:8080/login', {
+					.post(`${process.env.REACT_APP_HOST}/login`, {
 						username: nickname.current.value,
 						password: password.current.value,
 					})
 					.then((response) => {
 						if (response.data.status === 'SUCCESS') {
-								axios.get('http://localhost:8080/get-user').then((res) => {
+								axios.get(`${process.env.REACT_APP_HOST}/get-user`).then((res) => {
 									let roles = res.data.roles
 									authContext.login({ username: response.data.message, roles: roles })
 								})

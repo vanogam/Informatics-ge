@@ -27,7 +27,7 @@ function handleContestsResponse(response, setRows, isLoggedIn) {
 		const contestDuration = (contest.durationInSeconds / 3600).toFixed(2)
 		const contestStatus = contest.status
 		// axios
-		// 	.get(`http://localhost:8080/contest/${contest.id}/is-registered`, {
+		// 	.get(`${process.env.REACT_APP_HOST}/contest/${contest.id}/is-registered`, {
 		// 	})
 		// 	.then((response) =>{registered= response.data.registered})
 		var curContest = {
@@ -54,7 +54,7 @@ export default function Contests() {
 	const [roles, setRoles] = useState()
 	useEffect(() => {
 		axios
-			.get('http://localhost:8080/contest-list', {
+			.get(`${process.env.REACT_APP_HOST}/contest-list`, {
 				params: {
 					roomId: 1,
 				},

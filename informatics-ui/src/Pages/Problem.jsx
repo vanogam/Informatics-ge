@@ -56,7 +56,7 @@ export default function Problem(){
 		}
 		console.log(body)
 		axios
-				.post('http://localhost:8080/submit', body)
+				.post(`${process.env.REACT_APP_HOST}/submit`, body)
 				.then((response) =>  {console.log(response)})
 		navigate(`/contest/${contest_id}/mySubmissions`, { replace: true });
 	}
@@ -69,7 +69,7 @@ export default function Problem(){
 	const [submission, setSubmission] = useState("")
 	// useEffect(() => {
 	// 	axios
-	// 		.get(`http://localhost:8080/statements/219/KA`)
+	// 		.get(`${process.env.REACT_APP_HOST}/statements/219/KA`)
 	// 		.then((response) =>  {handleProblemResponse(response, setPDF)})
 	// 		.catch((error) => console.log(error))
 	// }, [])
@@ -77,7 +77,7 @@ export default function Problem(){
 	useEffect(() => {
 		
     
-          fetch(new Request(`http://localhost:8080/statements/${problem_id}/KA`,
+          fetch(new Request(`${process.env.REACT_APP_HOST}/statements/${problem_id}/KA`,
 		  {
 			method: "GET",
 			mode: "cors",

@@ -86,7 +86,7 @@ export default function NewTaskCard({ contestId, handleSubmit }) {
 			outputTemplate,
 		})
 		axios
-		.post('http://localhost:8080/save-task', params)
+		.post(`${process.env.REACT_APP_HOST}/save-task`, params)
 		.then((res) => {setTaskId(res.data.taskDTO.id);
 			console.log("NOW UPLOAD STATEMENT")
 			var bodyFormData = new FormData();
@@ -96,7 +96,7 @@ export default function NewTaskCard({ contestId, handleSubmit }) {
 			console.log("BodyFromData", bodyFormData)
 			axios({
 				method: "post",
-				url: 'http://localhost:8080/upload-statement',
+				url: `${process.env.REACT_APP_HOST}/upload-statement`,
 				data: bodyFormData,
 				headers: { "Content-Type": 'multipart/form-data; boundary=<calculated when request is sent></calculated>'},
 			  })
@@ -112,7 +112,7 @@ export default function NewTaskCard({ contestId, handleSubmit }) {
 					console.log("TestCase", testCase)
 					axios({
 						method: "post",
-						url: 'http://localhost:8080/add-testcases',
+						url: `${process.env.REACT_APP_HOST}/add-testcases`,
 						data: bodyFormData,
 						headers: { "Content-Type": 'multipart/form-data; boundary=<calculated when request is sent></calculated>'},
 						})

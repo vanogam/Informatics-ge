@@ -15,7 +15,7 @@ export default function Login() {
 
 	const handleLoginResponse = async (response) => {
 		if (response.data.status === 'SUCCESS') {
-			axios.get('http://localhost:8080/get-user').then((res) => {
+			axios.get(`${process.env.REACT_APP_HOST}/get-user`).then((res) => {
 				let roles = res.data.roles
 				setPopUp(false)
 				toast.success('Login Success')
@@ -35,7 +35,7 @@ export default function Login() {
 
 	const handleLoginSubmit = () => {
 		axios
-			.post('http://localhost:8080/login', {
+			.post(`${process.env.REACT_APP_HOST}/login`, {
 				username: nickname.current.value,
 				password: password.current.value,
 			})

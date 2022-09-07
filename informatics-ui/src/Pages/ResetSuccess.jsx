@@ -33,7 +33,7 @@ export default function ResetSuccess() {
 		}
 
 		axios
-			.post(`http://localhost:8080/recover/update-password/${token}`, {
+			.post(`${process.env.REACT_APP_HOST}/recover/update-password/${token}`, {
 				newPassword: password.current.value,
 			})
 			.then((response) => {

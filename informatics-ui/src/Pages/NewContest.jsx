@@ -42,8 +42,8 @@ export default function NewContest() {
 		console.log(params)
 		setContestName(nameRef?.current.value)
 		axios
-			.post('http://localhost:8080/create-contest', params)
-			.then((res) => {setContestId(res.data.contest.id); 	axios.post(`http://localhost:8080/contest/${res.data.contest.id}/register`,{})})
+			.post(`${process.env.REACT_APP_HOST}/create-contest`, params)
+			.then((res) => {setContestId(res.data.contest.id); 	axios.post(`${process.env.REACT_APP_HOST}/contest/${res.data.contest.id}/register`,{})})
 	
 
 	}

@@ -35,7 +35,7 @@ export default function Archive(){
 	const [problems , setProblems] = useState([])
 	useEffect(() => {
 		axios
-			.get(`http://localhost:8080/room/1/tasks?offset=0&limit=20`, {
+			.get(`${process.env.REACT_APP_HOST}/room/1/tasks?offset=0&limit=20`, {
 				params:{
 					offset : 0 , 
 					limit: 20

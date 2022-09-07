@@ -24,7 +24,7 @@ export default function MySubmissions() {
 
 	useEffect(() => {
 		axios
-			.get(`http://localhost:8080/contest/${contest_id}/submissions`)
+			.get(`${process.env.REACT_APP_HOST}/contest/${contest_id}/submissions`)
 			.then((response) => {
 				if (response.data.status === 'SUCCESS')
 					setSubmissions(response.data.submissions)
@@ -32,7 +32,7 @@ export default function MySubmissions() {
 			})
 		const interval = setInterval(() => {
 			axios
-				.get(`http://localhost:8080/contest/${contest_id}/submissions`)
+				.get(`${process.env.REACT_APP_HOST}/contest/${contest_id}/submissions`)
 				.then((response) => {
 					if (response.data.status === 'SUCCESS')
 						setSubmissions(response.data.submissions)

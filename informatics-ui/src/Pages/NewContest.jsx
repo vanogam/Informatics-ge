@@ -13,7 +13,7 @@ import {
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
 import { useRef, useState } from 'react'
 import axios from 'axios'
-import NewTaskCard from './NewTaskCard'
+import NewTaskCard from '../Components/NewTaskCard'
 import { NavLink } from 'react-router-dom'
 export default function NewContest() {
 	const [contestId, setContestId] = useState(null)

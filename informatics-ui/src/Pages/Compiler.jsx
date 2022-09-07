@@ -7,7 +7,7 @@ import 'prismjs/components/prism-c'
 import 'prismjs/components/prism-cpp'
 import 'prismjs/components/prism-javascript'
 import 'prismjs/themes/prism.css' //Example style, you can use another
-import './numbers.css'
+import '../styles/numbers.css'
 import { Button } from '@mui/material'
 import TextField from '@mui/material/TextField'
 
@@ -73,7 +73,7 @@ export default function Compiler() {
 					sx={{
 						marginInline: '2px',
 						alignSelf: 'right',
-						marginLeft: '60px',
+						marginLeft: '25%',
 						width: '50%',
 						marginTop: '5%',
 						background: '#3c324e',
@@ -89,15 +89,15 @@ export default function Compiler() {
 				<TextField
 					id="outlined-multiline-static"
 					multiline
-					rows={5}
+					rows={3}
 				></TextField>
 
 				<Button
 					sx={{
 						marginInline: '2px',
 						alignSelf: 'right',
-						width: '50%',
-						marginBottom: '20%',
+						width: '70%',
+						// marginBottom: '20%',
 						marginLeft: '30px',
 						background: '#3c324e',
 					}}
@@ -108,9 +108,10 @@ export default function Compiler() {
 
 				<p style = {{color:'#452c54', fontWeight: 'bold'}}>გამომავალი მონაცემები: </p>
 				<TextField
+					disabled
 					id="outlined-multiline-static"
 					multiline
-					rows={4}
+					rows={3}
 				></TextField>
 			</Box>
 		</Box>

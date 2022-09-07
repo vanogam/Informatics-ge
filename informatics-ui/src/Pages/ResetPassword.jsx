@@ -4,20 +4,16 @@ import InputLabel from '@mui/material/InputLabel'
 import InputAdornment from '@mui/material/InputAdornment'
 import TextField from '@mui/material/TextField'
 import axios from 'axios'
-import EmailIcon from '@mui/icons-material/Email'
 import { Button } from '@mui/material'
 import Typography from '@mui/material/Typography'
-import logo from '../Components/logo.png'
+import logo from '../assets/logo.png'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import CancelIcon from '@mui/icons-material/Cancel'
 import { toast } from 'react-toastify'
 import { AuthContext } from '../store/authentication'
 import { useNavigate } from 'react-router-dom'
 import {
-	Email,
 	AccountCircle,
-	Lock,
-	Person,
 } from '@mui/icons-material'
 
 export default function ResetPassword() {

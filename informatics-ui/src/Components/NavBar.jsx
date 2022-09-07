@@ -3,13 +3,13 @@ import { blue } from '@mui/material/colors'
 import { NavLink } from 'react-router-dom'
 import axios from 'axios'
 import { toast } from 'react-toastify'
-import './NavBar.css'
+import '../styles/NavBar.css'
 
 import React, { useState, useEffect, useContext } from 'react'
 import Login from './Login'
 import Register from './Register'
 import { AuthContext } from '../store/authentication'
-
+import PersonIcon from '@mui/icons-material/Person'
 function Navbar() {
 	const authContext = useContext(AuthContext)
 	const isLoggedIn = authContext.isLoggedIn
@@ -124,12 +124,17 @@ function Navbar() {
 					>
 						{isLoggedIn ? (
 							<div style={{ display: 'flex', alignItems: 'center' }}>
-								<Typography variant="button">👨‍💻{ authContext.username}</Typography>
+								<PersonIcon />
+								<Typography variant="button">
+									{' '}
+									{authContext.username}
+								</Typography>
 								<Button
 									className="items"
 									sx={{
+
 										// marginInline: '2px',
-										// marginLeft: '60px',
+										marginLeft: '5%',
 										color: '#e1dce6',
 									}}
 									onClick={() => handleLogOut()}

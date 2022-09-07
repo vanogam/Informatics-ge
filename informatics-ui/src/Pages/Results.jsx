@@ -7,10 +7,12 @@ import {
 	TableCell,
 	TableHead,
 	TableRow,
+	TableContainer,
+	Paper
 } from '@mui/material'
-import { NavLink } from "react-router-dom";
 import axios from 'axios';
 import { useState, useEffect } from 'react';
+
 
 function handleResults(response, setResults, response2){
     console.log(response)
@@ -87,14 +89,15 @@ export default function Results(){
 			>
 			</Typography>
 			<Container maxWidth="lg">
+			<TableContainer component={Paper} sx={{ marginInline: 'auto' }}>
 				<Table sx={{ marginX: 'auto' }}>
 					<TableHead>
 						<TableRow>
 							
-							<TableCell >მომხმარებელი 👨‍💻</TableCell>
+							<TableCell >მომხმარებელი</TableCell>
                             <TableCell>ამოცანა "{taskNames[0]? taskNames[0]: "-"}" </TableCell>
 							<TableCell> ამოცანა "{taskNames[1]? taskNames[0]: "-"}"</TableCell>
-							<TableCell>საბოლოო შედეგი 🏆</TableCell>
+							<TableCell>საბოლოო შედეგი </TableCell>
 			
 						</TableRow>
 					</TableHead>
@@ -127,6 +130,7 @@ export default function Results(){
 						))}
 					</TableBody>
 				</Table>
+				</TableContainer>
 			</Container>
 		</main>
 	)

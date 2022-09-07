@@ -9,7 +9,9 @@ import {
 	TableRow,
 	Button,
 	Modal,
-	Box
+	Box,
+	TableContainer,
+	Paper
 } from '@mui/material'
 import { NavLink } from "react-router-dom";
 import axios from 'axios';
@@ -112,6 +114,7 @@ export default function Contest(){
 				
 			</Typography>
 			<Container maxWidth="lg">
+			<TableContainer component={Paper} sx={{ marginInline: 'auto' }}>
 				<Table sx={{ marginX: 'auto' }}>
 					<TableHead>
 						<TableRow>
@@ -146,12 +149,13 @@ export default function Contest(){
 									{problem.category}
 
 								</TableCell>
-								<TableCell ><NavLink to={`${problem.id}`}exact>{problem.name} </NavLink></TableCell>
+								<TableCell ><NavLink style={{ color: 'black', textDecorationLine: 'none' }} to={`${problem.id}`}exact>{problem.name} </NavLink></TableCell>
 
 							</TableRow>
 						))}
 					</TableBody>
 				</Table>
+				</TableContainer>
 			</Container>
 		</main>
 	)

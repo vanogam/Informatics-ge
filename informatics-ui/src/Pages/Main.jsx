@@ -5,9 +5,9 @@ import CardContent from '@mui/material/CardContent';
 import CardMedia from '@mui/material/CardMedia';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
-import news1 from "../Components/news1.jpg";
-import news2 from "../Components/news2.jpg";
-import news3 from "../Components/news3.jpg";
+import news1 from "../assets/news1.jpg";
+import news2 from "../assets/news2.jpg";
+import news3 from "../assets/news3.jpg";
 import {  Box} from '@mui/material';
 
 export default function Main() {

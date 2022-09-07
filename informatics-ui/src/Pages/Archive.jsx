@@ -7,7 +7,10 @@ import {
 	TableCell,
 	TableHead,
 	TableRow,
+	TableContainer,
+	Paper,
 } from '@mui/material'
+import BarChartIcon from '@mui/icons-material/BarChart';
 import { NavLink } from "react-router-dom";
 import axios from 'axios';
 import { useState, useEffect } from 'react';
@@ -74,6 +77,7 @@ export default function Archive(){
 				ამ გვერდზე შეგიძლიათ იხილოთ დაარქივებული ამოცანები
 			</Typography>
 			<Container maxWidth="lg">
+			<TableContainer component={Paper} sx={{ marginInline: 'auto' }}>
 				<Table sx={{ marginX: 'auto' }}>
 					<TableHead>
 						<TableRow>
@@ -95,12 +99,13 @@ export default function Archive(){
 									{problem.category}
 
 								</TableCell>
-								<TableCell ><NavLink to={`/contest/${contest_id}/${problem.id}`}exact>{problem.name} </NavLink></TableCell>
+								<TableCell ><NavLink  style={{ color: 'black', textDecorationLine: 'none' }} to={`/contest/${contest_id}/${problem.id}`}exact>{problem.name} </NavLink></TableCell>
 
 							</TableRow>
 						))}
 					</TableBody>
 				</Table>
+				</TableContainer>
 			</Container>
 		</main>
 	)

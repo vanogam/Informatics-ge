@@ -1,13 +1,7 @@
 import { useParams } from 'react-router-dom'
 import { Document, Page ,pdfjs } from 'react-pdf';
 import {
-	Container,
 	Typography,
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableRow,
     Box
 } from '@mui/material'
 import React, { useState } from 'react'
@@ -18,10 +12,9 @@ import 'prismjs/components/prism-c'
 import 'prismjs/components/prism-cpp'
 import 'prismjs/components/prism-javascript'
 import 'prismjs/themes/prism.css' //Example style, you can use another
-import './numbers.css'
+import '../styles/numbers.css'
 import { Button } from '@mui/material'
-import TextField from '@mui/material/TextField'
-import { NavLink, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axios from 'axios';
 import { useEffect } from 'react';
 // import Pdf from "../../home/u/informatics/statements/passw/statement_KA.pdf"

@@ -7,13 +7,16 @@ import {
 	TableHead,
 	TableRow,
 	Button,
+	TableContainer,
+	Paper,
 } from '@mui/material'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { useState, useEffect, useContext } from 'react'
 import { AuthContext } from '../store/authentication'
-import * as React from 'react';
-
+import * as React from 'react'
+import BarChartIcon from '@mui/icons-material/BarChart';
+import TerminalIcon from '@mui/icons-material/Terminal';
 function handleContestsResponse(response, setRows, isLoggedIn) {
 	var curRows = []
 	const contests = response.data.contests
@@ -34,17 +37,17 @@ function handleContestsResponse(response, setRows, isLoggedIn) {
 			startDate: contestStartDate,
 			duration: contestDuration.toString() + ' სთ',
 			status: contestStatus,
-			results:' 📊',
-			submissions: "🗃️"
+			results: '',
+			submissions: '',
 		}
 		curRows.push(curContest)
 	}
-	var rows = [...curRows].sort((a, b) =>
-    a.status > b.status ? 1 : -1, );
+	var rows = [...curRows].sort((a, b) => (a.status > b.status ? 1 : -1))
 	setRows(rows)
 }
 
 export default function Contests() {
+	const navigate = useNavigate()
 	const authContext = useContext(AuthContext)
 	const isLoggedIn = authContext.isLoggedIn
 	const [rows, setRows] = useState([])
@@ -95,61 +98,79 @@ export default function Contests() {
 						დაამატე კონტესტი
 					</Button>
 				)}
-				<Table sx={{ marginX: 'auto' }}>
-					<TableHead>
-						<TableRow>
-							<TableCell>სახელი</TableCell>
-							<TableCell align="right">დასაწყების დრო</TableCell>
-							<TableCell align="right">ხანგრძლივობა</TableCell>
-							<TableCell align="right">სტატუსი</TableCell>
-							<TableCell align="right">შედეგები</TableCell>
-							<TableCell align="right">მცდელობები</TableCell>
-							{roles === 'ADMIN' ? <TableCell></TableCell> : null}
-						</TableRow>
-					</TableHead>
-					<TableBody>
-						{rows.map((row) => (
-							<TableRow
-								key={row.name}
-								sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-							>
-								<TableCell component="th" scope="row">
-									<NavLink to={`/contest/${row.id}`} exact>
-										{row.name}{' '}
-									</NavLink>
-								</TableCell>
-								<TableCell align="right">{row.startDate}</TableCell>
-								<TableCell align="right">{row.duration}</TableCell>
-								<TableCell align="right" sx ={{color:
-                          row.status === "LIVE" ? "green" : "black"}} >{row.status==="LIVE"?"მიმდინარე" :"წარსული"}</TableCell>
-								<TableCell align="right" component="th" scope="row">
-									<NavLink to={`/results/${row.id}`} exact>
-										{row.results}{' '}
-									</NavLink>
-								</TableCell>
-								<TableCell align="right" component="th" scope="row">
-									<NavLink to={`/contest/${row.id}/submissions`} exact>
-										{row.submissions}{' '}
-									</NavLink>
-								</TableCell>
-								{roles === 'ADMIN' && (
-									<TableCell>
-										<Button
-											variant="contained"
-											color="secondary"
-											sx={{ backgroundColor: '#2f2d47' }}
-											component={NavLink}
-											to={`/editContest/${row.id}`}
-										>
-											რედაქტირება
-										</Button>
-										
-									</TableCell>
-								)}
+				<TableContainer component={Paper} sx={{ marginInline: 'auto' }}>
+					<Table sx={{ marginX: 'auto' }}>
+						<TableHead>
+							<TableRow>
+								<TableCell>სახელი</TableCell>
+								<TableCell align="right">დასაწყების დრო</TableCell>
+								<TableCell align="right">ხანგრძლივობა</TableCell>
+								<TableCell align="right">სტატუსი</TableCell>
+								<TableCell align="right">შედეგები</TableCell>
+								<TableCell align="right">მცდელობები</TableCell>
+								{roles === 'ADMIN' ? <TableCell></TableCell> : null}
 							</TableRow>
-						))}
-					</TableBody>
-				</Table>
+						</TableHead>
+						<TableBody>
+							{rows.map((row) => (
+								<TableRow
+									// onClick={() => {
+									// 	navigate(`/contest/${row.id}`, {
+									// 		replace: true,
+									// 	})
+									// }}
+									key={row.name}
+									sx={{
+										'&:last-child td, &:last-child th': { border: 0 },
+										cursor: 'pointer',
+										'&:hover': { backgroundColor: '#eee' },
+									}}
+								>
+									<TableCell component="th" scope="row">
+										<NavLink
+											style={{ color: 'black', textDecorationLine: 'none' }}
+											to={`/contest/${row.id}`}
+											exact
+										>
+											{row.name}
+										</NavLink>
+									</TableCell>
+									<TableCell align="right">{row.startDate}</TableCell>
+									<TableCell align="right">{row.duration}</TableCell>
+									<TableCell
+										align="right"
+										sx={{ color: row.status === 'LIVE' ? 'green' : 'black' }}
+									>
+										{row.status === 'LIVE' ? 'მიმდინარე' : 'წარსული'}
+									</TableCell>
+									<TableCell align="right" component="th" scope="row">
+										<NavLink style={{ color: '#3c324e', textDecorationLine: 'none' }} to={`/results/${row.id}`} exact>
+												{<BarChartIcon></BarChartIcon>}
+										</NavLink>
+									</TableCell>
+									<TableCell align="right" component="th" scope="row">
+										<NavLink style={{ color: '#3c324e', textDecorationLine: 'none' }} to={`/contest/${row.id}/submissions`} exact>
+												{<TerminalIcon></TerminalIcon>}
+										</NavLink>
+									</TableCell>
+									{roles === 'ADMIN' && (
+										<TableCell>
+											<Button
+												variant="contained"
+												color="secondary"
+												sx={{ backgroundColor: '#2f2d47' }}
+												component={NavLink}
+												to={`/editContest/${row.id}`}
+											>
+												რედაქტირება
+											</Button>
+										</TableCell>
+									)}
+								</TableRow>
+							))}
+						</TableBody>
+					</Table>
+				</TableContainer>
 			</Container>
 		</main>
 	)

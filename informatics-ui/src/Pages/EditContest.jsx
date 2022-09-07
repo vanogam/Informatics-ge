@@ -14,7 +14,7 @@ import {
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
 import { useRef, useState } from 'react'
 import axios from 'axios'
-import NewTaskCard from './NewTaskCard'
+import NewTaskCard from '../Components/NewTaskCard'
 import { useParams } from 'react-router-dom'
 import { NavLink } from 'react-router-dom'
 import FormGroup from '@mui/material/FormGroup';

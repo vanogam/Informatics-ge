@@ -14,27 +14,39 @@ import Typography from "@mui/material/Typography";
 import TableContainer from "@mui/material/TableContainer";
 import { useParams } from "react-router-dom";
 import { useEffect } from "react";
-
+import { Chip } from '@mui/material'
 export default function ContestSubmissions() {
   const [submissions, setSubmissions] = useState([]);
   const [selectedSubmission, setSelectedSubmission] = useState({});
   const [popUp, setPopUp] = useState(false);
   const { contest_id } = useParams();
-
+  useEffect(() => {
+		axios
+			.get(`http://localhost:8080/contest/${contest_id}/status`)
+			.then((response) => {
+				if (response.data.status === 'SUCCESS')
+					setSubmissions(response.data.submissions)
+				else return <>NO SUBMISSIONS FOUND</>
+			})
+		const interval = setInterval(() => {
+			axios
+				.get(`http://localhost:8080/contest/${contest_id}/status`)
+				.then((response) => {
+					if (response.data.status === 'SUCCESS')
+						setSubmissions(response.data.submissions)
+					else return <>NO SUBMISSIONS FOUND</>
+				})
+		}, 5000)
+    return () => {
+			clearInterval(interval)
+		}
+	}, [])
   const hightlightWithLineNumbers = (input, grammar, language) =>
     highlight(input, grammar, language)
       .split("\n")
       .map((line, i) => `${line}`)
       .join("\n");
-      useEffect(() => {
-        axios
-          .get(`http://localhost:8080/contest/${contest_id}/status`)
-          .then((response) => {
-            if (response.data.status === "SUCCESS")
-              setSubmissions(response.data.submissions);
-            else return <>NO SUBMISSIONS FOUND</>;
-          });
-      }, []);
+  
       return (
         <>
           <Typography 	sx={{ color: '#452c54', fontWeight: 'bold' }} align="center" variant="h6" mb="1rem" mt="1rem">
@@ -93,7 +105,7 @@ export default function ContestSubmissions() {
                 transform: "translate(-50%, -50%)",
                 maxHeight: "80%",
                 overflowY: "auto",
-                width: "600px",
+                width: "55%",
                 bgcolor: "white",
                 border: `2px solid ;`,
                 borderRadius: "0.5rem",
@@ -141,35 +153,50 @@ export default function ContestSubmissions() {
                     <Typography align="center" variant="h6" mb="1rem">
                       ტესტ ქეისები
                     </Typography>
-                    {selectedSubmission?.results?.map((testCase) => (
-                      <Paper elevation={4} sx={{ padding: "1rem" , marginBottom: "1rem",
-                        backgroundColor:
-                          testCase.outcome === "Correct" ? "#CFE8D3" : "#E8CFD4",
-                      }}>
-                        <Typography sx={{fontSize: "15px"}}>#{testCase.idx}</Typography>
-                        <Box sx={{display: "flex", justifyContent: "space-between"}}>
-                            <Typography sx={{fontSize: "15px"}} >
-                              სტატუსი:{" "}
-                              <span style={{ fontWeight: 700 }}>
-                                {testCase.outcome}
-                              </span>
-                            </Typography>
-                            <Typography sx={{fontSize: "15px"}}>
-                              მესიჯი:{" "}
-                              <span style={{ fontWeight: 700 }}>{testCase.text}</span>
-                            </Typography>
-                            <Typography sx={{fontSize: "15px"}}>
-                              დრო:{" "}
-                              <span style={{ fontWeight: 700 }}>{testCase.time}</span>
-                            </Typography>
-                            <Typography sx={{fontSize: "15px"}}>
-                              მეხსიერება:{" "}
-                              <span style={{ fontWeight: 700 }}>{parseInt(testCase.memory/1000) + "KB"}</span>
-                            </Typography>
-                        </Box>
-                      </Paper>
-                    ))}
-                  </Paper>
+                    <TableContainer component={Paper}>
+									<Table sx={{ minWidth: 650 }} aria-label="simple table">
+										<TableHead>
+											<TableRow>
+												<TableCell>#</TableCell>
+												<TableCell>სტატუსი</TableCell>
+												<TableCell>მესიჯი</TableCell>
+												<TableCell>დრო</TableCell>
+												<TableCell>მეხსიერება</TableCell>
+											</TableRow>
+										</TableHead>
+										<TableBody>
+											{selectedSubmission?.results?.map((testCase) => (
+												<TableRow
+													key={testCase.idx}
+													sx={{
+														'&:last-child td, &:last-child th': { border: 0 },
+														cursor: 'pointer',
+														'&:hover': { backgroundColor: '#eee' },
+													}}
+												>
+													<TableCell>{testCase.idx}</TableCell>
+													<TableCell>
+														<Chip
+															sx={{
+																backgroundColor:
+																	testCase.outcome === 'Correct'
+																		? '#CFE8D3'
+																		: '#E8CFD4',
+															}}
+															label={testCase.outcome}
+														/>
+													</TableCell>
+													<TableCell>{testCase.text}</TableCell>
+													<TableCell>{testCase.time}</TableCell>
+													<TableCell>
+														{parseInt(testCase.memory / 1000) + 'KB'}
+													</TableCell>
+												</TableRow>
+											))}
+										</TableBody>
+									</Table>
+								</TableContainer>
+							</Paper>
                 ) : (
                   <Paper elevation={4} sx={{ padding: "1rem" }}>
                     <Typography>

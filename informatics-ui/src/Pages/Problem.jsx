@@ -99,7 +99,8 @@ export default function Problem(){
         }}>
               <Box sx={{ marginLeft:'2%', marginTop: '5%',width: '80%', maxWidth: 500 }}>
         <Typography variant="h7" gutterBottom>
-        ამოცანა {problem_id}
+        ამოცანა
+		 {/* {problem_id} */}
         </Typography>
         <Document file={pdf}>
             <Page pageNumber={1} />

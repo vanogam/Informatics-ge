@@ -26,10 +26,12 @@ function handleContestResponse(response, setProblems){
 		
 		const taskId = task.task.id
 		const taskName = task.task.title.KA
+		const score = task.score
 		const taskItem = {
 			id: taskId, 
 			name: taskName,
-			category: curCategory
+			category: curCategory,
+			score: score
 		}
 		curCategory += 1
 		curTasks.push(taskItem)
@@ -123,6 +125,11 @@ export default function Contest(){
 							
 							<TableCell>კატეგორია</TableCell>
 							<TableCell >სახელი</TableCell>
+							{(isLoggedIn && roles !== 'ADMIN' && registered === true) &&
+								(
+									<TableCell>ქულა</TableCell>	
+								)
+								}
 							{(isLoggedIn && roles !== 'ADMIN' && registered === false) && (
 									<TableCell>
 										<Button
@@ -151,8 +158,13 @@ export default function Contest(){
 									{problem.category}
 
 								</TableCell>
+								
 								<TableCell ><NavLink style={{ color: 'black', textDecorationLine: 'none' }} to={`${problem.id}`}exact>{problem.name} </NavLink></TableCell>
-
+								{(isLoggedIn && roles !== 'ADMIN' && registered === true) &&
+								(
+									<TableCell>{problem.score}</TableCell>	
+								)
+								}
 							</TableRow>
 						))}
 					</TableBody>

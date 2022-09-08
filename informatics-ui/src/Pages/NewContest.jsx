@@ -123,7 +123,7 @@ export default function NewContest() {
 						<>
 							<Paper
 								elevation={4}
-								sx={{height:'200px', padding: '1rem', marginBottom: '0.5rem' }}
+								sx={{  padding: '1rem', marginBottom: '0.5rem' }}
 							>
 								<Typography
 									textAlign="center"

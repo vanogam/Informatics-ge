@@ -157,7 +157,7 @@ export default function EditContest() {
 						<>
 							<Paper
 								elevation={4}
-								sx={{ padding: '1rem', marginBottom: '0.5rem' }}
+								sx={{  padding: '1rem', marginBottom: '0.5rem' }}
 							>
 								<Typography
 									textAlign="center"
@@ -166,11 +166,11 @@ export default function EditContest() {
 								>
 									ამოცანები
 								</Typography>
-								<Stack>
+								<Stack >
 									{tasks?.map((task, index) => (
 										<Paper
 											elevation={4}
-											sx={{ padding: '1rem', marginBottom: '0.5rem' }}
+											sx={{padding: '1rem', marginBottom: '0.5rem' }}
 											key={task}
 										>
 											<Typography>

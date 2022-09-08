@@ -14,6 +14,7 @@ import EditContest from './Pages/EditContest'
 import Results from './Pages/Results'
 import MySubmissions from './Pages/MySubmissions'
 import ContestSubmissions from './Pages/ContestSubmissions'
+import NewNews from './Pages/NewNews'
 function App() {
 	return (
 		<div className="App">
@@ -55,7 +56,8 @@ function App() {
 						element={<ContestSubmissions />}
 					/>
 					<Route path="/addContest" element={<NewContest />} />
-					<Route path="/editContest/:contest_id" element={<EditContest />} />
+					<Route path="/editContest/:contest_id" element={<EditContest />} />\
+					<Route path="/newNews" element={<NewNews />} />
 				</Routes>
 			</Box>
 		</div>

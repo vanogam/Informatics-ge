@@ -134,12 +134,11 @@ export default function NewTaskCard({ contestId, handleSubmit }) {
 		handleSubmit(enTitle)
 	}
 	return (
-		<Paper elevation={4} sx={{ padding: '1rem' }}>
-			<Typography align="center" variant="h5" mb="1rem">
+		<Paper elevation={4} sx={{  padding: '1rem' }}>
+			<Typography align="center" variant="h6" mb="1rem">
 				ახალი ამოცანა
 			</Typography>
 			<Stack gap="1rem" maxWidth="25rem" mx="auto" mb="1rem">
-				<TextField 	size = "small" label="Code" inputRef={codeRef} variant="outlined" />
 				<Stack flexDirection="row" gap="1rem">
 					<Button fullWidth variant="contained" component="label">
 						EN პირობა
@@ -163,8 +162,11 @@ export default function NewTaskCard({ contestId, handleSubmit }) {
 						variant="outlined"
 						size = "small"
 					/>
+						<TextField 	size = "small" label="Code" inputRef={codeRef} variant="outlined" />
 				</Stack>
 				{/* <TextField type="file" variant="outlined" /> */}
+
+				<Stack flexDirection="row" gap="1rem">
 				<TextField size = "small" label="taskType" inputRef={taskTypeRef} variant="outlined" />
 				<TextField
 					label="taskScoreType"
@@ -172,12 +174,16 @@ export default function NewTaskCard({ contestId, handleSubmit }) {
 					variant="outlined"
 					size = "small"
 				/>
-				<TextField
+
+<TextField
 					label="taskScoreParameter"
 					inputRef={taskScoreParameterRef}
 					variant="outlined"
 					size = "small"
 				/>
+				</Stack>
+				<Stack flexDirection="row" gap="1rem">
+
 				<TextField
 					label="timeLimitMillis"
 					inputRef={timeLimitMillisRef}
@@ -190,18 +196,25 @@ export default function NewTaskCard({ contestId, handleSubmit }) {
 					variant="outlined"
 					size = "small"
 				/>
+				</Stack>
+				<Stack flexDirection="row" gap="1rem">
+
+				
 				<TextField
 					label="inputTemplate"
 					inputRef={inputTemplateRef}
 					variant="outlined"
 					size = "small"
 				/>
-				<TextField
+
+<TextField
 					label="outputTemplate"
 					inputRef={outputTemplateRef}
 					variant="outlined"
 					size = "small"
 				/>
+				</Stack>
+			
 			</Stack>
 			{testCases?.map((testCase, index) => (
 				<Paper
@@ -224,7 +237,7 @@ export default function NewTaskCard({ contestId, handleSubmit }) {
 						variant="contained"
 						sx ={{background: '#3c324e'}}
 						onClick={() => setShowNewTestCaseCard(true)}
-					>
+					>ახალი ამოცანა
 						ახალი ტესტ-ქეისები
 					</Button>
 				</Paper>

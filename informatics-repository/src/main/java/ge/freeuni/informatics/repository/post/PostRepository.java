@@ -20,7 +20,7 @@ public class PostRepository implements IPostRepository {
     }
 
     @Override
-    public Post getPost(long postId) {
+    public Post getPost(Long postId) {
         return em.find(Post.class, postId);
     }
 

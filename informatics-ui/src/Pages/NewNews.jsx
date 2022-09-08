@@ -31,7 +31,6 @@ export default function NewNews(){
 			title: title?.current.value,
             roomId: 1,
 			content: text?.current.value, 
-            image: img
 		}
 		console.log(params)
 
@@ -42,7 +41,7 @@ export default function NewNews(){
                 
                 //handle success
                 var bodyFormData = new FormData();
-			    bodyFormData.append("image", params.image)
+			    bodyFormData.append("image", img)
                 bodyFormData.append('postId', newsId)
                   axios({
                       method: "post",

@@ -8,7 +8,7 @@ public interface IPostRepository {
 
     Post savePost(Post post);
 
-    Post getPost(long postId);
+    Post getPost(Long postId);
 
     List<Post> filter(Long roomId, Integer offset, Integer limit);
 }

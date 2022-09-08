@@ -21,7 +21,7 @@ public class PostController {
 
     @Autowired
     IPostsManager postsManager;
-    @GetMapping(value = "/posts/{postId}/image")
+    @GetMapping(value = "/posts/{postId}/image", produces = MediaType.IMAGE_PNG_VALUE)
     byte[] getPostImage(@PathVariable Long postId) {
         try {
             File image = postsManager.getPostImage(postId);
@@ -59,8 +59,8 @@ public class PostController {
         }
     }
 
-    @PostMapping(value = "/posts/upload", produces = MediaType.IMAGE_PNG_VALUE)
-    InformaticsResponse uploadImage(@RequestParam MultipartFile image, @RequestParam Integer postId) {
+    @PostMapping(value = "/posts/{postId}/upload")
+    InformaticsResponse uploadImage(@RequestParam MultipartFile image, @PathVariable Long postId) {
         try {
             postsManager.uploadImage(postId, image.getBytes());
             return new InformaticsResponse("SUCCESS", null);

@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -41,6 +42,7 @@ public class PostsManager implements IPostsManager {
         if (!room.isMember(userManager.getAuthenticatedUser().getId())) {
             throw new InformaticsServerException("permissionDenied");
         }
+        postDTO.setAuthorName(userManager.getUser(postDTO.getAuthorId()).getUsername());
         return postDTO;
     }
 
@@ -50,7 +52,11 @@ public class PostsManager implements IPostsManager {
         if (!room.isMember(userManager.getAuthenticatedUser().getId())) {
             throw new InformaticsServerException("permissionDenied");
         }
-        return PostDTO.toDTOs(postRepository.filter(roomId, offset, limit));
+        List<PostDTO> postDTOList = PostDTO.toDTOs(postRepository.filter(roomId, offset, limit));
+        for (PostDTO postDTO : postDTOList) {
+            postDTO.setAuthorName(userManager.getUser(postDTO.getAuthorId()).getUsername());
+        }
+        return postDTOList;
     }
 
     @Override
@@ -67,6 +73,8 @@ public class PostsManager implements IPostsManager {
 
     @Override
     public void addPost(PostDTO post) throws InformaticsServerException {
+        post.setAuthorId(userManager.getAuthenticatedUser().getId());
+        post.setPostDate(new Date());
         Post postEntity = PostDTO.fromDTO(post);
         Post entityAtDB = postRepository.getPost(post.getId());
         ContestRoom room = roomRepository.getRoom(post.getRoomId());

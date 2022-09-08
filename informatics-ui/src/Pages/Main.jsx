@@ -15,7 +15,23 @@ import { AuthContext } from '../store/authentication'
 import { NavLink} from 'react-router-dom'
 import NewNews from './NewNews'
 function loadNews(response, setNews){
+	var curNews = []
+	const newsList = response.data.news
+	for (const news of newsList) {
+		const title = news.title
+		const text = news.text 
+		const image = news.image
+		const date = news.date 
+		const cur = {
+			title: title, 
+			text: text, 
+			image: image, 
+			date: date 
+		}
+		curNews.push(cur)
+	}
 
+	setNews(curNews)
 }
 
 export default function Main() {
@@ -24,7 +40,7 @@ export default function Main() {
 	const [roles, setRoles] = useState()	
 	useEffect(() => {
 		axios
-			.get(`${process.env.REACT_APP_HOST}/contest-list`, {
+			.get(`${process.env.REACT_APP_HOST}/news`, {
 				params: {
 					roomId: 1,
 				},
@@ -103,7 +119,7 @@ export default function Main() {
 						maxWidth: '40%',
 						maxHeight: '10%',
 					}}>
-				<CardMedia width="20" component="img" height="200" image={news.image} />
+				<CardMedia width="20" component="img" height="200" src ={news.image} />
 				<CardContent>
 					<Typography gutterBottom variant="h5" component="div">
 					{news.title}

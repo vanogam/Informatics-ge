@@ -23,7 +23,31 @@ export default function NewNews(){
 
 
 
-	const handleAddNews = (params) => {
+	const handleAddNews = () => {
+
+        const img = picRef?.current.files[0]
+        console.log("HI")
+		const params = {
+			title: title?.current.value,
+			date: time?.current.value,
+			text: text?.current.value, 
+            image: img
+		}
+		console.log(params)
+
+		// var bodyFormData = new FormData();
+		// 	bodyFormData.append("title", params.title)
+		// 	bodyFormData.append("date", params.date)
+		// 	bodyFormData.append("text", params.text)
+        //     bodyFormData.append("image", params.img)
+		// 	console.log("BodyFromData", bodyFormData)
+		// 	axios({
+		// 		method: "post",
+		// 		url: `${process.env.REACT_APP_HOST}/add-news`,
+		// 		data: bodyFormData,
+		// 		headers: { "Content-Type": 'multipart/form-data; boundary=<calculated when request is sent></calculated>'},
+		// 	  })
+
 		
 	}
   return(  
@@ -42,7 +66,7 @@ export default function NewNews(){
             
         </Stack>
         <Stack flexDirection="row" gap="1rem">
-        <Button variant="contained" component="label">
+        <Button  sx ={{background: '#3c324e'}}variant="contained" component="label">
                 სურათი
                 <input ref={picRef} type="file" hidden />
             </Button>
@@ -69,8 +93,8 @@ export default function NewNews(){
             />
             <Button 
             
-            sx ={{ marginLeft: '25%',width:'50%'}} variant="contained" component="label"
-            onClick={() => {(console.log("Save news"))}}>
+            sx ={{background: '#3c324e', marginLeft: '25%',width:'50%'}} variant="contained" component="label"
+            onClick={() => {(console.log("Save news")); handleAddNews()}}>
                 შენახვა
                 
             </Button>

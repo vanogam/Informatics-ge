@@ -1,12 +1,20 @@
 package ge.freeuni.informatics.server.posts;
 
-import ge.freeuni.informatics.common.model.post.Post;
+import ge.freeuni.informatics.common.dto.PostDTO;
+import ge.freeuni.informatics.common.exception.InformaticsServerException;
 
+import java.io.File;
 import java.util.List;
 
 public interface IPostsManager {
 
-    List<Post> getPosts(long roomId);
+    PostDTO getPost(long postId) throws InformaticsServerException;
 
-    void addPost(Post post);
+    List<PostDTO> getPosts(long roomId, Integer offset, Integer limit) throws InformaticsServerException;
+
+    File getPostImage(long postId) throws InformaticsServerException;
+
+    void addPost(PostDTO post) throws InformaticsServerException;
+
+    void uploadImage(long postId, byte[] image) throws InformaticsServerException;
 }

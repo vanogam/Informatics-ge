@@ -31,7 +31,7 @@ function Navbar() {
 
 	const handleLogOut = () => {
 		axios
-			.post(`${process.env.REACT_APP_HOST}/logout`, {})
+			.get(`${process.env.REACT_APP_HOST}/logout`)
 			.then((response) => {
 				toast.success('Logout Successful')
 				authContext.logout()

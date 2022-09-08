@@ -39,7 +39,7 @@ public class SecurityConfiguration {
                     .and().logout(logout -> logout
                     .permitAll()
                     .logoutSuccessHandler((request, response, authentication) -> response.setStatus(HttpServletResponse.SC_OK)
-                    )).csrf().disable().cors(cors -> cors.disable());
+                    )).csrf().disable().cors();
         }
     }
 

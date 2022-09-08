@@ -94,5 +94,10 @@
       "name": "ge.freeuni.informatics.host",
       "type": "java.lang.String",
       "description": "Description for ge.freeuni.informatics.host."
+    },
+    {
+      "name": "ge.freeuni.informatics.Task.postImageDirectoryAddress",
+      "type": "java.lang.String",
+      "description": "Description for ge.freeuni.informatics.Task.postImageDirectoryAddress."
     }
   ] }

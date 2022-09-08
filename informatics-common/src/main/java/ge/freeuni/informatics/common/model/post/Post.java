@@ -14,7 +14,11 @@ public class Post {
 
     long id;
 
+    String title;
+
     String content;
+
+    String imagePath;
 
     long authorId;
 
@@ -30,6 +34,14 @@ public class Post {
 
     public void setId(long id) {
         this.id = id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public String getContent() {
@@ -55,6 +67,14 @@ public class Post {
 
     public void setPostDate(Date postDate) {
         this.postDate = postDate;
+    }
+
+    public String getImagePath() {
+        return imagePath;
+    }
+
+    public void setImagePath(String imagePath) {
+        this.imagePath = imagePath;
     }
 
     @OneToOne(targetEntity = ContestRoom.class)

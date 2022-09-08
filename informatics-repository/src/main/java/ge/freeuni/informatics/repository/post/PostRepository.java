@@ -25,7 +25,7 @@ public class PostRepository implements IPostRepository {
     }
 
     @Override
-    public List<Post> filter(long roomId, Integer offset, Integer limit) {
+    public List<Post> filter(Long roomId, Integer offset, Integer limit) {
         TypedQuery<Post> query = em.createQuery("SELECT p FROM Post p WHERE p.roomId = :roomId", Post.class)
                 .setParameter("roomId", roomId);
         query.setFirstResult(offset);

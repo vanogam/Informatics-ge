@@ -8,25 +8,25 @@ import java.util.List;
 
 public class PostDTO {
 
-    long id;
+    Long id;
 
     String title;
 
     String content;
 
-    long authorId;
+    Long authorId;
 
     String authorName;
 
     Date postDate;
 
-    long roomId;
+    Long roomId;
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -46,7 +46,7 @@ public class PostDTO {
         this.content = content;
     }
 
-    public long getAuthorId() {
+    public Long getAuthorId() {
         return authorId;
     }
 
@@ -58,7 +58,7 @@ public class PostDTO {
         this.authorName = authorName;
     }
 
-    public void setAuthorId(long authorId) {
+    public void setAuthorId(Long authorId) {
         this.authorId = authorId;
     }
 
@@ -70,11 +70,11 @@ public class PostDTO {
         this.postDate = postDate;
     }
 
-    public long getRoomId() {
+    public Long getRoomId() {
         return roomId;
     }
 
-    public void setRoomId(long roomId) {
+    public void setRoomId(Long roomId) {
         this.roomId = roomId;
     }
 

@@ -1,5 +1,6 @@
 package ge.freeuni.informatics.server.submission;
 
+import ge.freeuni.informatics.common.Language;
 import ge.freeuni.informatics.common.dto.SubmissionDTO;
 import ge.freeuni.informatics.common.model.contest.Contest;
 import ge.freeuni.informatics.common.model.contest.ContestStatus;
@@ -108,6 +109,15 @@ public class SubmissionManager implements ISubmissionManager {
                 submissionDTO.setUsername(userManager.getUser(submissionDTO.getUserId()).getUsername());
             } catch (Exception ignored) {
                 submissionDTO.setUsername("[DELETED]");
+            }
+        }
+
+        for (SubmissionDTO submissionDTO : submissionDTOS) {
+            try {
+                submissionDTO.setTaskName(taskRepository.getTask(submissionDTO.getTaskId()).getTitle().get(Language.KA.name()));
+                submissionDTO.setContestName(contestRepository.getContest(submissionDTO.getContestId()).getName());
+            } catch (Exception ignored) {
+
             }
         }
         return submissionDTOS;

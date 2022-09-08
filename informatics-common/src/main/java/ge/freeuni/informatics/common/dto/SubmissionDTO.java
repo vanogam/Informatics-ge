@@ -31,6 +31,10 @@ public class SubmissionDTO {
 
     private long contestId;
 
+    private String taskName;
+
+    private String contestName;
+
     private String language;
 
     private Date submissionTime;
@@ -63,6 +67,22 @@ public class SubmissionDTO {
 
     public void setUserId(long userId) {
         this.userId = userId;
+    }
+
+    public String getTaskName() {
+        return taskName;
+    }
+
+    public void setTaskName(String taskName) {
+        this.taskName = taskName;
+    }
+
+    public String getContestName() {
+        return contestName;
+    }
+
+    public void setContestName(String contestName) {
+        this.contestName = contestName;
     }
 
     public Float getScore() {

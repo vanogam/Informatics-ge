@@ -20,7 +20,7 @@ export default function NewNews(){
 	const time = useRef(null)
     const text = useRef(null)
 	const picRef = useRef(null)
-
+    const[newsId, setNewsId] = useState(null)
 
 
 	const handleAddNews = () => {
@@ -29,24 +29,42 @@ export default function NewNews(){
         console.log("HI")
 		const params = {
 			title: title?.current.value,
-			date: time?.current.value,
-			text: text?.current.value, 
+            roomId: 1,
+			content: text?.current.value, 
             image: img
 		}
 		console.log(params)
 
-		// var bodyFormData = new FormData();
-		// 	bodyFormData.append("title", params.title)
-		// 	bodyFormData.append("date", params.date)
-		// 	bodyFormData.append("text", params.text)
-        //     bodyFormData.append("image", params.img)
-		// 	console.log("BodyFromData", bodyFormData)
-		// 	axios({
-		// 		method: "post",
-		// 		url: `${process.env.REACT_APP_HOST}/add-news`,
-		// 		data: bodyFormData,
-		// 		headers: { "Content-Type": 'multipart/form-data; boundary=<calculated when request is sent></calculated>'},
-		// 	  })
+        axios
+        .post(`${process.env.REACT_APP_HOST}/add-post`, params)
+			.then((response) => {
+                setNewsId(response.data.postId)
+                
+                //handle success
+                var bodyFormData = new FormData();
+			    bodyFormData.append("image", params.image)
+                bodyFormData.append('postId', newsId)
+                  axios({
+                      method: "post",
+                      url: `${process.env.REACT_APP_HOST}/1/upload-image`,
+                      data: bodyFormData,
+                      headers: { "Content-Type": 'multipart/form-data; boundary=<calculated when request is sent></calculated>'},
+                      })
+                      .then(function (response) {
+                          //handle success
+                          console.log(response);
+                      })
+                      .catch(function (response) {
+                          //handle error
+                          console.log(response);
+                      });
+                      console.log(response);
+              
+              })
+              .catch(function (response) {
+                //handle error
+                console.log(response);
+              });
 
 		
 	}
@@ -73,12 +91,6 @@ export default function NewNews(){
             <TextField
                 label="სათაური"
                 inputRef={title}
-                variant="outlined"
-                size = "small"
-            />
-             <TextField
-                label="დრო"
-                inputRef={time}
                 variant="outlined"
                 size = "small"
             />

@@ -40,7 +40,7 @@ export default function Main() {
 	const [roles, setRoles] = useState()	
 	useEffect(() => {
 		axios
-			.get(`${process.env.REACT_APP_HOST}/news`, {
+			.get(`${process.env.REACT_APP_HOST}/posts`, {
 				params: {
 					roomId: 1,
 				},

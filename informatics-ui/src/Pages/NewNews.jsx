@@ -42,10 +42,10 @@ export default function NewNews(){
                 //handle success
                 var bodyFormData = new FormData();
 			    bodyFormData.append("image", img)
-                bodyFormData.append('postId', newsId)
+                bodyFormData.append('postId', response.data.postId)
                   axios({
                       method: "post",
-                      url: `${process.env.REACT_APP_HOST}/1/upload-image`,
+                      url: `${process.env.REACT_APP_HOST}/posts/${response.data.postId}/upload`,
                       data: bodyFormData,
                       headers: { "Content-Type": 'multipart/form-data; boundary=<calculated when request is sent></calculated>'},
                       })

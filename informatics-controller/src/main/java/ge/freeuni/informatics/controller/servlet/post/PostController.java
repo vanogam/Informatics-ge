@@ -21,7 +21,7 @@ public class PostController {
 
     @Autowired
     IPostsManager postsManager;
-    @GetMapping(value = "/posts/{postId}/image", produces = MediaType.IMAGE_PNG_VALUE)
+    @GetMapping(value = "/posts/{postId}/image")
     byte[] getPostImage(@PathVariable Long postId) {
         try {
             File image = postsManager.getPostImage(postId);
@@ -31,7 +31,7 @@ public class PostController {
         }
     }
 
-    @GetMapping(value = "/{roomId}/posts")
+    @GetMapping(value = "/room/{roomId}/posts")
     GetPostsResponse getPosts(@PathVariable Long roomId, PagingRequest request) {
         try {
             return new GetPostsResponse("SUCCESS", null, postsManager.getPosts(roomId, request.getOffset(), request.getLimit()));
@@ -40,7 +40,7 @@ public class PostController {
         }
     }
 
-    @GetMapping(value = "/posts/{postId}", produces = MediaType.IMAGE_PNG_VALUE)
+    @GetMapping(value = "/posts/{postId}")
     GetPostResponse getPost(@PathVariable Long postId) {
         try {
             return new GetPostResponse("SUCCESS", null, postsManager.getPost(postId));
@@ -50,13 +50,12 @@ public class PostController {
     }
 
 
-    @PostMapping(value = "/add-post", produces = MediaType.IMAGE_PNG_VALUE)
-    InformaticsResponse addPost(@RequestBody PostDTO postDTO) {
+    @PostMapping(value = "/add-post")
+    AddPostResponse addPost(@RequestBody PostDTO postDTO) {
         try {
-            postsManager.addPost(postDTO);
-            return new InformaticsResponse("SUCCESS", null);
+            return new AddPostResponse("SUCCESS", null, postsManager.addPost(postDTO));
         } catch (InformaticsServerException ex) {
-            return new GetPostResponse("FAIL", ex.getCode(), null);
+            return new AddPostResponse("FAIL", ex.getCode(), null);
         }
     }
 

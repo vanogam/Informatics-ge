@@ -10,5 +10,5 @@ public interface IPostRepository {
 
     Post getPost(long postId);
 
-    List<Post> filter(long roomId, Integer offset, Integer limit);
+    List<Post> filter(Long roomId, Integer offset, Integer limit);
 }

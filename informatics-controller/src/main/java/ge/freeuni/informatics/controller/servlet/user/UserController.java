@@ -64,13 +64,11 @@ public class UserController {
     }
 
     @GetMapping("/login")
-    @ResponseBody
     public void login() {
 
     }
 
-    @PostMapping("/logout")
-    @ResponseBody
+    @GetMapping("/logout")
     public void logout(HttpServletRequest request, HttpServletResponse response) {
         try {
             request.logout();

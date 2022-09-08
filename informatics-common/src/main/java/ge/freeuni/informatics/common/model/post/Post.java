@@ -20,11 +20,11 @@ public class Post {
 
     String imagePath;
 
-    long authorId;
+    Long authorId;
 
     Date postDate;
 
-    long roomId;
+    Long roomId;
 
     @Id
     @GeneratedValue
@@ -52,12 +52,11 @@ public class Post {
         this.content = content;
     }
 
-    @OneToOne(targetEntity = User.class)
-    public long getAuthorId() {
+    public Long getAuthorId() {
         return authorId;
     }
 
-    public void setAuthorId(long authorId) {
+    public void setAuthorId(Long authorId) {
         this.authorId = authorId;
     }
 
@@ -77,12 +76,11 @@ public class Post {
         this.imagePath = imagePath;
     }
 
-    @OneToOne(targetEntity = ContestRoom.class)
-    public long getRoomId() {
+    public Long getRoomId() {
         return roomId;
     }
 
-    public void setRoomId(long roomId) {
+    public void setRoomId(Long roomId) {
         this.roomId = roomId;
     }
 }

@@ -6,9 +6,11 @@ import org.springframework.stereotype.Repository;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
+import javax.transaction.Transactional;
 import java.util.List;
 
 @Repository
+@Transactional
 public class PostRepository implements IPostRepository {
 
     @PersistenceContext
@@ -28,8 +30,12 @@ public class PostRepository implements IPostRepository {
     public List<Post> filter(Long roomId, Integer offset, Integer limit) {
         TypedQuery<Post> query = em.createQuery("SELECT p FROM Post p WHERE p.roomId = :roomId", Post.class)
                 .setParameter("roomId", roomId);
-        query.setFirstResult(offset);
-        query.setMaxResults(limit);
+        if (offset != null) {
+            query.setFirstResult(offset);
+        }
+        if (limit != null) {
+            query.setMaxResults(limit);
+        }
         return query.getResultList();
     }
 }

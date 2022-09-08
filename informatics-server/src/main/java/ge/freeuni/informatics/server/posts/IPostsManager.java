@@ -14,7 +14,7 @@ public interface IPostsManager {
 
     File getPostImage(long postId) throws InformaticsServerException;
 
-    void addPost(PostDTO post) throws InformaticsServerException;
+    Long addPost(PostDTO post) throws InformaticsServerException;
 
     void uploadImage(long postId, byte[] image) throws InformaticsServerException;
 }

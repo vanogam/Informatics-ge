@@ -72,24 +72,30 @@ public class PostsManager implements IPostsManager {
     }
 
     @Override
-    public void addPost(PostDTO post) throws InformaticsServerException {
+    public Long addPost(PostDTO post) throws InformaticsServerException {
         post.setAuthorId(userManager.getAuthenticatedUser().getId());
         post.setPostDate(new Date());
         Post postEntity = PostDTO.fromDTO(post);
-        Post entityAtDB = postRepository.getPost(post.getId());
         ContestRoom room = roomRepository.getRoom(post.getRoomId());
         if (!room.getTeachers().contains(userManager.getAuthenticatedUser().getId())) {
             throw new InformaticsServerException("permissionDenied");
         }
-        if (entityAtDB != null) {
-            if (entityAtDB.getRoomId() != postEntity.getRoomId()) {
-                throw new InformaticsServerException("invalidAction");
+        if (post.getId() != null) {
+            Post entityAtDB = postRepository.getPost(post.getId());
+
+            if (entityAtDB != null) {
+                if (entityAtDB.getRoomId() != postEntity.getRoomId()) {
+                    throw new InformaticsServerException("invalidAction");
+                }
+                postEntity.setImagePath(entityAtDB.getImagePath());
+            } else {
+                throw new InformaticsServerException("notFound");
             }
-            postEntity.setImagePath(entityAtDB.getImagePath());
         }
         if (postEntity.getId() == null) {
             postEntity = postRepository.savePost(postEntity);
         }
+        return postEntity.getId();
     }
 
     @Override

@@ -83,7 +83,7 @@ public class PostDTO {
         postDTO.setId(post.getId());
         postDTO.setTitle(post.getTitle());
         postDTO.setContent(post.getContent());
-        postDTO.setAuthorId(post.getId());
+        postDTO.setAuthorId(post.getAuthorId());
         postDTO.setPostDate(post.getPostDate());
         postDTO.setRoomId(post.getRoomId());
 
@@ -95,7 +95,7 @@ public class PostDTO {
         post.setId(postDTO.getId());
         post.setTitle(postDTO.getTitle());
         post.setContent(postDTO.getContent());
-        post.setAuthorId(postDTO.getId());
+        post.setAuthorId(postDTO.getAuthorId());
         post.setPostDate(postDTO.getPostDate());
         post.setRoomId(postDTO.getRoomId());
 

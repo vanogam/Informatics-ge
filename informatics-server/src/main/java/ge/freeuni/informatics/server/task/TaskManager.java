@@ -76,7 +76,7 @@ public class TaskManager implements ITaskManager {
     }
 
     @Override
-    public List<TaskInfo> getUpsolvingTasks(long roomId, int offset, int limit) throws InformaticsServerException {
+    public List<TaskInfo> getUpsolvingTasks(long roomId, Integer offset, Integer limit) throws InformaticsServerException {
         ContestRoom room = roomManager.getRoom(roomId);
         UserDTO currentUser = userManager.getAuthenticatedUser();
         if (!room.isMember(currentUser.getId())) {
@@ -87,7 +87,7 @@ public class TaskManager implements ITaskManager {
         for (Contest contest : contests) {
             for (Task task : contest.getTasks()) {
                 TaskDTO taskDTO = TaskDTO.toDTO(task);
-                ContestantResult contestantResult = contest.getStandings().getContestantResult(currentUser.getId());
+                ContestantResult contestantResult = contest.getUpsolvingStandings().getContestantResult(currentUser.getId());
                 if (contestantResult == null) {
                     result.add(new TaskInfo(taskDTO, 0F));
                 } else {

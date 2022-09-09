@@ -17,7 +17,7 @@ public interface ITaskManager {
 
     TaskDTO addTask(TaskDTO task, long contestId) throws InformaticsServerException;
 
-    List<TaskInfo> getUpsolvingTasks(long roomId, int offset, int limit) throws InformaticsServerException;
+    List<TaskInfo> getUpsolvingTasks(long roomId, Integer offset, Integer limit) throws InformaticsServerException;
 
 
     Map<String, String> fillTaskNames(Long contestId);

@@ -55,7 +55,10 @@ public class ContestService {
     public void startup() {
         List<ContestDTO> futureContests = ContestDTO.toDTOs(contestRepository.getContests(null, null, Collections.singletonList(ContestStatus.FUTURE), null, null, null));
         List<ContestDTO> liveContests = ContestDTO.toDTOs(contestRepository.getContests(null, null, Collections.singletonList(ContestStatus.LIVE), null, null, null));
-
+        List<ContestDTO> upsolving = ContestDTO.toDTOs(contestRepository.getContests(null, null, Collections.singletonList(ContestStatus.PAST), true, null, null));
+        for (ContestDTO upsolvingContest : upsolving) {
+            upsolvingContests.put(upsolvingContest.getId(), upsolvingContest);
+        }
         scheduleFutureContests(futureContests);
         manageLiveContests(liveContests);
     }

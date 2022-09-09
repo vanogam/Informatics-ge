@@ -29,7 +29,7 @@ function handleResults(response, setResults, response2){
 			b: "-"
 		}
 		console.log("TaskNames", taskNames)
-		console.log("Scoes", scores)
+		console.log("Scores", scores)
 		console.log("Map", taskNameMap)
 		for (const [key, value] of Object.entries(scores)) {
 			console.log(key, value);

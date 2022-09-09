@@ -93,7 +93,9 @@ export default function MySubmissions() {
 									{submission.contestId} | {submission.taskId}
 								</TableCell>
 								<TableCell align="right">{submission.username}</TableCell>
-								<TableCell align="right">{submission.submissionTime}</TableCell>
+								<TableCell align="right">{
+									new Date(selectedSubmission.submissionTime).toLocaleString()
+								}</TableCell>
 								<TableCell align="right">{submission.language}</TableCell>
 								<TableCell align="right">
 									{submission.status === 'FINISHED'
@@ -132,7 +134,7 @@ export default function MySubmissions() {
 							ენა: {selectedSubmission.language}
 						</Typography>
 						<Typography sx={{ fontSize: '10px', fontWeight: '400' }}>
-							გაშვების დრო: {selectedSubmission.submissionTime}
+							გაშვების დრო: {new Date(selectedSubmission.submissionTime).toLocaleString()}
 						</Typography>
 					</Paper>
 					<Paper elevation={4} sx={{ padding: '1rem', marginBottom: '1rem' }}>

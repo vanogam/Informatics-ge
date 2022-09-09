@@ -24,7 +24,11 @@ function handleContestsResponse(response, setRows, isLoggedIn) {
 		const contestId = contest.id
 		const contestName = contest.name
 		const contestStartDate = contest.startDate
-		const contestDuration = (contest.durationInSeconds / 3600).toFixed(2)
+		const date =  new Date(contestStartDate);
+
+		const contestDuration = (contest.durationInSeconds / 60).toFixed(2)
+		const hours = Math.floor(contestDuration/60)
+		const minutes = contestDuration%60 
 		const contestStatus = contest.status
 		// axios
 		// 	.get(`${process.env.REACT_APP_HOST}/contest/${contest.id}/is-registered`, {
@@ -34,8 +38,8 @@ function handleContestsResponse(response, setRows, isLoggedIn) {
 			id: contestId,
 			name: contestName,
 			status: contestStatus,
-			startDate: contestStartDate,
-			duration: contestDuration.toString() + ' სთ',
+			startDate: date.toLocaleString(),
+			duration: hours.toString() + ' სთ ' + minutes.toString() + ' წთ',
 			status: contestStatus,
 			results: '',
 			submissions: '',
@@ -52,6 +56,12 @@ export default function Contests() {
 	const isLoggedIn = authContext.isLoggedIn
 	const [rows, setRows] = useState([])
 	const [roles, setRoles] = useState()
+	const statusMap = {
+		"LIVE" : "მიმდინარე",
+		"PAST" :'წარსული',
+		"FUTURE": 'მომავალი'
+	}
+		
 	useEffect(() => {
 		axios
 			.get(`${process.env.REACT_APP_HOST}/contest-list`, {
@@ -119,7 +129,7 @@ export default function Contests() {
 									// 		replace: true,
 									// 	})
 									// }}
-									key={row.name}
+									key = {row.id}
 									sx={{
 										'&:last-child td, &:last-child th': { border: 0 },
 										cursor: 'pointer',
@@ -141,7 +151,7 @@ export default function Contests() {
 										align="right"
 										sx={{ color: row.status === 'LIVE' ? 'green' : 'black' }}
 									>
-										{row.status === 'LIVE' ? 'მიმდინარე' : 'წარსული'}
+										{statusMap[row.status]}
 									</TableCell>
 									<TableCell align="right" component="th" scope="row">
 										<NavLink style={{ color: '#3c324e', textDecorationLine: 'none' }} to={`/results/${row.id}`} exact>

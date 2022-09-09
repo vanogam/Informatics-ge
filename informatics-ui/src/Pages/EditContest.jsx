@@ -12,7 +12,7 @@ import {
 	Box
 } from '@mui/material'
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import axios from 'axios'
 import NewTaskCard from '../Components/NewTaskCard'
 import { useParams } from 'react-router-dom'
@@ -20,20 +20,49 @@ import { NavLink } from 'react-router-dom'
 import FormGroup from '@mui/material/FormGroup';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox'
+
+function defaultInfo(response, setDefaultName, setDefaultDurationInSeconds, contestId){
+	const contests = response.data.contests
+	for (const contest of contests) {
+		if(parseInt(contest.id) ===parseInt(parseInt(contestId.contest_id)) ){
+			setDefaultName(contest.name);
+			setDefaultDurationInSeconds(contest.durationInSeconds);
+	
+		}
+	}
+
+}
 export default function EditContest() {
+	
 	const contestId = useParams()
 	const [contestName, setContestName] = useState(null)
     const [saved, setSaved] = useState(null)
 	const [value, setValue] = useState(dayjs('2014-08-18T21:11:54'))
 	const [durationType, setDurationType] = useState('Minutes')
 	const [tasks, setTasks] = useState([])
-	const nameRef = useRef(null)
-	const durationRef = useRef(null)
+
 	const [showNewTaskCard, setShowNewTaskCard] = useState(false)
 	const durationTypes = ['Hours', 'Minutes']
 	const[archive, setArchive] = useState(false)
 	const[autoArchive, setAutoArchive] = useState(false)
-	console.log(archive)
+
+	const [defaultName, setDefaultName] = useState("")
+	const [defaultDurationInSeconds, setDefaultDurationInSeconds] = useState(null)
+	const nameRef = useRef(defaultName)
+
+	const durationRef = useRef(defaultDurationInSeconds)
+	useEffect(() => {
+
+		axios
+			.get(`${process.env.REACT_APP_HOST}/contest-list`, {
+				params: {
+					roomId: 1,
+				},
+			})
+			.then((response) => defaultInfo(response, setDefaultName, setDefaultDurationInSeconds, contestId))
+			.catch((error) => console.log(error))
+		
+	}, [])
 	const handleAddContest = () => {
 		console.log("HI")
 		const params = {
@@ -74,14 +103,15 @@ export default function EditContest() {
 						{!saved ?(
 							<>
 								<Typography variant="h5" align="center" pb="1rem">
-									კონტესტის რედაქტირება: {contestId.contest_id}
+									კონტესტის რედაქტირება
 								</Typography>
 								<Stack gap="1rem" maxWidth="25rem" mx="auto">
 									<TextField
-										label="Contest Name"
+										label= {defaultName}
 										inputRef={nameRef}
 										variant="outlined"
-									
+										defaultValue={defaultName}
+										
 									/>
 									<Box sx ={{	display: 'flex',
 					flexDirection: 'row'}}>
@@ -110,10 +140,11 @@ export default function EditContest() {
 									/>
 									<Stack direction="row" gap="1rem">
 										<TextField
-											label="ხანგრძლივობა (წთ)"
+											label={defaultDurationInSeconds}
 											variant="outlined"
 											type="number"
 											inputRef={durationRef}
+											defaultValue = {defaultDurationInSeconds}
 											fullWidth
 										/>
 										<TextField

@@ -51,10 +51,10 @@ export default function Register() {
 									authContext.login({ username: response.data.message, roles: roles })
 								})
 							setPopUp(false)
-							toast.success('Login Success')
+							toast.success('წარმატებული ავტორიზაცია')
 							authContext.login(response.data.message)
 						} else if (response.data.status === 'FAIL') {
-							toast.error('Login Error')
+							toast.error('წარუმატებელი ავტორიზაცია')
 						}
 					})
 					.catch((error) => {
@@ -63,7 +63,7 @@ export default function Register() {
 			})
 			.catch((error) => {
 				console.error(error)
-				toast.error('Error while registering')
+				toast.error('რეგისტრაციის ერორი')
 			})
 	}
 

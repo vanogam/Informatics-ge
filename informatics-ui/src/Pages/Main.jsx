@@ -16,17 +16,17 @@ import { NavLink} from 'react-router-dom'
 import NewNews from './NewNews'
 function loadNews(response, setNews){
 	var curNews = []
-	const newsList = response.data.news
+	const newsList = response.data.posts
 	for (const news of newsList) {
 		const title = news.title
-		const text = news.text 
-		const image = news.image
-		const date = news.date 
+		const text = news.content
+		const date = news.postDate
+		const id = news.id
 		const cur = {
+			id : id,
 			title: title, 
 			text: text, 
-			image: image, 
-			date: date 
+			postDate: date 
 		}
 		curNews.push(cur)
 	}
@@ -36,12 +36,11 @@ function loadNews(response, setNews){
 
 export default function Main() {
 	const authContext = useContext(AuthContext)
-	const [news, setNews] = useState([])
+	const [newsS, setNews] = useState([])
 	const [roles, setRoles] = useState()	
 	useEffect(() => {
 		axios
-			.get(`${process.env.REACT_APP_HOST}/posts/1`, {
-			
+			.get(`${process.env.REACT_APP_HOST}/room/1/posts`, {
 			})
 			.then((response) =>loadNews(response, setNews))
 			.catch((error) => console.log(error))
@@ -117,7 +116,8 @@ export default function Main() {
 						maxWidth: '40%',
 						maxHeight: '10%',
 					}}>
-				<CardMedia width="20" component="img" height="200" src ={news.image} />
+				{/* <CardMedia width="20" component="img" height="200" src = {`${process.env.REACT_APP_HOST}/posts/${news.id}/image`} /> */}
+				<CardMedia width="20" component="img" height="200" src = {news.image} />
 				<CardContent>
 					<Typography gutterBottom variant="h5" component="div">
 					{news.title}

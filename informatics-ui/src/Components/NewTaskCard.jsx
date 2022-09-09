@@ -237,7 +237,7 @@ export default function NewTaskCard({ contestId, handleSubmit }) {
 						variant="contained"
 						sx ={{background: '#3c324e'}}
 						onClick={() => setShowNewTestCaseCard(true)}
-					>ახალი ამოცანა
+					>
 						ახალი ტესტ-ქეისები
 					</Button>
 				</Paper>

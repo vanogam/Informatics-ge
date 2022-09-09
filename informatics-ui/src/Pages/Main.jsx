@@ -107,7 +107,7 @@ export default function Main() {
 					</Button>
 				)}
 				
-				{dummy_news_list.map((news) => (
+				{newsS.map((news) => (
 					<Card	sx={{
 						marginTop: '3%',
 						marginBottom: '0',
@@ -116,8 +116,8 @@ export default function Main() {
 						maxWidth: '40%',
 						maxHeight: '10%',
 					}}>
-				{/* <CardMedia width="20" component="img" height="200" src = {`${process.env.REACT_APP_HOST}/posts/${news.id}/image`} /> */}
-				<CardMedia width="20" component="img" height="200" src = {news.image} />
+				<CardMedia width="20" component="img" height="200" src = {`${process.env.REACT_APP_HOST}/posts/${news.id}/image`} />
+				{/* <CardMedia width="20" component="img" height="200" src = {news.image} /> */}
 				<CardContent>
 					<Typography gutterBottom variant="h5" component="div">
 					{news.title}

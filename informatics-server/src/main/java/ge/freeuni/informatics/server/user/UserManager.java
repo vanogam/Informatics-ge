@@ -37,7 +37,7 @@ public class UserManager implements IUserManager {
     @Value("${ge.freeuni.informatics.host}")
     private String host;
 
-    @Value("${server.port.front}")
+    @Value("${ge.freeuni.informatics.port.front}")
     private String port;
 
     final IUserRepository userRepository;

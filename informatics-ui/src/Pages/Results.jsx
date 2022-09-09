@@ -96,7 +96,7 @@ export default function Results(){
 							
 							<TableCell >მომხმარებელი</TableCell>
                             <TableCell>ამოცანა "{taskNames[0]? taskNames[0]: "-"}" </TableCell>
-							<TableCell> ამოცანა "{taskNames[1]? taskNames[0]: "-"}"</TableCell>
+							<TableCell> ამოცანა "{taskNames[1]? taskNames[1]: "-"}"</TableCell>
 							<TableCell>საბოლოო შედეგი </TableCell>
 			
 						</TableRow>

@@ -94,7 +94,7 @@ export default function MySubmissions() {
 								</TableCell>
 								<TableCell align="right">{submission.username}</TableCell>
 								<TableCell align="right">{
-									new Date(selectedSubmission.submissionTime).toLocaleString()
+									new Date(submission.submissionTime).toLocaleString()
 								}</TableCell>
 								<TableCell align="right">{submission.language}</TableCell>
 								<TableCell align="right">

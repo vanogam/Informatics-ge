@@ -26,9 +26,9 @@ function handleContestsResponse(response, setRows, isLoggedIn) {
 		const contestStartDate = contest.startDate
 		const date =  new Date(contestStartDate);
 
-		const contestDuration = (contest.durationInSeconds / 60).toFixed(2)
-		const hours = Math.floor(contestDuration/60)
-		const minutes = contestDuration%60 
+		// const contestDuration = (contest.durationInSeconds / 60).toFixed(2)
+		const hours = Math.floor(contest.durationInSeconds/3600)
+		const minutes = (contest.durationInSeconds%3600)/60
 		const contestStatus = contest.status
 		// axios
 		// 	.get(`${process.env.REACT_APP_HOST}/contest/${contest.id}/is-registered`, {

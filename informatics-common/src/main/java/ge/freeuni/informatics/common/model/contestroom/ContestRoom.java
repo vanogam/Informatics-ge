@@ -75,7 +75,7 @@ public class ContestRoom {
     }
 
     @Transient
-    public boolean isMember(long userId) {
+    public boolean isMember(Long userId) {
         return participants.contains(userId) || teachers.contains(userId) || id == GLOBAL_ROOM_ID;
     }
 }

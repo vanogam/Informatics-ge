@@ -39,7 +39,13 @@ public class PostsManager implements IPostsManager {
     public PostDTO getPost(long postId) throws InformaticsServerException {
         PostDTO postDTO = PostDTO.toDTO(postRepository.getPost(postId));
         ContestRoom room = roomRepository.getRoom(postDTO.getRoomId());
-        if (!room.isMember(userManager.getAuthenticatedUser().getId())) {
+        Long userId = null;
+        try {
+            userId = userManager.getAuthenticatedUser().getId();
+        } catch (Exception ignored) {
+
+        }
+        if (!room.isMember(userId)) {
             throw new InformaticsServerException("permissionDenied");
         }
         postDTO.setAuthorName(userManager.getUser(postDTO.getAuthorId()).getUsername());
@@ -49,7 +55,14 @@ public class PostsManager implements IPostsManager {
     @Override
     public List<PostDTO> getPosts(long roomId, Integer offset, Integer limit) throws InformaticsServerException {
         ContestRoom room = roomRepository.getRoom(roomId);
-        if (!room.isMember(userManager.getAuthenticatedUser().getId())) {
+
+        Long userId = null;
+        try {
+            userId = userManager.getAuthenticatedUser().getId();
+        } catch (Exception ignored) {
+
+        }
+        if (!room.isMember(userId)) {
             throw new InformaticsServerException("permissionDenied");
         }
         List<PostDTO> postDTOList = PostDTO.toDTOs(postRepository.filter(roomId, offset, limit));

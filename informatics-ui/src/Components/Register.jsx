@@ -37,7 +37,7 @@ export default function Register() {
 		axios
 			.post(`${process.env.REACT_APP_HOST}/register`, body)
 			.then((response) => {
-				toast.success('Register Success')
+				toast.success('წარმატებული რეგისტრაცია')
 				setPopUp(false)
 				axios
 					.post(`${process.env.REACT_APP_HOST}/login`, {
@@ -63,7 +63,7 @@ export default function Register() {
 			})
 			.catch((error) => {
 				console.error(error)
-				toast.error('რეგისტრაციის ერორი')
+				toast.error('წარუმატებელი რეგისტრაცია')
 			})
 	}
 

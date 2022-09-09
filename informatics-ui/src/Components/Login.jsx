@@ -18,13 +18,13 @@ export default function Login() {
 			axios.get(`${process.env.REACT_APP_HOST}/get-user`).then((res) => {
 				let roles = res.data.roles
 				setPopUp(false)
-				toast.success('Login Success')
+				toast.success('წარმატებული ავტორიზაცია')
 				setCredentialsError(false)
 				authContext.login({ username: response.data.message, roles: roles })
 			})
 		} else if (response.data.status === 'FAIL') {
 			setCredentialsError(true)
-			toast.error('Login Error')
+			toast.error('წარუმატებელი ავტორიზაცია')
 		}
 	}
 

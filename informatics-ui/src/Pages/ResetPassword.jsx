@@ -33,7 +33,7 @@ export default function ResetPassword() {
 			.then((response) => {
 				if (response.data.status === 'SUCCESS') {
 					setSuccess('True')
-					toast.success('Recovery Link Sent')
+					toast.success('ლინკი გადმოგზავნილია მეილზე')
 				} else if (response.data.status === 'FAIL') {
 					setSuccess('False')
 					toast.error('Recovery Link Error')

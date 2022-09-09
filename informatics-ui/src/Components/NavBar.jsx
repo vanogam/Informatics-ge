@@ -33,7 +33,7 @@ function Navbar() {
 		axios
 			.get(`${process.env.REACT_APP_HOST}/logout`)
 			.then((response) => {
-				toast.success('Logout Successful')
+				toast.success('გამოსვლა')
 				authContext.logout()
 			})
 			.catch((error) => console.log(error))

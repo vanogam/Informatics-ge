@@ -76,8 +76,13 @@ public class PostsManager implements IPostsManager {
     public File getPostImage(long postId) throws InformaticsServerException {
         Post post = postRepository.getPost(postId);
         ContestRoom room = roomRepository.getRoom(post.getRoomId());
-        Long currentUser = userManager.getAuthenticatedUser().getId();
-        if (!room.isOpen() && !room.isMember(currentUser)) {
+        Long currentUser = null;
+        try {
+            currentUser = userManager.getAuthenticatedUser().getId();
+        } catch (Exception ignored) {
+
+        }
+        if (!room.isMember(currentUser)) {
             throw new InformaticsServerException("permissionDenied");
         }
 

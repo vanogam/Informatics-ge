@@ -14,10 +14,11 @@ import {
 	Paper
 } from '@mui/material'
 import { NavLink } from "react-router-dom";
-import axios from 'axios';
 import { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../store/authentication'
 import ContestRegisterPopUp from '../Components/ContestRegisterPopUp'
+import { getAxiosInstance } from '../utils/axiosInstance'
+import Cookies from 'js-cookie'
 function handleContestResponse(response, setProblems){
 	var curTasks = []
 	const tasks = response.data.tasks
@@ -42,13 +43,13 @@ export default function Contest(){
 	const [popUp, setPopUp] = useState(false)
 	const authContext = useContext(AuthContext)
 	const isLoggedIn = authContext.isLoggedIn
-	const [roles, setRoles] = useState()
+	const [roles, setRoles] = useState([])
     const {contest_id} = useParams()
 	const [problems , setProblems] = useState([])
 	const [registered, setIsRegistered] = useState(false)
 	useEffect(() => {
-		axios
-			.get(`http://localhost:8080/contest/${contest_id}/tasks`, {
+		getAxiosInstance()
+			.get(`/contest/${contest_id}/tasks`, {
 				params:{
 					offset : 0 , 
 					limit: 20
@@ -56,8 +57,8 @@ export default function Contest(){
 			})
 			.then((response) =>  {
 				handleContestResponse(response, setProblems)
-				axios
-			.get(`http://localhost:8080/contest/${contest_id}/is-registered`)
+				getAxiosInstance()
+			.get(`/contest/${contest_id}/is-registered`)
 			.then((response) => {
 				
                 if (response.data.registered){
@@ -65,7 +66,7 @@ export default function Contest(){
                 }})
 				})
 			.catch((error) => console.log(error))
-			setRoles(() => localStorage.getItem('roles'))
+			setRoles(() => authContext.roles)
 	}, [])
 
     // const rows = [
@@ -125,12 +126,12 @@ export default function Contest(){
 							
 							<TableCell>კატეგორია</TableCell>
 							<TableCell >სახელი</TableCell>
-							{(isLoggedIn && roles !== 'ADMIN' && registered === true) &&
+							{(isLoggedIn && !roles.includes('ADMIN') && registered === true) &&
 								(
 									<TableCell>ქულა</TableCell>	
 								)
 								}
-							{(isLoggedIn && roles !== 'ADMIN' && registered === false) && (
+							{(isLoggedIn && !roles.includes('ADMIN') && registered === false) && (
 									<TableCell>
 										<Button
 											className="items"
@@ -160,7 +161,7 @@ export default function Contest(){
 								</TableCell>
 								
 								<TableCell ><NavLink style={{ color: 'black', textDecorationLine: 'none' }} to={`${problem.id}`}exact>{problem.name} </NavLink></TableCell>
-								{(isLoggedIn && roles !== 'ADMIN' && registered === true) &&
+								{(isLoggedIn && !roles.includes('ADMIN') && registered === true) &&
 								(
 									<TableCell>{problem.score}</TableCell>	
 								)

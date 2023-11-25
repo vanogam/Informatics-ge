@@ -19,12 +19,10 @@ const boxStyle = {
 	marginLeft: '10%',
 	paddingTop: '5%',
 	color: 'purple',
-	paddingLeft: '10%',
 	fontWeight: 'bold',
-
 	fontSize: '20',
 }
-const hightlightWithLineNumbers = (input, grammar, language) =>
+const highlightWithLineNumbers = (input, grammar, language) =>
 	highlight(input, grammar, language)
 		.split('\n')
 		.map((line, i) => `<span class='editorLineNumber'>${i + 1}</span>${line}`)
@@ -58,7 +56,7 @@ export default function Compiler() {
 					value={code}
 					onValueChange={(code) => setCode(code)}
 					highlight={(code) =>
-						hightlightWithLineNumbers(code, languages.cpp, 'cpp')
+						highlightWithLineNumbers(code, languages.cpp, 'cpp')
 					}
 					className="editor"
 					textareaId="codeArea"

@@ -11,12 +11,13 @@ import {
 	Paper,
 } from '@mui/material'
 import { NavLink, useNavigate } from 'react-router-dom'
-import axios from 'axios'
 import { useState, useEffect, useContext } from 'react'
 import { AuthContext } from '../store/authentication'
 import * as React from 'react'
 import BarChartIcon from '@mui/icons-material/BarChart';
 import TerminalIcon from '@mui/icons-material/Terminal';
+import { getAxiosInstance } from '../utils/axiosInstance'
+import Cookies from 'js-cookie'
 function handleContestsResponse(response, setRows, isLoggedIn) {
 	var curRows = []
 	const contests = response.data.contests
@@ -36,7 +37,6 @@ function handleContestsResponse(response, setRows, isLoggedIn) {
 			status: contestStatus,
 			startDate: contestStartDate,
 			duration: contestDuration.toString() + ' სთ',
-			status: contestStatus,
 			results: '',
 			submissions: '',
 		}
@@ -51,17 +51,17 @@ export default function Contests() {
 	const authContext = useContext(AuthContext)
 	const isLoggedIn = authContext.isLoggedIn
 	const [rows, setRows] = useState([])
-	const [roles, setRoles] = useState()
+	const [roles, setRoles] = useState([])
 	useEffect(() => {
-		axios
-			.get(`${process.env.REACT_APP_HOST}/contest-list`, {
+		getAxiosInstance()
+			.get('/contest-list', {
 				params: {
 					roomId: 1,
 				},
 			})
 			.then((response) => handleContestsResponse(response, setRows, isLoggedIn))
 			.catch((error) => console.log(error))
-		setRoles(() => localStorage.getItem('roles'))
+		setRoles(() => Cookies.get('roles'))
 	}, [])
 
 	return (
@@ -87,7 +87,7 @@ export default function Contests() {
 				მონაწილეობა.
 			</Typography>
 			<Container maxWidth="lg">
-				{roles === 'ADMIN' && (
+				{roles.includes('ADMIN') && (
 					<Button
 						variant="contained"
 						color="secondary"
@@ -108,7 +108,7 @@ export default function Contests() {
 								<TableCell align="right">სტატუსი</TableCell>
 								<TableCell align="right">შედეგები</TableCell>
 								<TableCell align="right">მცდელობები</TableCell>
-								{roles === 'ADMIN' ? <TableCell></TableCell> : null}
+								{roles.includes('ADMIN') ? <TableCell></TableCell> : null}
 							</TableRow>
 						</TableHead>
 						<TableBody>
@@ -153,7 +153,7 @@ export default function Contests() {
 												{<TerminalIcon></TerminalIcon>}
 										</NavLink>
 									</TableCell>
-									{roles === 'ADMIN' && (
+									{roles.includes('ADMIN') && (
 										<TableCell>
 											<Button
 												variant="contained"

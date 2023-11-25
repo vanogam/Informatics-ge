@@ -1,8 +1,9 @@
 import { createContext, useCallback, useEffect, useState } from 'react'
-
+import Cookies from 'js-cookie';
 export const AuthContext = createContext({
 	isLoggedIn: false,
 	username: '',
+	roles: [],
 	login: () => {},
 	logout: () => {},
 })
@@ -11,9 +12,9 @@ export const AuthContextProvider = (props) => {
 	const [isLoggedIn, setIsLoggedIn] = useState(false)
 	const [username, setUsername] = useState('')
 	useEffect(() => {
-		if (localStorage.getItem('username')) {
+		if (Cookies.get('username')) {
 			setIsLoggedIn(true)
-			setUsername(localStorage.getItem('username'))
+			setUsername(Cookies.get('username'))
 		} else {
 			setIsLoggedIn(false)
 			setUsername('')
@@ -21,22 +22,23 @@ export const AuthContextProvider = (props) => {
 	}, [])
 
 	const logoutHandler = useCallback(() => {
-		localStorage.removeItem('username')
-		localStorage.removeItem('roles')
+		Cookies.remove('username')
+		Cookies.remove('roles')
 		setIsLoggedIn(false)
 		setUsername('')
 	}, [])
 
 	const loginHandler = useCallback(({ username, roles }) => {
-		localStorage.setItem('username', username)
-		localStorage.setItem('roles', roles)
+		Cookies.set('username', username)
+		Cookies.set('roles', roles)
 		setIsLoggedIn(true)
-		setUsername(localStorage.getItem('username'))
+		setUsername(Cookies.get('username'))
 	}, [])
 
 	const contextValue = {
 		isLoggedIn: isLoggedIn,
-		username: isLoggedIn ? localStorage.getItem('username') : '',
+		username: isLoggedIn ? Cookies.get('username') : '',
+		roles: isLoggedIn ? Cookies.get('roles') : '',
 		login: loginHandler,
 		logout: logoutHandler,
 	}

@@ -10,8 +10,8 @@ import {
 	TableContainer,
 	Paper
 } from '@mui/material'
-import axios from 'axios';
 import { useState, useEffect } from 'react';
+import { getAxiosInstance } from '../utils/axiosInstance'
 
 
 function handleResults(response, setResults, response2){
@@ -34,10 +34,10 @@ function handleResults(response, setResults, response2){
 		for (const [key, value] of Object.entries(scores)) {
 			console.log(key, value);
 			for (const [key2, value2] of Object.entries(taskNameMap)){
-				if(key + ":KA" == key2) {
-				  if (taskNames[0] && (taskNames[0] == value2)){
+				if(key + ":KA" === key2) {
+				  if (taskNames[0] && (taskNames[0] === value2)){
 					  standingItem["a"] = value
-				  }else if( taskNames[1] && (taskNames[1] == value2)){
+				  }else if( taskNames[1] && (taskNames[1] === value2)){
 					  standingItem["b"]= value
 				  }
 				}
@@ -55,16 +55,16 @@ export default function Results(){
 	const [results, setResults] = useState([])
 	const [taskNames, setTaskNames] = useState([])
 	useEffect(() => {
-		axios
-			.get(`${process.env.REACT_APP_HOST}/contest/${contest_id}/standings`,
+		getAxiosInstance()
+			.get(`/contest/${contest_id}/standings`,
 			{params: {
 				offset : 0 , 
 				limit: 20
 			}})
 			.then((response1) =>  
 			{
-				axios
-			.get(`${process.env.REACT_APP_HOST}/contest/${contest_id}/task-names`)
+				getAxiosInstance()
+			.get(`/contest/${contest_id}/task-names`)
 			.then((response2) =>  {setTaskNames(response2.data.taskNames); handleResults(response1, setResults, response2)})
 			})
 			

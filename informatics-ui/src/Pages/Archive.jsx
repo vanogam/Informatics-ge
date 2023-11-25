@@ -12,8 +12,8 @@ import {
 } from '@mui/material'
 import BarChartIcon from '@mui/icons-material/BarChart';
 import { NavLink } from "react-router-dom";
-import axios from 'axios';
 import { useState, useEffect } from 'react';
+import { getAxiosInstance } from '../utils/axiosInstance'
 
 function handleContestResponse(response, setProblems){
 	var curTasks = []
@@ -34,8 +34,8 @@ export default function Archive(){
     const {contest_id} = useParams()
 	const [problems , setProblems] = useState([])
 	useEffect(() => {
-		axios
-			.get(`${process.env.REACT_APP_HOST}/room/1/tasks?offset=0&limit=20`, {
+		getAxiosInstance()
+			.get('/room/1/tasks?offset=0&limit=20', {
 				params:{
 					offset : 0 , 
 					limit: 20

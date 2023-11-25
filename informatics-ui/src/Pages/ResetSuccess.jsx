@@ -11,10 +11,10 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import CancelIcon from '@mui/icons-material/Cancel'
 import LockIcon from '@mui/icons-material/Lock'
 import { useParams } from 'react-router-dom'
-import axios from 'axios'
 import { toast } from 'react-toastify'
 import { AuthContext } from '../store/authentication'
 import { useNavigate } from 'react-router-dom'
+import { getAxiosInstance } from '../utils/axiosInstance'
 export default function ResetSuccess() {
 	let { token } = useParams()
 
@@ -32,8 +32,8 @@ export default function ResetSuccess() {
 			// setSuccess('True')
 		}
 
-		axios
-			.post(`${process.env.REACT_APP_HOST}/recover/update-password/${token}`, {
+		getAxiosInstance()
+			.post(`/recover/update-password/${token}`, {
 				newPassword: password.current.value,
 			})
 			.then((response) => {

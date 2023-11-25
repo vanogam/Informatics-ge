@@ -1,7 +1,7 @@
 import { Button, Paper, Stack, TextField, Typography } from '@mui/material'
 import { useRef, useState } from 'react'
 import NewTestCaseCard from './NewTestCaseCard'
-import axios from 'axios'
+import { getAxiosInstance } from '../utils/axiosInstance'
 export default function NewTaskCard({ contestId, handleSubmit }) {
 	console.log("CONTESTID", contestId)
 	const codeRef = useRef(null)
@@ -85,8 +85,8 @@ export default function NewTaskCard({ contestId, handleSubmit }) {
 			inputTemplate,
 			outputTemplate,
 		})
-		axios
-		.post(`${process.env.REACT_APP_HOST}/save-task`, params)
+		getAxiosInstance()
+		.post('/save-task', params)
 		.then((res) => {setTaskId(res.data.taskDTO.id);
 			console.log("NOW UPLOAD STATEMENT")
 			var bodyFormData = new FormData();
@@ -94,9 +94,9 @@ export default function NewTaskCard({ contestId, handleSubmit }) {
 			bodyFormData.append("language", "KA")
 			bodyFormData.append("statement", kaStatement)
 			console.log("BodyFromData", bodyFormData)
-			axios({
+			getAxiosInstance()({
 				method: "post",
-				url: `${process.env.REACT_APP_HOST}/upload-statement`,
+				url: '/upload-statement',
 				data: bodyFormData,
 				headers: { "Content-Type": 'multipart/form-data; boundary=<calculated when request is sent></calculated>'},
 			  })
@@ -110,9 +110,9 @@ export default function NewTaskCard({ contestId, handleSubmit }) {
 					console.log("BodyFromData", bodyFormData)
 					console.log("TestCases", testCases)
 					console.log("TestCase", testCase)
-					axios({
+					getAxiosInstance()({
 						method: "post",
-						url: `${process.env.REACT_APP_HOST}/add-testcases`,
+						url: '/add-testcases',
 						data: bodyFormData,
 						headers: { "Content-Type": 'multipart/form-data; boundary=<calculated when request is sent></calculated>'},
 						})

@@ -7,6 +7,7 @@ import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.server.user.IUserManager;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.ServletException;
@@ -68,7 +69,7 @@ public class UserController {
 
     }
 
-    @GetMapping("/logout")
+    @PostMapping("/logout")
     public void logout(HttpServletRequest request, HttpServletResponse response) {
         try {
             request.logout();
@@ -79,9 +80,9 @@ public class UserController {
     }
 
     @GetMapping("/get-user")
-    public UserDTO getUser() {
+    public ResponseEntity<UserDTO> getUser() {
         try {
-            return userManager.getAuthenticatedUser();
+            return ResponseEntity.ok(userManager.getAuthenticatedUser());
         } catch (InformaticsServerException e) {
             return null;
         }

@@ -15,8 +15,8 @@ import 'prismjs/themes/prism.css' //Example style, you can use another
 import '../styles/numbers.css'
 import { Button } from '@mui/material'
 import { useNavigate } from "react-router-dom";
-import axios from 'axios';
 import { useEffect } from 'react';
+import { getAxiosInstance } from '../utils/axiosInstance'
 // import Pdf from "../../home/u/informatics/statements/passw/statement_KA.pdf"
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
@@ -28,13 +28,11 @@ const boxStyle = {
 	marginLeft: '10%',
 	paddingTop: '5%',
 	color: 'purple',
-	paddingLeft: '10%',
 	fontWeight: 'bold',
-
 	fontSize: '20',
 }
 
-const hightlightWithLineNumbers = (input, grammar, language) =>
+const highlightWithLineNumbers = (input, grammar, language) =>
 	highlight(input, grammar, language)
 		.split('\n')
 		.map((line, i) => `<span class='editorLineNumber'>${i + 1}</span>${line}`)
@@ -55,8 +53,8 @@ export default function Problem(){
 				"language" : "CPP"
 		}
 		console.log(body)
-		axios
-				.post(`${process.env.REACT_APP_HOST}/submit`, body)
+		getAxiosInstance()
+				.post(`/submit`, body)
 				.then((response) =>  {console.log(response)})
 		navigate(`/contest/${contest_id}/mySubmissions`, { replace: true });
 	}
@@ -126,7 +124,7 @@ export default function Problem(){
 					value={code}
 					onValueChange={(code) => setCode(code)}
 					highlight={(code) =>
-						hightlightWithLineNumbers(code, languages.cpp, 'cpp')
+						highlightWithLineNumbers(code, languages.cpp, 'cpp')
 					}
 					className="editor"
 					textareaId="codeArea"

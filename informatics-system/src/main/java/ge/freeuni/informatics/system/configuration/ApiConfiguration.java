@@ -25,8 +25,8 @@ public class ApiConfiguration {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true); // you USUALLY want this
         // likely you should limit this to specific origins
-        config.addAllowedOrigin("**");
-        config.addAllowedHeader("**");
+        config.addAllowedOriginPattern("*");
+        config.addAllowedHeader("*");
         config.addAllowedMethod("GET");
         config.addAllowedMethod("POST");
         config.addAllowedMethod("PUT");

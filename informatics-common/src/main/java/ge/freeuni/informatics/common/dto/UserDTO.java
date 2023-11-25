@@ -3,6 +3,10 @@ package ge.freeuni.informatics.common.dto;
 
 import ge.freeuni.informatics.common.model.user.User;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 public class UserDTO {
 
     private long id;
@@ -19,7 +23,7 @@ public class UserDTO {
 
     private Integer version;
 
-    private String roles;
+    private List<String> roles = new ArrayList<>();
 
     public Long getId() {
         return id;
@@ -77,11 +81,11 @@ public class UserDTO {
         this.version = version;
     }
 
-    public String getRoles() {
+    public List<String> getRoles() {
         return roles;
     }
 
-    public void setRoles(String roles) {
+    public void setRoles(List<String> roles) {
         this.roles = roles;
     }
 
@@ -93,8 +97,8 @@ public class UserDTO {
         userDTO.setFirstName(user.getFirstName());
         userDTO.setEmail(user.getEmail());
         userDTO.setLastName(user.getLastName());
-        userDTO.setVersion(userDTO.getVersion());
-        userDTO.setRoles(user.getRoles());
+        userDTO.setVersion(user.getVersion());
+        userDTO.setRoles(Arrays.asList(user.getRoles().split(",")));
 
         return userDTO;
     }
@@ -109,7 +113,7 @@ public class UserDTO {
         user.setEmail(userDTO.getEmail());
         user.setPassword(userDTO.getPassword());
         user.setVersion(userDTO.getVersion());
-        user.setRoles(userDTO.getRoles());
+        user.setRoles(userDTO.getRoles().stream().reduce("", (last, s) -> last + (!last.isEmpty() ? "," : "") + s));
 
         return user;
     }

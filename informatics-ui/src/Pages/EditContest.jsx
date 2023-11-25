@@ -13,13 +13,13 @@ import {
 } from '@mui/material'
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
 import { useRef, useState } from 'react'
-import axios from 'axios'
 import NewTaskCard from '../Components/NewTaskCard'
 import { useParams } from 'react-router-dom'
 import { NavLink } from 'react-router-dom'
 import FormGroup from '@mui/material/FormGroup';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox'
+import { getAxiosInstance } from '../utils/axiosInstance'
 export default function EditContest() {
 	const contestId = useParams()
 	const [contestName, setContestName] = useState(null)
@@ -51,8 +51,8 @@ export default function EditContest() {
 		params["durationInSeconds"] = params["durationInSeconds"].toString()
 		console.log(params)
 		setContestName(nameRef?.current.value)
-		axios
-			.post(`${process.env.REACT_APP_HOST}/create-contest`, params)
+		getAxiosInstance()
+			.post('/create-contest', params)
 			.then((res) =>{setSaved(true)})
 	}
 

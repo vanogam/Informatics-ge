@@ -1,22 +1,23 @@
 import { useRef, useState, useContext } from 'react'
 import { Button, Modal, TextField } from '@mui/material'
-import axios from 'axios'
 import { Box } from '@mui/system'
 import { NavLink } from 'react-router-dom'
 import { AuthContext } from '../store/authentication'
 import { toast } from 'react-toastify'
+import { getAxiosInstance } from '../utils/axiosInstance'
 
 export default function Login() {
 	const [popUp, setPopUp] = useState(false)
 	const [credentialsError, setCredentialsError] = useState(false)
-	const nickname = useRef('')
+	const username = useRef('')
 	const password = useRef('')
 	const authContext = useContext(AuthContext)
 
 	const handleLoginResponse = async (response) => {
 		if (response.data.status === 'SUCCESS') {
-			axios.get(`${process.env.REACT_APP_HOST}/get-user`).then((res) => {
+			getAxiosInstance().get('/get-user').then((res) => {
 				let roles = res.data.roles
+				console.log(res, roles)
 				setPopUp(false)
 				toast.success('Login Success')
 				setCredentialsError(false)
@@ -34,11 +35,12 @@ export default function Login() {
 	}
 
 	const handleLoginSubmit = () => {
-		axios
-			.post(`${process.env.REACT_APP_HOST}/login`, {
-				username: nickname.current.value,
+		getAxiosInstance()
+			.post('/login', {
+				username: username.current.value,
 				password: password.current.value,
-			})
+			},
+				{ withCredentials: true })
 			.then((response) => handleLoginResponse(response))
 			.catch((error) => console.log(error))
 	}
@@ -82,11 +84,11 @@ export default function Login() {
 						autoComplete="off"
 					>
 						<TextField
-							id="nickname"
+							id="username"
 							label="მომხმარებელი"
-							type="nickname"
+							type="username"
 							autoComplete="current-nickname"
-							inputRef={nickname}
+							inputRef={username}
 						/>
 
 						<TextField

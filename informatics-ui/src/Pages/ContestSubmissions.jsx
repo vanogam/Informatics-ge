@@ -1,7 +1,6 @@
 import { useState } from "react";
 import Editor from "react-simple-code-editor";
 import { highlight, languages } from "prismjs/components/prism-core";
-import axios from "axios";
 import Box from "@mui/material/Box";
 import Modal from "@mui/material/Modal";
 import Table from "@mui/material/Table";
@@ -15,22 +14,23 @@ import TableContainer from "@mui/material/TableContainer";
 import { useParams } from "react-router-dom";
 import { useEffect } from "react";
 import { Chip } from '@mui/material'
+import { getAxiosInstance } from '../utils/axiosInstance'
 export default function ContestSubmissions() {
   const [submissions, setSubmissions] = useState([]);
   const [selectedSubmission, setSelectedSubmission] = useState({});
   const [popUp, setPopUp] = useState(false);
   const { contest_id } = useParams();
   useEffect(() => {
-		axios
-			.get(`${process.env.REACT_APP_HOST}/contest/${contest_id}/status`)
+		getAxiosInstance()
+			.get(`/contest/${contest_id}/status`)
 			.then((response) => {
 				if (response.data.status === 'SUCCESS')
 					setSubmissions(response.data.submissions)
 				else return <>NO SUBMISSIONS FOUND</>
 			})
 		const interval = setInterval(() => {
-			axios
-				.get(`${process.env.REACT_APP_HOST}/contest/${contest_id}/status`)
+			getAxiosInstance()
+				.get(`/contest/${contest_id}/status`)
 				.then((response) => {
 					if (response.data.status === 'SUCCESS')
 						setSubmissions(response.data.submissions)
@@ -41,7 +41,7 @@ export default function ContestSubmissions() {
 			clearInterval(interval)
 		}
 	}, [])
-  const hightlightWithLineNumbers = (input, grammar, language) =>
+  const highlightWithLineNumbers = (input, grammar, language) =>
     highlight(input, grammar, language)
       .split("\n")
       .map((line, i) => `${line}`)
@@ -128,13 +128,12 @@ export default function ContestSubmissions() {
                 <Editor
                   value={selectedSubmission.text}
                   highlight={(code) =>
-                    hightlightWithLineNumbers(code, languages.cpp, "cpp")
+                    highlightWithLineNumbers(code, languages.cpp, "cpp")
                   }
                   textareaId="codeArea"
                   style={{
                     overflowY: "auto",
                     maxHeight: "20rem",
-                    overflowY: "auto",
                     fontFamily: '"Fira code", "Fira Mono", monospace',
                     fontSize: 12,
                   }}

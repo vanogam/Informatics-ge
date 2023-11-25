@@ -12,9 +12,9 @@ import {
 } from '@mui/material'
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
 import { useRef, useState } from 'react'
-import axios from 'axios'
 import NewTaskCard from '../Components/NewTaskCard'
 import { NavLink } from 'react-router-dom'
+import { getAxiosInstance } from '../utils/axiosInstance'
 export default function NewContest() {
 	const [contestId, setContestId] = useState(null)
 	const [contestName, setContestName] = useState(null)
@@ -41,10 +41,9 @@ export default function NewContest() {
 		params["durationInSeconds"] = params["durationInSeconds"].toString()
 		console.log(params)
 		setContestName(nameRef?.current.value)
-		axios
-			.post(`${process.env.REACT_APP_HOST}/create-contest`, params)
-			.then((res) => {setContestId(res.data.contest.id); 	axios.post(`${process.env.REACT_APP_HOST}/contest/${res.data.contest.id}/register`,{})})
-	
+		getAxiosInstance()
+			.post('/create-contest', params)
+			.then((res) => {setContestId(res.data.contest.id); 	getAxiosInstance().post(`/contest/${res.data.contest.id}/register`,{})})
 
 	}
 

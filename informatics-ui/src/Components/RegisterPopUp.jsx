@@ -98,7 +98,7 @@ function RegisterPopUp({
 						id="username"
 						label="username"
 						type="Nickname"
-						autoComplete="nickname"
+						autoComplete="username"
 						value={registerUsername}
 						onChange={(e) => handleInputChange(e)}
 						InputProps={{

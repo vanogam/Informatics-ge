@@ -6,15 +6,15 @@ import { blue } from '@mui/material/colors'
 import { Email, AccountCircle, Lock, Person } from '@mui/icons-material'
 import { useRef, useState, useContext } from 'react'
 import { AuthContext } from '../store/authentication'
-import axios from 'axios'
 import { toast } from 'react-toastify'
+import { getAxiosInstance } from '../utils/axiosInstance'
 
 export default function Register() {
 	const [popUp, setPopUp] = useState(false)
 	const [passwordMatch, setPasswordMatch] = useState(true)
 	const firstName = useRef('')
 	const lastName = useRef('')
-	const nickname = useRef('')
+	const username = useRef('')
 	const email = useRef('')
 	const rePassword = useRef('')
 	const password = useRef('')
@@ -28,28 +28,29 @@ export default function Register() {
 		setPasswordMatch(true)
 		const body = {
 			email: email.current.value,
-			username: nickname.current.value,
+			username: username.current.value,
 			firstName: firstName.current.value,
 			lastName: firstName.current.value,
 			password: password.current.value,
 		}
 
-		axios
-			.post(`${process.env.REACT_APP_HOST}/register`, body)
+		getAxiosInstance()
+			.post(`/register`, body)
 			.then((response) => {
 				toast.success('Register Success')
 				setPopUp(false)
-				axios
-					.post(`${process.env.REACT_APP_HOST}/login`, {
-						username: nickname.current.value,
-						password: password.current.value,
-					})
+				getAxiosInstance()
+					.post('/login', {
+							username: username.current.value,
+							password: password.current.value,
+						},
+						{ withCredentials: true })
 					.then((response) => {
 						if (response.data.status === 'SUCCESS') {
-								axios.get(`${process.env.REACT_APP_HOST}/get-user`).then((res) => {
-									let roles = res.data.roles
-									authContext.login({ username: response.data.message, roles: roles })
-								})
+							getAxiosInstance().get('/get-user').then((res) => {
+								let roles = res.data.roles
+								authContext.login({ username: response.data.message, roles: roles })
+							})
 							setPopUp(false)
 							toast.success('Login Success')
 							authContext.login(response.data.message)
@@ -70,7 +71,7 @@ export default function Register() {
 	return (
 		<>
 			<Button
-				className="items"
+				className='items'
 				sx={{
 					marginInline: '2px',
 					alignSelf: 'flex-end',
@@ -97,24 +98,24 @@ export default function Register() {
 				>
 					{' '}
 					<Box
-						component="form"
+						component='form'
 						sx={{
 							'& .MuiTextField-root': { m: 1, width: '30ch' },
 						}}
 						noValidate
-						autoComplete="off"
+						autoComplete='off'
 					>
 						{' '}
 						<TextField
 							style={{ alignItems: 'center', justifyContent: 'center' }}
-							id="register-first-name"
-							label="სახელი"
-							type="FirstName"
-							autoComplete="FirstName"
+							id='register-first-name'
+							label='სახელი'
+							type='FirstName'
+							autoComplete='FirstName'
 							inputRef={firstName}
 							InputProps={{
 								startAdornment: (
-									<InputAdornment position="start">
+									<InputAdornment position='start'>
 										<Person></Person>
 									</InputAdornment>
 								),
@@ -122,14 +123,14 @@ export default function Register() {
 						/>
 						<TextField
 							style={{ alignItems: 'center', justifyContent: 'center' }}
-							id="register-last-name"
-							label="გვარი"
-							type="LastName"
-							autoComplete="LastName"
+							id='register-last-name'
+							label='გვარი'
+							type='LastName'
+							autoComplete='LastName'
 							inputRef={lastName}
 							InputProps={{
 								startAdornment: (
-									<InputAdornment position="start">
+									<InputAdornment position='start'>
 										<Person></Person>
 									</InputAdornment>
 								),
@@ -137,14 +138,14 @@ export default function Register() {
 						/>
 						<TextField
 							style={{ alignItems: 'center', justifyContent: 'center' }}
-							id="username"
-							label="მომხმარებლის სახელი"
-							type="Nickname"
-							autoComplete="nickname"
-							inputRef={nickname}
+							id='username'
+							label='მომხმარებლის სახელი'
+							type='Nickname'
+							autoComplete='username'
+							inputRef={username}
 							InputProps={{
 								startAdornment: (
-									<InputAdornment position="start">
+									<InputAdornment position='start'>
 										<AccountCircle></AccountCircle>
 									</InputAdornment>
 								),
@@ -153,26 +154,26 @@ export default function Register() {
 						<TextField
 							InputProps={{
 								startAdornment: (
-									<InputAdornment position="start">
+									<InputAdornment position='start'>
 										<Email></Email>
 									</InputAdornment>
 								),
 							}}
-							id="register-email"
-							label="ელ-ფოსტა"
-							type="email"
-							autoComplete="current-email"
+							id='register-email'
+							label='ელ-ფოსტა'
+							type='email'
+							autoComplete='current-email'
 							inputRef={email}
 						/>
 						<TextField
-							id="register-password"
-							label="პაროლი"
-							type="password"
-							autoComplete="current-password"
+							id='register-password'
+							label='პაროლი'
+							type='password'
+							autoComplete='current-password'
 							inputRef={password}
 							InputProps={{
 								startAdornment: (
-									<InputAdornment position="start">
+									<InputAdornment position='start'>
 										<Lock></Lock>
 									</InputAdornment>
 								),
@@ -184,14 +185,14 @@ export default function Register() {
 					</Button> */}
 						<Box>
 							<TextField
-								id="confirm-password"
-								label="გაიმეორე პაროლი"
-								type="password"
-								autoComplete="current-password"
+								id='confirm-password'
+								label='გაიმეორე პაროლი'
+								type='password'
+								autoComplete='current-password'
 								inputRef={rePassword}
 								InputProps={{
 									startAdornment: (
-										<InputAdornment position="start">
+										<InputAdornment position='start'>
 											<Lock></Lock>
 										</InputAdornment>
 									),
@@ -200,14 +201,14 @@ export default function Register() {
 						</Box>
 						{!passwordMatch && (
 							<Box
-								display="flex"
-								justifyContent="row"
+								display='flex'
+								justifyContent='row'
 								sx={{ marginLeft: '10%', marginTop: '3%' }}
 							>
 								<Typography
 									gutterBottom
-									variant="p"
-									component="div"
+									variant='p'
+									component='div'
 									sx={{ color: 'red' }}
 								>
 									პაროლები არ ემთხვევა ერთმანეთს{' '}
@@ -221,8 +222,8 @@ export default function Register() {
 					<Button
 						sx={{ background: '#3c324e', marginLeft: '26%', marginTop: '2%' }}
 						onClick={() => handleRegistrationSubmit()}
-						variant="contained"
-						color = "success"
+						variant='contained'
+						color='success'
 					>
 						რეგისტრაცია
 					</Button>

@@ -1,4 +1,3 @@
-import dayjs, { Dayjs } from 'dayjs'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import {
@@ -11,8 +10,7 @@ import {
 	Typography,
 } from '@mui/material'
 
-import { useRef, useState } from 'react'
-import axios from 'axios'
+import { useRef } from 'react'
 import { NavLink } from 'react-router-dom'
 export default function NewNews(){
 

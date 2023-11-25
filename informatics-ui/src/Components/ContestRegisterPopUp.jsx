@@ -1,10 +1,10 @@
-import axios from "axios"
 import { useState, useEffect } from "react"
+import { getAxiosInstance } from '../utils/axiosInstance'
 export default function ContestRegisterPopUp({contestId}){
     const [text, setText] = useState("")
     useEffect(() => {
-                    axios
-                    .post(`${process.env.REACT_APP_HOST}/contest/${contestId}/register`, {
+                    getAxiosInstance()
+                    .post(`/contest/${contestId}/register`, {
                     })
                     .then((response) => {
                         if(response.data.status == "SUCCESS"){

@@ -9,9 +9,6 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-
-import javax.servlet.http.HttpServletResponse;
 
 @EnableWebSecurity
 public class SecurityConfiguration {
@@ -21,9 +18,10 @@ public class SecurityConfiguration {
     public static class MainSecurityAdapter extends WebSecurityConfigurerAdapter {
         private static final String[] GLOBAL_ADDRESSES = {"/",
                 "/login",
+                "/logout",
                 "/register"};
 
-        private static final String[] ALL_ACCOUNT_ADDRESSES = {"/logout", "/profile"};
+        private static final String[] ALL_ACCOUNT_ADDRESSES = {"/profile"};
 
         @Autowired
         private void configureGlobal(AuthenticationManagerBuilder auth) {
@@ -37,10 +35,14 @@ public class SecurityConfiguration {
                     .permitAll()
                     .antMatchers(ALL_ACCOUNT_ADDRESSES)
                     .hasAnyAuthority(UserRole.ADMIN.name(), UserRole.TEACHER.name(), UserRole.STUDENT.name())
-                    .and().logout(logout -> logout
-                    .permitAll()
-                    .logoutSuccessHandler((request, response, authentication) -> response.setStatus(HttpServletResponse.SC_OK)
-                    )).csrf().disable().cors(AbstractHttpConfigurer::disable);
+                    .and().logout()
+                    .invalidateHttpSession(true)
+                    .logoutSuccessHandler((request, response, authentication) -> response.setHeader("Access-Control-Allow-Origin", "http://localhost:3000")).addLogoutHandler((request, response, authentication) -> {
+                        response.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
+                        response.setHeader("Access-Control-Allow-Credentials", "true");
+
+                    })
+                    .and().csrf().disable();
         }
     }
 

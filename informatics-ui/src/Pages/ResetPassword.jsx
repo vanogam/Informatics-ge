@@ -3,7 +3,6 @@ import Box from '@mui/material/Box'
 import InputLabel from '@mui/material/InputLabel'
 import InputAdornment from '@mui/material/InputAdornment'
 import TextField from '@mui/material/TextField'
-import axios from 'axios'
 import { Button } from '@mui/material'
 import Typography from '@mui/material/Typography'
 import logo from '../assets/logo.png'
@@ -15,6 +14,7 @@ import { useNavigate } from 'react-router-dom'
 import {
 	AccountCircle,
 } from '@mui/icons-material'
+import { getAxiosInstance } from '../utils/axiosInstance'
 
 export default function ResetPassword() {
 	const username = useRef('')
@@ -28,8 +28,8 @@ export default function ResetPassword() {
 		const body = {
 			username: username.current.value,
 		}
-		axios
-			.post(`${process.env.REACT_APP_HOST}/recover/request`, body)
+		getAxiosInstance()
+			.post(`/recover/request`, body)
 			.then((response) => {
 				if (response.data.status === 'SUCCESS') {
 					setSuccess('True')

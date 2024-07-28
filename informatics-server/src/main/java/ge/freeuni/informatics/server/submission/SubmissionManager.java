@@ -124,7 +124,6 @@ public class SubmissionManager implements ISubmissionManager {
     }
 
     @Override
-    @Secured("STUDENT")
     public void addSubmissionViaText(Submission submission, String text) throws InformaticsServerException {
         submission.setUserId(userManager.getAuthenticatedUser().getId());
         CodeLanguage language = CodeLanguage.valueOf(submission.getLanguage());

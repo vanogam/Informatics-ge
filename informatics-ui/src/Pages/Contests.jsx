@@ -16,7 +16,7 @@ import { AuthContext } from '../store/authentication'
 import * as React from 'react'
 import BarChartIcon from '@mui/icons-material/BarChart';
 import TerminalIcon from '@mui/icons-material/Terminal';
-import { getAxiosInstance } from '../utils/axiosInstance'
+import { AxiosContext, getAxiosInstance } from '../utils/axiosInstance'
 import Cookies from 'js-cookie'
 function handleContestsResponse(response, setRows, isLoggedIn) {
 	var curRows = []
@@ -47,23 +47,21 @@ function handleContestsResponse(response, setRows, isLoggedIn) {
 }
 
 export default function Contests() {
-	const navigate = useNavigate()
+	const axiosInstance = useContext(AxiosContext)
 	const authContext = useContext(AuthContext)
 	const isLoggedIn = authContext.isLoggedIn
 	const [rows, setRows] = useState([])
-	const [roles, setRoles] = useState([])
 	useEffect(() => {
-		getAxiosInstance()
-			.get('/contest-list', {
+		axiosInstance
+			.get('/contests', {
 				params: {
 					roomId: 1,
 				},
 			})
 			.then((response) => handleContestsResponse(response, setRows, isLoggedIn))
 			.catch((error) => console.log(error))
-		setRoles(() => Cookies.get('roles'))
 	}, [])
-
+	console.log(authContext.roles)
 	return (
 		<main>
 			<Typography
@@ -87,7 +85,7 @@ export default function Contests() {
 				მონაწილეობა.
 			</Typography>
 			<Container maxWidth="lg">
-				{roles.includes('ADMIN') && (
+				{authContext.roles.includes('ADMIN') && (
 					<Button
 						variant="contained"
 						color="secondary"
@@ -108,7 +106,7 @@ export default function Contests() {
 								<TableCell align="right">სტატუსი</TableCell>
 								<TableCell align="right">შედეგები</TableCell>
 								<TableCell align="right">მცდელობები</TableCell>
-								{roles.includes('ADMIN') ? <TableCell></TableCell> : null}
+								{authContext.roles.includes('ADMIN') ? <TableCell></TableCell> : null}
 							</TableRow>
 						</TableHead>
 						<TableBody>
@@ -130,7 +128,7 @@ export default function Contests() {
 										<NavLink
 											style={{ color: 'black', textDecorationLine: 'none' }}
 											to={`/contest/${row.id}`}
-											exact
+
 										>
 											{row.name}
 										</NavLink>
@@ -144,23 +142,23 @@ export default function Contests() {
 										{row.status === 'LIVE' ? 'მიმდინარე' : 'წარსული'}
 									</TableCell>
 									<TableCell align="right" component="th" scope="row">
-										<NavLink style={{ color: '#3c324e', textDecorationLine: 'none' }} to={`/results/${row.id}`} exact>
+										<NavLink style={{ color: '#3c324e', textDecorationLine: 'none' }} to={`/results/${row.id}`} exact={"true"}>
 												{<BarChartIcon></BarChartIcon>}
 										</NavLink>
 									</TableCell>
 									<TableCell align="right" component="th" scope="row">
-										<NavLink style={{ color: '#3c324e', textDecorationLine: 'none' }} to={`/contest/${row.id}/submissions`} exact>
+										<NavLink style={{ color: '#3c324e', textDecorationLine: 'none' }} to={`/contest/${row.id}/submissions`} exact={"true"}>
 												{<TerminalIcon></TerminalIcon>}
 										</NavLink>
 									</TableCell>
-									{roles.includes('ADMIN') && (
+									{authContext.roles.includes('ADMIN') && (
 										<TableCell>
 											<Button
 												variant="contained"
 												color="secondary"
 												sx={{ backgroundColor: '#2f2d47' }}
 												component={NavLink}
-												to={`/editContest/${row.id}`}
+												to={`/edit-contest/${row.id}`}
 											>
 												რედაქტირება
 											</Button>

@@ -13,6 +13,7 @@ public class InformaticsResponse {
 
     private String message;
 
+    // TODO Remove after migration to status codes
     private String status;
 
     public String getMessage() {

@@ -9,9 +9,10 @@ import Login from './Login'
 import Register from './Register'
 import { AuthContext } from '../store/authentication'
 import PersonIcon from '@mui/icons-material/Person'
-import { getAxiosInstance } from '../utils/axiosInstance'
+import { AxiosContext, getAxiosInstance } from '../utils/axiosInstance'
 function Navbar() {
 	const authContext = useContext(AuthContext)
+	const axiosInstance = useContext(AxiosContext)
 	const isLoggedIn = authContext.isLoggedIn
 	const [toggleMenu, setToggleMenu] = useState(false)
 	const [screenWidth, setScreenWidth] = useState(window.innerWidth)
@@ -30,7 +31,7 @@ function Navbar() {
 	}, [])
 
 	const handleLogOut = () => {
-		getAxiosInstance()
+		axiosInstance
 			.post('/logout', {})
 			.then((response) => {
 				toast.success('Logout Successful')

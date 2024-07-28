@@ -15,6 +15,8 @@ import Results from './Pages/Results'
 import MySubmissions from './Pages/MySubmissions'
 import ContestSubmissions from './Pages/ContestSubmissions'
 import NewNews from './Pages/NewNews'
+import NewTaskCard from './Components/NewTaskCard'
+import Error from './Pages/Error'
 
 function App() {
 	return (
@@ -57,8 +59,11 @@ function App() {
 						element={<ContestSubmissions />}
 					/>
 					<Route path='/addContest' element={<NewContest />} />
-					<Route path='/editContest/:contest_id' element={<EditContest />} />\
-					<Route path='/newNews' element={<NewNews />} />
+					<Route path='/edit-contest/:contest_id' element={<EditContest />} />\
+					<Route path='/contest/:contest_id/add-task' element={<NewTaskCard />} />\
+					<Route path='/edit-task/:task_id' element={<NewTaskCard />} />\
+					<Route path='/new-news' element={<NewNews />} />
+					<Route element={<Error/>} />
 				</Routes>
 			</Box>
 		</div>

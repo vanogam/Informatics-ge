@@ -17,7 +17,7 @@ import { NavLink } from "react-router-dom";
 import { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../store/authentication'
 import ContestRegisterPopUp from '../Components/ContestRegisterPopUp'
-import { getAxiosInstance } from '../utils/axiosInstance'
+import { AxiosContext, getAxiosInstance } from '../utils/axiosInstance'
 import Cookies from 'js-cookie'
 function handleContestResponse(response, setProblems){
 	var curTasks = []
@@ -47,8 +47,10 @@ export default function Contest(){
     const {contest_id} = useParams()
 	const [problems , setProblems] = useState([])
 	const [registered, setIsRegistered] = useState(false)
+	const axiosInstance = useContext(AxiosContext)
+
 	useEffect(() => {
-		getAxiosInstance()
+		axiosInstance
 			.get(`/contest/${contest_id}/tasks`, {
 				params:{
 					offset : 0 , 
@@ -57,7 +59,7 @@ export default function Contest(){
 			})
 			.then((response) =>  {
 				handleContestResponse(response, setProblems)
-				getAxiosInstance()
+				axiosInstance
 			.get(`/contest/${contest_id}/is-registered`)
 			.then((response) => {
 				
@@ -69,19 +71,6 @@ export default function Contest(){
 			setRoles(() => authContext.roles)
 	}, [])
 
-    // const rows = [
-	// 	{
-	// 		id: 1,
-    //         category: "a",
-	// 		name: 'Problem1',
-			
-	// 	},
-    //     {
-	// 		id: 2,
-    //         category: "b",
-	// 		name: 'Problem2',
-	// 	},
-    // ]
     return (
        <main>
 		<Modal open={popUp} onClose={() => setPopUp(false)}>
@@ -126,12 +115,12 @@ export default function Contest(){
 							
 							<TableCell>კატეგორია</TableCell>
 							<TableCell >სახელი</TableCell>
-							{(isLoggedIn && !roles.includes('ADMIN') && registered === true) &&
+							{(isLoggedIn && !roles?.includes('ADMIN') && registered === true) &&
 								(
 									<TableCell>ქულა</TableCell>	
 								)
 								}
-							{(isLoggedIn && !roles.includes('ADMIN') && registered === false) && (
+							{(isLoggedIn && !roles?.includes('ADMIN') && registered === false) && (
 									<TableCell>
 										<Button
 											className="items"
@@ -160,8 +149,8 @@ export default function Contest(){
 
 								</TableCell>
 								
-								<TableCell ><NavLink style={{ color: 'black', textDecorationLine: 'none' }} to={`${problem.id}`}exact>{problem.name} </NavLink></TableCell>
-								{(isLoggedIn && !roles.includes('ADMIN') && registered === true) &&
+								<TableCell ><NavLink style={{ color: 'black', textDecorationLine: 'none' }} to={`${problem.id}`}exact={"true"}>{problem.name} </NavLink></TableCell>
+								{(isLoggedIn && !roles?.includes('ADMIN') && registered === true) &&
 								(
 									<TableCell>{problem.score}</TableCell>	
 								)

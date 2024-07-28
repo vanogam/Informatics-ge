@@ -168,11 +168,15 @@ public class CmsCommunicationManager implements ICmsCommunicationManager {
         return template.replace("*", num.toString());
     }
 
-    private void runProcess(ProcessBuilder processBuilder) throws IOException {
+    private void runProcess(ProcessBuilder processBuilder) throws IOException, InformaticsServerException {
         try {
-            processBuilder.redirectOutput(new File(commandOutput)).redirectError(new File(commandErrorOutput)).start().waitFor();
+            int exitCode = processBuilder.redirectOutput(new File(commandOutput)).redirectError(new File(commandErrorOutput)).start().waitFor();
+            if (exitCode != 0) {
+                throw new InformaticsServerException("cmsException");
+            }
         } catch (InterruptedException e) {
             log.error("Error during executing command", e);
+            throw new InformaticsServerException("cmsException");
         }
     }
 }

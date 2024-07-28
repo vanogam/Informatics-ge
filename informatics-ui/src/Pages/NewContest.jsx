@@ -1,4 +1,4 @@
-import dayjs, { Dayjs } from 'dayjs'
+import dayjs from 'dayjs'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import {
@@ -11,15 +11,17 @@ import {
 	Typography,
 } from '@mui/material'
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
-import { useRef, useState } from 'react'
-import NewTaskCard from '../Components/NewTaskCard'
+import { useContext, useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
-import { getAxiosInstance } from '../utils/axiosInstance'
+import { AxiosContext, getAxiosInstance } from '../utils/axiosInstance'
+import getMessage from '../Components/lang'
 export default function NewContest() {
 	const [contestId, setContestId] = useState(null)
 	const [contestName, setContestName] = useState(null)
+	const axiosInstance = useContext(AxiosContext)
 
-	const [value, setValue] = useState(dayjs('2014-08-18T21:11:54'))
+	const [value, setValue] = useState(dayjs(new Date()))
+	const [showError, setShowError] = useState(false)
 	const [durationType, setDurationType] = useState('Minutes')
 	const [tasks, setTasks] = useState([])
 	const nameRef = useRef(null)
@@ -28,7 +30,10 @@ export default function NewContest() {
 	const durationTypes = ['Hours', 'Minutes']
 
 	const handleAddContest = () => {
-		console.log("HI")
+		setShowError(true);
+		if (!isValid()) {
+			return;
+		}
 		const params = {
 			name: nameRef?.current.value,
 			startDate: value.format('DD/MM/YYYY HH:mm'),
@@ -39,12 +44,20 @@ export default function NewContest() {
 			roomId: "1",
 		}
 		params["durationInSeconds"] = params["durationInSeconds"].toString()
-		console.log(params)
 		setContestName(nameRef?.current.value)
-		getAxiosInstance()
+		axiosInstance
 			.post('/create-contest', params)
-			.then((res) => {setContestId(res.data.contest.id); 	getAxiosInstance().post(`/contest/${res.data.contest.id}/register`,{})})
+			.then((res) => {setContestId(res.data.contest.id); 	axiosInstance.post(`/contest/${res.data.contest.id}/register`,{})})
 
+	}
+
+	const isValid = () => {
+		console.log(!!nameRef.current.value)
+		console.log(!!durationRef.current.value)
+		console.log(value)
+		return !!nameRef.current.value
+				&& !!durationRef.current.value
+				&& !!value
 	}
 
 	const handleSubmit = (title) => {
@@ -66,27 +79,34 @@ export default function NewContest() {
 									<TextField
 										label="სახელი"
 										inputRef={nameRef}
+										required={true}
+										error={!nameRef.current?.value && showError}
 										variant="outlined"
 									/>
 									<DateTimePicker
 										label="დაწყების დრო"
 										value={value}
 										onChange={setValue}
+										inputFormat={'DD/MM/YYYY HH:mm'}
 										renderInput={(params) => (
-											<TextField variant="outlined" {...params} />
+											<TextField variant="outlined"
+																 required={true}
+																 {...params}
+																 error={!value && showError}/>
 										)}
 									/>
 									<Stack direction="row" gap="1rem">
 										<TextField
-											label="ხანგრძლივობა (წთ)"
+											label={`${getMessage('ka', 'duration')} (${getMessage('ka', durationType === 'Minutes' ? 'minuteShort' : 'hourShort')})`}
 											variant="outlined"
+											required={true}
 											type="number"
+											error={!durationRef.current?.value && showError}
 											inputRef={durationRef}
 											fullWidth
 										/>
 										<TextField
 											select
-											// label="Select"
 											value={durationType}
 											onChange={(e) => {
 												setDurationType(e.target.value)
@@ -95,7 +115,7 @@ export default function NewContest() {
 										>
 											{durationTypes.map((option) => (
 												<MenuItem key={option} value={option}>
-													{option}
+													{getMessage('ka', 'DATEFORMAT_' + option)}
 												</MenuItem>
 											))}
 										</TextField>
@@ -106,7 +126,7 @@ export default function NewContest() {
 										sx = {{background: '#3c324e'}}
 										size="large"
 									>
-										დაამატე კონტესტი
+										{getMessage('ka', 'addContest')}
 									</Button>
 								</Stack>
 							</>
@@ -146,20 +166,6 @@ export default function NewContest() {
 											</Typography>
 										</Paper>
 									))}
-									{showNewTaskCard ? (
-										<NewTaskCard contestId={contestId} handleSubmit={handleSubmit} />
-									) : (
-										<Paper elevation={4} sx={{ padding: '1rem' }}>
-											<Button
-												fullWidth
-												variant="contained"
-												sx = {{background: '#3c324e'}}
-												onClick={() => setShowNewTaskCard(true)}
-											>
-												ახალი ამოცანის დამატება
-											</Button>
-										</Paper>
-									)}
 								</Stack>
 							</Paper>
 						

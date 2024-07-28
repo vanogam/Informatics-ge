@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Date;
 
 @RestController
+@RequestMapping("/api")
 public class SubmissionController {
     final IUserManager userManager;
 

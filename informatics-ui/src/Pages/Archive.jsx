@@ -12,8 +12,8 @@ import {
 } from '@mui/material'
 import BarChartIcon from '@mui/icons-material/BarChart';
 import { NavLink } from "react-router-dom";
-import { useState, useEffect } from 'react';
-import { getAxiosInstance } from '../utils/axiosInstance'
+import { useState, useEffect, useContext } from 'react'
+import { AxiosContext, getAxiosInstance } from '../utils/axiosInstance'
 
 function handleContestResponse(response, setProblems){
 	var curTasks = []
@@ -31,10 +31,11 @@ function handleContestResponse(response, setProblems){
 	setProblems(curTasks)
 }
 export default function Archive(){
-    const {contest_id} = useParams()
+	const axiosInstance = useContext(AxiosContext)
+	const {contest_id} = useParams()
 	const [problems , setProblems] = useState([])
 	useEffect(() => {
-		getAxiosInstance()
+		axiosInstance
 			.get('/room/1/tasks?offset=0&limit=20', {
 				params:{
 					offset : 0 , 
@@ -99,7 +100,7 @@ export default function Archive(){
 									{problem.category}
 
 								</TableCell>
-								<TableCell ><NavLink  style={{ color: 'black', textDecorationLine: 'none' }} to={`/contest/${contest_id}/${problem.id}`}exact>{problem.name} </NavLink></TableCell>
+								<TableCell ><NavLink  style={{ color: 'black', textDecorationLine: 'none' }} to={`/contest/${contest_id}/${problem.id}`}exact={"true"}>{problem.name} </NavLink></TableCell>
 
 							</TableRow>
 						))}

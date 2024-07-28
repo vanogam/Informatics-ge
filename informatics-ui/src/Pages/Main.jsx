@@ -12,8 +12,7 @@ import { Box } from '@mui/material'
 import { useState, useEffect, useContext } from 'react'
 import { AuthContext } from '../store/authentication'
 import { NavLink } from 'react-router-dom'
-import NewNews from './NewNews'
-import { getAxiosInstance } from '../utils/axiosInstance'
+import { AxiosContext } from '../utils/axiosInstance'
 import Cookies from 'js-cookie'
 
 function loadNews(response, setNews) {
@@ -21,18 +20,12 @@ function loadNews(response, setNews) {
 }
 
 export default function Main() {
+	const axiosInstance = useContext(AxiosContext)
 	const authContext = useContext(AuthContext)
 	const [news, setNews] = useState([])
 	const [roles, setRoles] = useState([])
 	useEffect(() => {
-		getAxiosInstance()
-			.get('/contest-list', {
-				params: {
-					roomId: 1,
-				},
-			})
-			.then((response) => loadNews(response, setNews))
-			.catch((error) => console.log(error))
+		loadNews(null, setNews);
 		setRoles(() => Cookies.get('roles'))
 	}, [])
 
@@ -85,7 +78,7 @@ export default function Main() {
 					width: '70%',
 				}}
 			/>
-			{roles.includes('ADMIN') && (
+			{roles?.includes('ADMIN') && (
 				<Button
 					variant='contained'
 					color='secondary'
@@ -97,8 +90,10 @@ export default function Main() {
 				</Button>
 			)}
 
-			{dummy_news_list.map((news) => (
-				<Card sx={{
+			{dummy_news_list.map((news, index) => (
+				<Card
+					key={index}
+					sx={{
 					marginTop: '3%',
 					marginBottom: '0',
 					marginLeft: '15%',

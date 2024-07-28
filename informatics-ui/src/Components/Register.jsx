@@ -7,7 +7,7 @@ import { Email, AccountCircle, Lock, Person } from '@mui/icons-material'
 import { useRef, useState, useContext } from 'react'
 import { AuthContext } from '../store/authentication'
 import { toast } from 'react-toastify'
-import { getAxiosInstance } from '../utils/axiosInstance'
+import { AxiosContext, getAxiosInstance } from '../utils/axiosInstance'
 
 export default function Register() {
 	const [popUp, setPopUp] = useState(false)
@@ -19,6 +19,7 @@ export default function Register() {
 	const rePassword = useRef('')
 	const password = useRef('')
 	const authContext = useContext(AuthContext)
+	const axiosInstance = useContext(AxiosContext)
 
 	const handleRegistrationSubmit = () => {
 		if (password.current.value !== rePassword.current.value) {
@@ -34,12 +35,12 @@ export default function Register() {
 			password: password.current.value,
 		}
 
-		getAxiosInstance()
+		axiosInstance
 			.post(`/register`, body)
 			.then((response) => {
 				toast.success('Register Success')
 				setPopUp(false)
-				getAxiosInstance()
+				axiosInstance
 					.post('/login', {
 							username: username.current.value,
 							password: password.current.value,
@@ -47,7 +48,7 @@ export default function Register() {
 						{ withCredentials: true })
 					.then((response) => {
 						if (response.data.status === 'SUCCESS') {
-							getAxiosInstance().get('/get-user').then((res) => {
+							axiosInstance.get('/get-user').then((res) => {
 								let roles = res.data.roles
 								authContext.login({ username: response.data.message, roles: roles })
 							})

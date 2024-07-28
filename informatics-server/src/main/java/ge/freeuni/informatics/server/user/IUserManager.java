@@ -15,6 +15,8 @@ public interface IUserManager {
 
     void editUser(User user);
 
+    boolean isLoggedIn() ;
+
     UserDTO getAuthenticatedUser() throws InformaticsServerException;
 
     void addPasswordRecoveryQuery(String username) throws InformaticsServerException;

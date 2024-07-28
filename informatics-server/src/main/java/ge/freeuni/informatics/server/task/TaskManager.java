@@ -139,12 +139,12 @@ public class TaskManager implements ITaskManager {
         }
         taskDTO.setContestId(contestId);
         Task task = TaskDTO.fromDTO(taskDTO);
+        judgeIntegration.addTask(TaskDTO.toDTO(task));
         task = taskRepository.addTask(task);
         if (!contest.getTasks().contains(task)) {
             contest.getTasks().add(task);
             contestRepository.addContest(contest);
         }
-        judgeIntegration.addTask(TaskDTO.toDTO(task));
         return TaskDTO.toDTO(task);
     }
 
@@ -280,6 +280,9 @@ public class TaskManager implements ITaskManager {
     private boolean checkAddTaskPermission(Contest contest) throws InformaticsServerException {
         UserDTO user = userManager.getAuthenticatedUser();
         ContestRoom room = roomManager.getRoom(contest.getRoomId());
+        if (user.getRoles().contains("ADMIN")) {
+            return true;
+        }
         return room.getTeachers().contains(user.getId());
     }
 

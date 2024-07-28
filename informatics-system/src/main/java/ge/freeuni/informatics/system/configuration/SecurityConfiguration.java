@@ -10,6 +10,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 
+import javax.servlet.http.HttpServletResponse;
+
 @EnableWebSecurity
 public class SecurityConfiguration {
 
@@ -17,9 +19,11 @@ public class SecurityConfiguration {
     @Order(Ordered.HIGHEST_PRECEDENCE + 1)
     public static class MainSecurityAdapter extends WebSecurityConfigurerAdapter {
         private static final String[] GLOBAL_ADDRESSES = {"/",
-                "/login",
-                "/logout",
-                "/register"};
+                "/api/login",
+                "/api/logout",
+                "/api/register",
+                "/api/contest-list"
+        };
 
         private static final String[] ALL_ACCOUNT_ADDRESSES = {"/profile"};
 
@@ -33,15 +37,19 @@ public class SecurityConfiguration {
             http.authorizeRequests()
                     .antMatchers(GLOBAL_ADDRESSES)
                     .permitAll()
-                    .antMatchers(ALL_ACCOUNT_ADDRESSES)
-                    .hasAnyAuthority(UserRole.ADMIN.name(), UserRole.TEACHER.name(), UserRole.STUDENT.name())
+                    .anyRequest().authenticated()
+                    .and()
+                    .exceptionHandling()
+                    .authenticationEntryPoint((request, response, authException) -> {
+                        // Return 401 Unauthorized for unauthenticated requests
+                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+                    })
+                    .accessDeniedHandler((request, response, accessDeniedException) -> {
+                        // Return 403 Forbidden for authenticated users without proper permissions
+                        response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden");
+                    })
                     .and().logout()
                     .invalidateHttpSession(true)
-                    .logoutSuccessHandler((request, response, authentication) -> response.setHeader("Access-Control-Allow-Origin", "http://localhost:3000")).addLogoutHandler((request, response, authentication) -> {
-                        response.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
-                        response.setHeader("Access-Control-Allow-Credentials", "true");
-
-                    })
                     .and().csrf().disable();
         }
     }

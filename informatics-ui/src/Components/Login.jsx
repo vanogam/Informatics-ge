@@ -4,7 +4,7 @@ import { Box } from '@mui/system'
 import { NavLink } from 'react-router-dom'
 import { AuthContext } from '../store/authentication'
 import { toast } from 'react-toastify'
-import { getAxiosInstance } from '../utils/axiosInstance'
+import { AxiosContext, getAxiosInstance } from '../utils/axiosInstance'
 
 export default function Login() {
 	const [popUp, setPopUp] = useState(false)
@@ -12,21 +12,17 @@ export default function Login() {
 	const username = useRef('')
 	const password = useRef('')
 	const authContext = useContext(AuthContext)
+	const axiosInstance = useContext(AxiosContext)
 
 	const handleLoginResponse = async (response) => {
-		if (response.data.status === 'SUCCESS') {
-			getAxiosInstance().get('/get-user').then((res) => {
-				let roles = res.data.roles
-				console.log(res, roles)
-				setPopUp(false)
-				toast.success('Login Success')
-				setCredentialsError(false)
-				authContext.login({ username: response.data.message, roles: roles })
-			})
-		} else if (response.data.status === 'FAIL') {
-			setCredentialsError(true)
-			toast.error('Login Error')
-		}
+		axiosInstance.get('/get-user').then((res) => {
+			let roles = res.data.roles
+			console.log(res, roles)
+			setPopUp(false)
+			toast.success('Login Success')
+			setCredentialsError(false)
+			authContext.login({ username: response.data.username, roles: roles })
+		})
 	}
 
 	function handlePassError() {
@@ -35,7 +31,7 @@ export default function Login() {
 	}
 
 	const handleLoginSubmit = () => {
-		getAxiosInstance()
+		axiosInstance
 			.post('/login', {
 				username: username.current.value,
 				password: password.current.value,

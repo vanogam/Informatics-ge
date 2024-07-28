@@ -57,6 +57,7 @@ public class SubmissionRepository implements ISubmissionRepository {
         }
         sql.append("AND s.roomId = :roomId ");
         parameters.put("roomId", roomId);
+        sql.append(" ORDER BY s.submissionTime DESC");
         TypedQuery<Submission> submissionQuery = em.createQuery(sql.toString(), Submission.class);
         for (String key : parameters.keySet()) {
             submissionQuery.setParameter(key, parameters.get(key));

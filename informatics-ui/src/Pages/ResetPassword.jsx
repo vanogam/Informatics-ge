@@ -14,9 +14,10 @@ import { useNavigate } from 'react-router-dom'
 import {
 	AccountCircle,
 } from '@mui/icons-material'
-import { getAxiosInstance } from '../utils/axiosInstance'
+import { AxiosContext, getAxiosInstance } from '../utils/axiosInstance'
 
 export default function ResetPassword() {
+	const axiosInstance = useContext(AxiosContext)
 	const username = useRef('')
 	const [success, setSuccess] = useState('')
 	const authProvider = useContext(AuthContext)
@@ -28,7 +29,7 @@ export default function ResetPassword() {
 		const body = {
 			username: username.current.value,
 		}
-		getAxiosInstance()
+		axiosInstance
 			.post(`/recover/request`, body)
 			.then((response) => {
 				if (response.data.status === 'SUCCESS') {

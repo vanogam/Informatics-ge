@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -18,6 +19,7 @@ import java.nio.file.Files;
 import java.util.List;
 
 @RestController
+@RequestMapping("/api")
 public class TaskController {
 
     @Autowired
@@ -72,7 +74,7 @@ public class TaskController {
     }
 
     @PostMapping("/save-task")
-    SaveTaskResponse saveTask(@RequestBody AddTaskRequest request) {
+    ResponseEntity<TaskDTO> saveTask(@RequestBody AddTaskRequest request) {
         TaskDTO taskDTO = new TaskDTO();
         taskDTO.setId(request.getTaskId());
         taskDTO.setTaskType(request.getTaskType());
@@ -86,9 +88,9 @@ public class TaskController {
         taskDTO.setInputTemplate(request.getInputTemplate());
         taskDTO.setOutputTemplate(request.getOutputTemplate());
         try {
-            return new SaveTaskResponse("SUCCESS", null, taskManager.addTask(taskDTO, request.getContestId()));
+            return ResponseEntity.ok(taskManager.addTask(taskDTO, request.getContestId()));
         } catch (InformaticsServerException ex) {
-            return new SaveTaskResponse("FAIL", ex.getCode(), null);
+            return ResponseEntity.badRequest().build();
         }
     }
 

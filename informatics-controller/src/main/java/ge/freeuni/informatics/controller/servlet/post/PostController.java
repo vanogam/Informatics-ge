@@ -17,6 +17,7 @@ import java.nio.file.Files;
 import java.util.List;
 
 @RestController
+@RequestMapping("/api")
 public class PostController {
 
     @Autowired

@@ -10,6 +10,8 @@ import ge.freeuni.informatics.server.submission.ISubmissionManager;
 import ge.freeuni.informatics.server.task.ITaskManager;
 import ge.freeuni.informatics.server.user.IUserManager;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -17,6 +19,7 @@ import java.util.Date;
 import java.util.List;
 
 @RestController
+@RequestMapping("/api")
 public class ContestController {
 
     @Autowired
@@ -34,15 +37,23 @@ public class ContestController {
     @Autowired
     private ISubmissionManager submissionManager;
 
-    @GetMapping("/contest-list")
+    @GetMapping("/contest/{id}")
+    public ResponseEntity<ContestDTO> getContest(@PathVariable long id) {
+        try {
+            return ResponseEntity.ok(contestManager.getContest(id));
+        } catch (InformaticsServerException ex) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+   @GetMapping("/contests")
     public ContestResponse getContestList(ContestListRequest request) {
         ContestResponse response = new ContestResponse();
         response.setContests(contestManager.getContests(Long.valueOf(request.getRoomId()), null, null, null, null, null));
         response.setStatus("SUCCESS");
         return response;
     }
-
-
+    
     @GetMapping("/contest/{id}/is-registered")
     public IsRegisteredResponse isRegistered(@PathVariable Long id) {
         try {
@@ -62,7 +73,7 @@ public class ContestController {
     }
 
     @PostMapping("/create-contest")
-    public CreateContestResponse createContest(@RequestBody CreateContestRequest contestRequest) {
+    public ResponseEntity<CreateContestResponse> createContest(@RequestBody CreateContestRequest contestRequest) {
         ContestDTO contestDTO = new ContestDTO();
         contestDTO.setId(contestRequest.getContestId());
         contestDTO.setName(contestRequest.getName());
@@ -70,16 +81,13 @@ public class ContestController {
         contestDTO.setDurationInSeconds(contestRequest.getDurationInSeconds());
         contestDTO.setStartDate(convertToDate(contestRequest.getStartDate()));
         contestDTO.setUpsolvingAfterFinish(contestRequest.isUpsolvingAfterFinish());
-        contestDTO.setUpsolving(contestDTO.isUpsolving());
+        contestDTO.setUpsolving(contestRequest.isUpsolving());
         contestDTO.setScoringType(contestRequest.getScoringType());
-        CreateContestResponse response = new CreateContestResponse();
         try {
-            return new CreateContestResponse("SUCCESS", null, contestManager.createContest(contestDTO));
+            return ResponseEntity.ok(new CreateContestResponse("SUCCESS", null, contestManager.createContest(contestDTO)));
         } catch (InformaticsServerException ex) {
-            response.setStatus("FAIL");
-            response.setMessage(ex.getCode());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new CreateContestResponse());
         }
-        return response;
     }
 
     @DeleteMapping("/contest/{contestId}")

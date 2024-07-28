@@ -52,7 +52,7 @@ public class InformaticsAuthenticationProvider implements AuthenticationProvider
             return roles;
         }
         for (String role : rolesString.split(",")) {
-            roles.add(new SimpleGrantedAuthority(role));
+            roles.add(new SimpleGrantedAuthority("ROLE_" + role));
         }
         return roles;
     }

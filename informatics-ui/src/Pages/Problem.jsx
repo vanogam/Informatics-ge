@@ -4,7 +4,7 @@ import {
 	Typography,
     Box
 } from '@mui/material'
-import React, { useState } from 'react'
+import React, { useContext, useState } from 'react'
 import Editor from 'react-simple-code-editor'
 import { highlight, languages } from 'prismjs/components/prism-core'
 import 'prismjs/components/prism-clike'
@@ -16,7 +16,8 @@ import '../styles/numbers.css'
 import { Button } from '@mui/material'
 import { useNavigate } from "react-router-dom";
 import { useEffect } from 'react';
-import { getAxiosInstance } from '../utils/axiosInstance'
+import axios from 'axios'
+import { AxiosContext } from '../utils/axiosInstance'
 // import Pdf from "../../home/u/informatics/statements/passw/statement_KA.pdf"
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
@@ -44,6 +45,7 @@ function handleProblemResponse(response, setPDF){
 }
 
 export default function Problem(){
+	const axiosInstance = useContext(AxiosContext);
 	let navigate = useNavigate();
 	function submitProblem(code, contest_id, task_id){
 		const body = {
@@ -53,24 +55,17 @@ export default function Problem(){
 				"language" : "CPP"
 		}
 		console.log(body)
-		getAxiosInstance()
+		axiosInstance
 				.post(`/submit`, body)
 				.then((response) =>  {console.log(response)})
 		navigate(`/contest/${contest_id}/mySubmissions`, { replace: true });
 	}
     const {contest_id, problem_id} = useParams()
-	// console.log("Contest_id", contest_id, "Problem id", problem_id)
     const [code, setCode] = React.useState(
 		`#include <iostream>\nusing namespace std;\nint main()\n{\ncout << "Hello, World!";\nreturn 0; \n}\n`
 	)
 	const [pdf, setPDF] = useState("")
 	const [submission, setSubmission] = useState("")
-	// useEffect(() => {
-	// 	axios
-	// 		.get(`${process.env.REACT_APP_HOST}/statements/219/KA`)
-	// 		.then((response) =>  {handleProblemResponse(response, setPDF)})
-	// 		.catch((error) => console.log(error))
-	// }, [])
 	
 	useEffect(() => {
 		

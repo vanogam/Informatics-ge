@@ -16,6 +16,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @RestController
+@RequestMapping("/api")
 public class UserController {
 
     final Logger log;
@@ -48,20 +49,22 @@ public class UserController {
 
     @PostMapping("/login")
     @ResponseBody
-    public LoginResponse login(@RequestBody AuthenticationDetails authenticationDetails, HttpServletRequest request) {
-        LoginResponse response = new LoginResponse();
+    public ResponseEntity<LoginResponse> login(@RequestBody AuthenticationDetails authenticationDetails, HttpServletRequest request) {
         try {
+            if (userManager.isLoggedIn()) {
+                if (userManager.getAuthenticatedUser().getUsername().equals(authenticationDetails.getUsername())) {
+                    return ResponseEntity.ok(new LoginResponse(userManager.getAuthenticatedUser().getUsername()));
+                } else {
+                    return ResponseEntity.badRequest().body(new LoginResponse(null, "loggedInWithDifferentUser"));
+                }
+            }
             request.login(authenticationDetails.getUsername(), authenticationDetails.getPassword());
-            response.setMessage(userManager.getAuthenticatedUser().getUsername());
-            response.setStatus("SUCCESS");
-        } catch (ServletException ex) {
-            response.setStatus("FAIL");
-        } catch (InformaticsServerException e) {
-            throw new RuntimeException(e);
+            return ResponseEntity.ok(new LoginResponse(userManager.getAuthenticatedUser().getUsername()));
+        } catch (InformaticsServerException ex) {
+            return ResponseEntity.badRequest().body(new LoginResponse(null, ex.getCode()));
+        } catch (ServletException e) {
+            return ResponseEntity.badRequest().body(new LoginResponse(null, "incorrectCredentials"));
         }
-
-        return response;
-
     }
 
     @GetMapping("/login")

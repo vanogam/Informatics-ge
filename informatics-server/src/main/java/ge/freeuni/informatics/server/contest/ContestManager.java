@@ -21,6 +21,7 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.security.RolesAllowed;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -44,14 +45,15 @@ public class ContestManager implements IContestManager {
         this.taskManager = taskManager;
     }
 
-    @Secured({"TEACHER", "ADMIN"})
+    @RolesAllowed({"ROLE_TEACHER", "ROLE_ADMIN"})
     @Override
     public ContestDTO createContest(ContestDTO contestDTO) throws InformaticsServerException {
         ContestRoom room = contestRoomManager.getRoom(contestDTO.getRoomId());
-        if (!room.getTeachers().contains(userManager.getAuthenticatedUser().getId())) {
+        if (!userManager.getAuthenticatedUser().getRoles().contains("ADMIN") &&
+            !room.getTeachers().contains(userManager.getAuthenticatedUser().getId())) {
             throw new InformaticsServerException("permissionDenied");
         }
-        Contest contest = null;
+        Contest contest;
         if (contestDTO.getId() != null) {
             contest = getContestInternal(contestDTO.getId());
             updateContest(contest, contestDTO);

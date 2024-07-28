@@ -14,9 +14,10 @@ import { useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { AuthContext } from '../store/authentication'
 import { useNavigate } from 'react-router-dom'
-import { getAxiosInstance } from '../utils/axiosInstance'
+import { AxiosContext, getAxiosInstance } from '../utils/axiosInstance'
 export default function ResetSuccess() {
 	let { token } = useParams()
+	const axiosInstance = useContext(AxiosContext)
 
 	const password = useRef('')
 	const confirmPassword = useRef('')
@@ -32,7 +33,7 @@ export default function ResetSuccess() {
 			// setSuccess('True')
 		}
 
-		getAxiosInstance()
+		axiosInstance
 			.post(`/recover/update-password/${token}`, {
 				newPassword: password.current.value,
 			})

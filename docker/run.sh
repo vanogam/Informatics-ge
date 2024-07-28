@@ -1,5 +1,3 @@
 #!/bin/sh
 
-sleep 10s
-
 java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8787 -jar /opt/app/target/Informatics.jar

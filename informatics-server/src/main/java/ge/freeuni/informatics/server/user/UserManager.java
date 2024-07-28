@@ -82,6 +82,12 @@ public class UserManager implements IUserManager {
     }
 
     @Override
+    public boolean isLoggedIn() {
+        Object principalObject = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return principalObject instanceof InformaticsPrincipal;
+    }
+
+    @Override
     public UserDTO getAuthenticatedUser() throws InformaticsServerException {
         Object principalObject = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (!(principalObject instanceof InformaticsPrincipal)) {
@@ -89,7 +95,6 @@ public class UserManager implements IUserManager {
         }
         InformaticsPrincipal principal = (InformaticsPrincipal) principalObject;
         return UserDTO.toDTO(principal.getUser());
-
     }
 
     @Override

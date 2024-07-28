@@ -39,31 +39,31 @@ export default function NewTestCaseCard({ handleTestCaseSubmit }) {
 						hidden
 					/>
 				</Button>
-				<TextField
-					size = "small"
-					select
-					value={selectedLanguage}
-					onChange={(e) => {
-						setSelectedLanguage(e.target.value)
-					}}
-					sx={{ minWidth: 'max-content' }}
-				>
-					{supportedLanguages.map((option) => (
-						<MenuItem key={option} value={option}>
-							{option}
-						</MenuItem>
-					))}
-				</TextField>
+				{/*<TextField*/}
+				{/*	size = "small"*/}
+				{/*	select*/}
+				{/*	value={selectedLanguage}*/}
+				{/*	onChange={(e) => {*/}
+				{/*		setSelectedLanguage(e.target.value)*/}
+				{/*	}}*/}
+				{/*	sx={{ minWidth: 'max-content' }}*/}
+				{/*>*/}
+				{/*	{supportedLanguages.map((option) => (*/}
+				{/*		<MenuItem key={option} value={option}>*/}
+				{/*			{option}*/}
+				{/*		</MenuItem>*/}
+				{/*	))}*/}
+				{/*</TextField>*/}
 			</Stack>
-			<Button
-				fullWidth
-				variant="contained"
-				size="large"
-				sx={{ marginTop: '1rem' }}
-				onClick={handleNewTestCase}
-			>
-				დაამატე ტესტ-ქეისები
-			</Button>
+			{/*<Button*/}
+			{/*	fullWidth*/}
+			{/*	variant="contained"*/}
+			{/*	size="large"*/}
+			{/*	sx={{ marginTop: '1rem' }}*/}
+			{/*	onClick={handleNewTestCase}*/}
+			{/*>*/}
+			{/*	დაამატე ტესტ-ქეისები*/}
+			{/*</Button>*/}
 		</Paper>
 	)
 }

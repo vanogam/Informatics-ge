@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useContext, useState } from 'react'
 import Editor from "react-simple-code-editor";
 import { highlight, languages } from "prismjs/components/prism-core";
 import Box from "@mui/material/Box";
@@ -14,14 +14,15 @@ import TableContainer from "@mui/material/TableContainer";
 import { useParams } from "react-router-dom";
 import { useEffect } from "react";
 import { Chip } from '@mui/material'
-import { getAxiosInstance } from '../utils/axiosInstance'
+import { AxiosContext, getAxiosInstance } from '../utils/axiosInstance'
 export default function ContestSubmissions() {
   const [submissions, setSubmissions] = useState([]);
   const [selectedSubmission, setSelectedSubmission] = useState({});
   const [popUp, setPopUp] = useState(false);
   const { contest_id } = useParams();
-  useEffect(() => {
-		getAxiosInstance()
+	const axiosInstance = useContext(AxiosContext)
+	useEffect(() => {
+		axiosInstance
 			.get(`/contest/${contest_id}/status`)
 			.then((response) => {
 				if (response.data.status === 'SUCCESS')
@@ -29,7 +30,7 @@ export default function ContestSubmissions() {
 				else return <>NO SUBMISSIONS FOUND</>
 			})
 		const interval = setInterval(() => {
-			getAxiosInstance()
+			axiosInstance
 				.get(`/contest/${contest_id}/status`)
 				.then((response) => {
 					if (response.data.status === 'SUCCESS')

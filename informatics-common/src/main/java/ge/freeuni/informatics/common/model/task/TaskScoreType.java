@@ -4,7 +4,7 @@ public enum TaskScoreType {
     /**
      *  Sum of all test cases.
      *  When selected, task score parameters should be
-     * one float, representing value of each test case;.
+     * one float, representing value of each test case.
      */
     SUM("Sum"),
     /**

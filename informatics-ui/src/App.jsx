@@ -61,7 +61,7 @@ function App() {
 					<Route path='/addContest' element={<NewContest />} />
 					<Route path='/edit-contest/:contest_id' element={<EditContest />} />\
 					<Route path='/contest/:contest_id/add-task' element={<NewTaskCard />} />\
-					<Route path='/edit-task/:task_id' element={<NewTaskCard />} />\
+					<Route path='/task/:task_id' element={<NewTaskCard />} />\
 					<Route path='/new-news' element={<NewNews />} />
 					<Route element={<Error/>} />
 				</Routes>

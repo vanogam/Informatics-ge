@@ -1,6 +1,6 @@
-import dayjs from 'dayjs';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import dayjs from 'dayjs'
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import {
 	Button,
 	Container,
@@ -12,33 +12,34 @@ import {
 	FormGroup,
 	FormControlLabel,
 	Checkbox,
-} from '@mui/material';
-import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
-import { useContext, useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { NavLink } from 'react-router-dom';
-import { AxiosContext, getAxiosInstance } from '../utils/axiosInstance';
+} from '@mui/material'
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
+import { useContext, useEffect, useRef, useState } from 'react'
+import { useParams } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
+import { AxiosContext, getAxiosInstance } from '../utils/axiosInstance'
 import getMessage from '../Components/lang'
 
 export default function EditContest() {
-	const axiosInstance = useContext(AxiosContext);
-	const params = useParams();
-	const [name, setName] = useState(null);
-	const [saved, setSaved] = useState(null);
-	const [tasks, setTasks] = useState([]);
-	const [showNewTaskCard, setShowNewTaskCard] = useState(false);
+	const axiosInstance = useContext(AxiosContext)
+	const params = useParams()
+	const [name, setName] = useState(null)
+	const [saved, setSaved] = useState(null)
+	const [tasks, setTasks] = useState([])
+	const [showNewTaskCard, setShowNewTaskCard] = useState(false)
 	const [contestData, setContestData] = useState({
-		contestName: " ",
+		contestName: ' ',
 		startDate: dayjs('2015-08-18T21:11:54'),
 		duration: 0,
 		archive: false,
 		autoArchive: false,
-	});
+	})
 
 	useEffect(() => {
 		axiosInstance.get(`/contest/${params.contest_id}`).then((response) => {
-			const contest = response.data;
-			setName(contest.name);
+			const contest = response.data
+			setName(contest.name)
+			setTasks(contest.tasks)
 			setContestData((prevData) => ({
 				...prevData,
 				contestName: contest.name,
@@ -46,9 +47,9 @@ export default function EditContest() {
 				duration: contest.durationInSeconds / 60,
 				archive: contest.upsolving,
 				autoArchive: contest.upsolvingAfterFinish,
-			}));
-		});
-	}, [axiosInstance, params.contest_id]);
+			}))
+		})
+	}, [axiosInstance, params.contest_id])
 
 	const handleAddContest = () => {
 		const params = {
@@ -59,26 +60,26 @@ export default function EditContest() {
 			contestId: parseInt(params.contest_id),
 			upsolving: contestData.archive,
 			upsolvingAfterFinish: contestData.autoArchive,
-		};
-		params['durationInSeconds'] = params['durationInSeconds'].toString();
-		console.log(params);
+		}
+		params['durationInSeconds'] = params['durationInSeconds'].toString()
+		console.log(params)
 		axiosInstance.post('/create-contest', params).then(() => {
-			setSaved(true);
-		});
-	};
+			setSaved(true)
+		})
+	}
 
 	const handleSubmit = (title) => {
-		setTasks((prevTasks) => [...prevTasks, title]);
-		setShowNewTaskCard(false);
-	};
+		setTasks((prevTasks) => [...prevTasks, title])
+		setShowNewTaskCard(false)
+	}
 
 	const handleChange = (event) => {
-		setContestData((prevData) => ({ ...prevData, archive: event.target.checked }));
-	};
+		setContestData((prevData) => ({ ...prevData, archive: event.target.checked }))
+	}
 
 	const handleChange2 = (event) => {
-		setContestData((prevData) => ({ ...prevData, autoArchive: event.target.checked }));
-	};
+		setContestData((prevData) => ({ ...prevData, autoArchive: event.target.checked }))
+	}
 
 	return (
 		<LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -139,7 +140,7 @@ export default function EditContest() {
 										onChange={(date) =>
 											setContestData((prevData) => ({ ...prevData, startDate: date }))
 										}
-										inputFormat={"DD/MM/YYYY HH:mm"}
+										inputFormat={'DD/MM/YYYY HH:mm'}
 										renderInput={(params) => <TextField variant='outlined' {...params} />}
 									/>
 									<Stack direction='row' gap='1rem'>
@@ -175,55 +176,68 @@ export default function EditContest() {
 							</>
 						)}
 					</Paper>
-							<Paper
-								elevation={4}
-								sx={{  padding: '1rem', marginBottom: '0.5rem' }}
-							>
-								<Typography
-									textAlign="center"
-									variant="h6"
-									marginBottom="0.5rem"
-								>
-									ამოცანები
-								</Typography>
-								<Stack >
-									{tasks?.map((task, index) => (
-										<Paper
-											elevation={4}
-											sx={{padding: '1rem', marginBottom: '0.5rem' }}
-											key={task}
-										>
-											<Typography>
-												<span style={{ fontWeight: 700 }}>
-													#{index + 1} task:{' '}
-												</span>
-												{tasks}
-											</Typography>
-										</Paper>
-									))}
-									<Paper elevation={4} sx={{ padding: '1rem' }}>
-										<Button
-											fullWidth
-											component={NavLink}
-											variant="contained"
-											sx = {{background: '#3c324e'}}
-											to={`/contest/${params.contest_id}/add-task`}
-											target="_blank"
-										>
-											{getMessage("ka", "addProblem")}
-										</Button>
-									</Paper>
-								</Stack>
-							</Paper>
-							<Button
-							sx = {{background: '#3c324e'}}variant="contained" size="large"
-							component={NavLink}
-							to="/contests"
+					<Paper
+						elevation={4}
+						sx={{ padding: '1rem', marginBottom: '0.5rem' }}
+					>
+						<Typography
+							textAlign='center'
+							variant='h6'
+							marginBottom='0.5rem'
 						>
-							დასრულება
-						</Button>
+							ამოცანები
+						</Typography>
+						<Stack>
+							{tasks?.map((task, index) => (
+								<Paper
+									elevation={4}
+									sx={{ padding: '1rem', marginBottom: '0.5rem' }}
+									key={task}
+								>
+									<Typography>
+												<span style={{ fontWeight: 700 }}>
+													<Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+														<Box>
+															#{index + 1} : {task.title.KA}
+														</Box>
+														<Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+															<Button component={NavLink}
+																			variant='contained'
+																			sx={{ background: '#3c324e' }}
+																			to={`/task/${task.id}`}
+																			target='_blank'>
+																{getMessage('ka', 'edit')}
+															</Button>
+														</Box>
+													</Box>
+												</span>
+										{/*{tasks}*/}
+									</Typography>
+								</Paper>
+							))}
+							<Paper elevation={4} sx={{ padding: '1rem' }}>
+								<Button
+									fullWidth
+									component={NavLink}
+									variant='contained'
+									sx={{ background: '#3c324e' }}
+									to={`/contest/${params.contest_id}/add-task`}
+									target='_blank'
+								>
+									{getMessage('ka', 'addProblem')}
+								</Button>
+							</Paper>
+						</Stack>
+					</Paper>
+					<Button
+						sx={{ background: '#3c324e' }} variant='contained' size='large'
+						component={NavLink}
+						to='/contests'
+					>
+						დასრულება
+					</Button>
 				</Stack>
 			</Container>
 		</LocalizationProvider>
-	);
+	)
 }

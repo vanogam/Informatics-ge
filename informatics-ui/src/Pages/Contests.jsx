@@ -120,7 +120,6 @@ export default function Contests() {
 									key={row.name}
 									sx={{
 										'&:last-child td, &:last-child th': { border: 0 },
-										cursor: 'pointer',
 										'&:hover': { backgroundColor: '#eee' },
 									}}
 								>

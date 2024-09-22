@@ -73,6 +73,11 @@ public class TaskController {
         }
     }
 
+    @GetMapping("/task/{id}")
+    ResponseEntity<TaskDTO> getTask(@PathVariable Integer id) {
+            return ResponseEntity.ok(TaskDTO.toDTO(taskManager.getTask(id)));
+    }
+
     @PostMapping("/save-task")
     ResponseEntity<TaskDTO> saveTask(@RequestBody AddTaskRequest request) {
         TaskDTO taskDTO = new TaskDTO();

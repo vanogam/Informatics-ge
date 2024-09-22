@@ -66,7 +66,7 @@ export default function Problem(){
 	)
 	const [pdf, setPDF] = useState("")
 	const [submission, setSubmission] = useState("")
-	
+	console.log(pdf)
 	useEffect(() => {
 		
     

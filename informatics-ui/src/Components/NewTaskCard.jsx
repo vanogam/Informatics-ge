@@ -1,5 +1,5 @@
 import { Button, Container, MenuItem, Paper, Stack, TextField, Typography } from '@mui/material'
-import { useContext, useRef, useState } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
 import NewTestCaseCard from './NewTestCaseCard'
 import { AxiosContext, getAxiosInstance } from '../utils/axiosInstance'
 import getMessage from './lang'
@@ -8,18 +8,18 @@ import { useParams } from 'react-router-dom'
 
 export default function NewTaskCard() {
 	const pageParams = useParams();
-	const codeRef = useRef(null)
-	const titleENref = useRef(null)
-	const titleKAref = useRef(null)
-	const taskTypeRef = useRef('BATCH')
-	const taskScoreTypeRef = useRef('SUM')
-	const taskScoreParameterRef = useRef(null)
-	const timeLimitMillisRef = useRef(null)
-	const memoryLimitMBref = useRef(null)
-	const inputTemplateRef = useRef(null)
-	const outputTemplateRef = useRef(null)
-	const enStatementRef = useRef(null)
-	const kaStatementRef = useRef(null)
+	const [code, setCode] = useState('');
+	const [titleEN, setTitleEN] = useState('');
+	const [titleKA, setTitleKA] = useState('');
+	const [taskType, setTaskType] = useState('BATCH');
+	const [taskScoreType, setTaskScoreType] = useState('SUM');
+	const [taskScoreParameter, setTaskScoreParameter] = useState('');
+	const [timeLimitMillis, setTimeLimitMillis] = useState('');
+	const [memoryLimitMB, setMemoryLimitMB] = useState('');
+	const [inputTemplate, setInputTemplate] = useState('');
+	const [outputTemplate, setOutputTemplate] = useState('');
+	const [enStatement, setEnStatement] = useState(null);
+	const [kaStatement, setKaStatement] = useState(null);
 	const [fieldValidations, setFieldValidations] = useState({
 		code: true,
 		titleKA: true,
@@ -39,21 +39,40 @@ export default function NewTaskCard() {
 	const axiosInstance = useContext(AxiosContext)
 	const taskScoreTypes = ['SUM', 'GROUP_MIN']
 	const taskTypes = ['BATCH']
+	useEffect(() => {
+		console.log(pageParams)
+		if (!!pageParams.task_id) {
+			axiosInstance.get(`/task/${pageParams.task_id}`).then((response) => {
+				console.log(response)
+				const task = response.data
+				setCode(task.code);
+				setTitleEN(task.title.EN);
+				setTitleKA(task.title.KA);
+				setTaskType(task.taskType);
+				setTaskScoreType(task.taskScoreType);
+				setTaskScoreParameter(task.taskScoreParameter);
+				setTimeLimitMillis(task.timeLimitMillis);
+				setMemoryLimitMB(task.memoryLimitMB);
+				setInputTemplate(task.inputTemplate);
+				setOutputTemplate(task.outputTemplate);
+			})
+		}
+	}, [])
 	const validateFields = () => {
 		const requiredFields = {
-			code: codeRef.current,
-			titleKA: titleKAref.current,
-			timeLimitMillis: timeLimitMillisRef.current,
-			memoryLimitMB: memoryLimitMBref.current,
-			inputTemplate: inputTemplateRef.current,
-			outputTemplate: outputTemplateRef.current,
+			code,
+			titleKA,
+			timeLimitMillis,
+			memoryLimitMB,
+			inputTemplate,
+			outputTemplate,
 		};
 
 		const validations = {};
 		let isValid = true;
 
 		for (const [fieldName, field] of Object.entries(requiredFields)) {
-			validations[fieldName] = !!field && ((field.value && field.value.trim()) || (field.files && field.files.length));
+			validations[fieldName] = !!field;
 			isValid = isValid && validations[fieldName];
 		}
 
@@ -66,49 +85,25 @@ export default function NewTaskCard() {
 			toast.warn(getMessage('ka', 'missingRequiredFields'));
 			return;
 		}
-		const code = codeRef?.current.value.toString()
-		const enStatement = enStatementRef?.current.files[0]
-		const kaStatement = kaStatementRef?.current.files[0]
-		const enTitle = titleENref?.current.value
-		const kaTitle = titleKAref?.current.value
-		const taskType = taskTypeRef?.current.value
-		const taskScoreType = taskScoreTypeRef?.current.value
-		const taskScoreParameter = taskScoreParameterRef?.current.value.toString()
-		const timeLimitMillis = timeLimitMillisRef?.current.value
-		const memoryLimitMB = memoryLimitMBref?.current.value
-		const inputTemplate = inputTemplateRef?.current.value
-		const outputTemplate = outputTemplateRef?.current.value
+
 		const params = {
-			'contestId': pageParams.contest_id,
-			'code': code.toString(),
-			'title': {
-				'KA': kaTitle.toString(),
-				'EN': enTitle.toString(),
+			contestId: pageParams.contest_id,
+			code: code.toString(),
+			title: {
+				KA: titleKA.toString(),
+				EN: titleEN.toString(),
 			},
-			'taskType': taskType.toString(),
-			'taskScoreType': taskScoreType.toString(),
-			'taskScoreParameter': parseFloat(taskScoreParameter),
-			'timeLimitMillis': parseInt(timeLimitMillis),
-			'memoryLimitMB': parseInt(memoryLimitMB),
-			'inputTemplate': inputTemplate.toString(),
-			'outputTemplate': outputTemplate.toString(),
-		}
-		console.log({
-			code,
-			enStatement,
-			kaStatement,
-			enTitle,
-			kaTitle,
-			taskType,
-			taskScoreType,
-			taskScoreParameter,
-			timeLimitMillis,
-			memoryLimitMB,
-			inputTemplate,
-			outputTemplate,
-		})
+			taskType: taskType.toString(),
+			taskScoreType: taskScoreType.toString(),
+			taskScoreParameter: parseFloat(taskScoreParameter),
+			timeLimitMillis: parseInt(timeLimitMillis),
+			memoryLimitMB: parseInt(memoryLimitMB),
+			inputTemplate: inputTemplate.toString(),
+			outputTemplate: outputTemplate.toString(),
+		};
+
 		axiosInstance
-			.post('/save-task', params)
+			.post('/task', params)
 			.then((res) => {
 				toast.success("ამოცანა წარმატებით დაემატა")
 				setTaskId(res.data.taskDTO.id)
@@ -140,11 +135,9 @@ export default function NewTaskCard() {
 								headers: { 'Content-Type': 'multipart/form-data; boundary=<calculated when request is sent></calculated>' },
 							})
 								.then(function(response) {
-									//handle success
 									console.log(response)
 								})
 								.catch(function(response) {
-									//handle error
 									console.log(response)
 								})
 							console.log(response)
@@ -166,49 +159,53 @@ export default function NewTaskCard() {
 					{/*	<Stack flexDirection='row' gap='1rem'>*/}
 					<Button fullWidth variant='contained' component='label'>
 						EN პირობა
-						<input ref={enStatementRef} type='file' hidden />
+						<input type='file' hidden onChange={(e) => setEnStatement(e.target.files[0])} />
 					</Button>
 					<Button fullWidth variant='contained' component='label'>
 						KA პირობა
-						<input ref={kaStatementRef} type='file' hidden />
+						<input type='file' hidden onChange={(e) => setKaStatement(e.target.files[0])} />
 					</Button>
 					{/*</Stack>*/}
 					{/*<Stack flexDirection='row' gap='1rem'>*/}
 					<TextField
 						label={getMessage('ka', 'title') + ' (ka)'}
-						inputRef={titleKAref}
+						value={titleKA}
+						onChange={(e) => {
+							setTitleKA(e.target.value);
+							setFieldValidations({ ...fieldValidations, titleKA: true });
+						}}
 						variant='outlined'
 						size='small'
 						required
 						error={!fieldValidations.titleKA}
-						onChange={() => setFieldValidations({
-							...fieldValidations,
-							titleKA: true
-						})}
 					/>
 					<TextField
 						label={getMessage('ka', 'title') + ' (en)'}
-						inputRef={titleENref}
+						value={titleEN}
+						onChange={(e) => setTitleEN(e.target.value)}
 						variant='outlined'
 						size='small'
 					/>
-					<TextField size='small'
-										 label={getMessage('ka', 'taskCode')}
-										 inputRef={codeRef}
-										 required
-										 variant='outlined'
-										 error={!fieldValidations.code}
-										 onChange={() => setFieldValidations({
-											 ...fieldValidations,
-											 code: true
-										 })}
+					<TextField
+						size='small'
+						label={getMessage('ka', 'taskCode')}
+						value={code}
+						onChange={(e) => {
+							setCode(e.target.value);
+							setFieldValidations({ ...fieldValidations, code: true });
+						}}
+						required
+						variant='outlined'
+						error={!fieldValidations.code}
 					/>
 					<TextField
 						select
 						size='small'
 						label={getMessage('ka', 'taskType')}
-						defaultValue={'BATCH'}
-						inputRef={taskTypeRef} variant='outlined'>
+						value={taskType}
+						onChange={(e) => setTaskType(e.target.value)}
+						variant='outlined'
+					>
 						{taskTypes.map((option) => (
 							<MenuItem key={option} value={option}>
 								{getMessage('ka', 'TASK_TYPE_' + option)}
@@ -218,8 +215,8 @@ export default function NewTaskCard() {
 					<TextField
 						select
 						label={getMessage('ka', 'taskScoreType')}
-						inputRef={taskScoreTypeRef}
-						defaultValue={'SUM'}
+						value={taskScoreType}
+						onChange={(e) => setTaskScoreType(e.target.value)}
 						variant='outlined'
 						size='small'
 						sx={{ minWidth: 'max-content' }}
@@ -232,65 +229,59 @@ export default function NewTaskCard() {
 					</TextField>
 					<TextField
 						label={getMessage('ka', 'taskScoreParameter')}
-						inputRef={taskScoreParameterRef}
+						value={taskScoreParameter}
+						onChange={(e) => setTaskScoreParameter(e.target.value)}
 						variant='outlined'
 						size='small'
 					/>
-					{/*</Stack>*/}
-					{/*<Stack flexDirection='row' gap='1rem'>*/}
-
 					<TextField
 						label={getMessage('ka', 'timeLimitMillis')}
-						inputRef={timeLimitMillisRef}
+						value={timeLimitMillis}
+						onChange={(e) => {
+							setTimeLimitMillis(e.target.value);
+							setFieldValidations({ ...fieldValidations, timeLimitMillis: true });
+						}}
 						variant='outlined'
 						size='small'
 						required
 						error={!fieldValidations.timeLimitMillis}
-						onChange={() => setFieldValidations({
-							...fieldValidations,
-							timeLimitMillis: true
-						})}
 					/>
 					<TextField
 						label={getMessage('ka', 'memoryLimitMB')}
-						inputRef={memoryLimitMBref}
+						value={memoryLimitMB}
+						onChange={(e) => {
+							setMemoryLimitMB(e.target.value);
+							setFieldValidations({ ...fieldValidations, memoryLimitMB: true });
+						}}
 						variant='outlined'
 						size='small'
 						required
 						error={!fieldValidations.memoryLimitMB}
-						onChange={() => setFieldValidations({
-							...fieldValidations,
-							memoryLimitMB: true
-						})}
 					/>
-					{/*</Stack>*/}
-					{/*<Stack flexDirection='row' gap='1rem'>*/}
 					<TextField
 						label={getMessage('ka', 'inputTemplate')}
-						inputRef={inputTemplateRef}
+						value={inputTemplate}
+						onChange={(e) => {
+							setInputTemplate(e.target.value);
+							setFieldValidations({ ...fieldValidations, inputTemplate: true });
+						}}
 						variant='outlined'
 						size='small'
 						required
 						error={!fieldValidations.inputTemplate}
-						onChange={() => setFieldValidations({
-							...fieldValidations,
-							inputTemplate: true
-						})}
 					/>
-
 					<TextField
 						label={getMessage('ka', 'outputTemplate')}
-						inputRef={outputTemplateRef}
+						value={outputTemplate}
+						onChange={(e) => {
+							setOutputTemplate(e.target.value);
+							setFieldValidations({ ...fieldValidations, outputTemplate: true });
+						}}
 						variant='outlined'
 						size='small'
 						required
 						error={!fieldValidations.outputTemplate}
-						onChange={() => setFieldValidations({
-							...fieldValidations,
-							outputTemplate: true
-						})}
 					/>
-					{/*</Stack>*/}
 				</Stack>
 				{testCases?.map((testCase, index) => (
 					<Paper
@@ -313,7 +304,7 @@ export default function NewTaskCard() {
 							variant='contained'
 							sx={{ background: '#3c324e' }}
 							onClick={() => setShowNewTestCaseCard(true)}
-						>ახალი ამოცანა
+						>
 							ახალი ტესტ-ქეისები
 						</Button>
 					</Paper>

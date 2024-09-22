@@ -31,6 +31,7 @@ const langDictionary = {
 		'TASK_SCORE_TYPE_GROUP_MIN': 'ტესტთა ჯგუფების ჯამი',
 
 		'TASK_TYPE_BATCH': 'სტანდარტული',
+		'edit': 'რედაქტირება',
 	}
 }
 

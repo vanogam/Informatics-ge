@@ -113,11 +113,11 @@ export default function Contest(){
 					<TableHead>
 						<TableRow>
 							
-							<TableCell>კატეგორია</TableCell>
-							<TableCell >სახელი</TableCell>
+							<TableCell  sx={{ width: '10%' }}>ნომერი</TableCell>
+							<TableCell  sx={{ width: '80%' }}>სახელი</TableCell>
 							{(isLoggedIn && !roles?.includes('ADMIN') && registered === true) &&
 								(
-									<TableCell>ქულა</TableCell>	
+									<TableCell  sx={{ width: '10%' }}>ქულა</TableCell>
 								)
 								}
 							{(isLoggedIn && !roles?.includes('ADMIN') && registered === false) && (

@@ -1,7 +1,7 @@
 import { Button, Container, MenuItem, Paper, Stack, TextField, Typography } from '@mui/material'
-import { useContext, useEffect, useRef, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import NewTestCaseCard from './NewTestCaseCard'
-import { AxiosContext, getAxiosInstance } from '../utils/axiosInstance'
+import { AxiosContext } from '../utils/axiosInstance'
 import getMessage from './lang'
 import { toast } from 'react-toastify'
 import { useParams } from 'react-router-dom'
@@ -9,6 +9,8 @@ import { useParams } from 'react-router-dom'
 export default function NewTaskCard() {
 	const pageParams = useParams();
 	const [code, setCode] = useState('');
+	const [title, setTitle] = useState('');
+	const [contestId, setContestId] = useState(null);
 	const [titleEN, setTitleEN] = useState('');
 	const [titleKA, setTitleKA] = useState('');
 	const [taskType, setTaskType] = useState('BATCH');
@@ -35,6 +37,7 @@ export default function NewTaskCard() {
 	const handleTestCaseSubmit = (params) => {
 		setTestCases((prevState) => [...prevState, params])
 		setShowNewTestCaseCard(false)
+		console.log("!!!")
 	}
 	const axiosInstance = useContext(AxiosContext)
 	const taskScoreTypes = ['SUM', 'GROUP_MIN']
@@ -43,9 +46,11 @@ export default function NewTaskCard() {
 		console.log(pageParams)
 		if (!!pageParams.task_id) {
 			axiosInstance.get(`/task/${pageParams.task_id}`).then((response) => {
-				console.log(response)
 				const task = response.data
+				setTaskId(task.id);
+				setTitle(task.title.KA);
 				setCode(task.code);
+				setContestId(task.contestId);
 				setTitleEN(task.title.EN);
 				setTitleKA(task.title.KA);
 				setTaskType(task.taskType);
@@ -87,7 +92,8 @@ export default function NewTaskCard() {
 		}
 
 		const params = {
-			contestId: pageParams.contest_id,
+			taskId: pageParams.task_id,
+			contestId: contestId,
 			code: code.toString(),
 			title: {
 				KA: titleKA.toString(),
@@ -106,9 +112,10 @@ export default function NewTaskCard() {
 			.post('/task', params)
 			.then((res) => {
 				toast.success("ამოცანა წარმატებით დაემატა")
-				setTaskId(res.data.taskDTO.id)
-				var bodyFormData = new FormData()
-				bodyFormData.append('taskId', res.data.taskDTO.id)
+				console.log(res)
+				setTaskId(res.data.id)
+				const bodyFormData = new FormData()
+				bodyFormData.append('taskId', res.data.id)
 				bodyFormData.append('language', 'KA')
 				bodyFormData.append('statement', kaStatement)
 				console.log('BodyFromData', bodyFormData)
@@ -118,20 +125,18 @@ export default function NewTaskCard() {
 					data: bodyFormData,
 					headers: { 'Content-Type': 'multipart/form-data; boundary=<calculated when request is sent></calculated>' },
 				})
-					.then(function(response) {
-						//handle success
 						console.log(testCases)
 						for (const testCase of testCases) {
-							var bodyFormData = new FormData()
-							bodyFormData.append('taskId', res.data.taskDTO.id)
-							bodyFormData.append('file', testCase['testCaseFile'])
-							console.log('BodyFromData', bodyFormData)
+							const testsBodyFormData = new FormData()
+							testsBodyFormData.append('taskId', res.data.taskDTO.id)
+							testsBodyFormData.append('file', testCase['testCaseFile'])
+							console.log('BodyFromData', testsBodyFormData)
 							console.log('TestCases', testCases)
 							console.log('TestCase', testCase)
 							axiosInstance({
 								method: 'post',
 								url: '/add-testcases',
-								data: bodyFormData,
+								data: testsBodyFormData,
 								headers: { 'Content-Type': 'multipart/form-data; boundary=<calculated when request is sent></calculated>' },
 							})
 								.then(function(response) {
@@ -140,25 +145,19 @@ export default function NewTaskCard() {
 								.catch(function(response) {
 									console.log(response)
 								})
-							console.log(response)
 						}
-					})
-					.catch(function(response) {
-						//handle error
-						console.log(response)
-					})
 			})
 	}
 	return (
 		<Container maxWidth='xs'>
 			<Paper elevation={4} sx={{ padding: '1rem' }}>
 				<Typography align='center' variant='h6' mb='1rem'>
-					ახალი ამოცანა
+					{taskId ? title : 'ახალი ამოცანა'}
 				</Typography>
 				<Stack gap='1rem' maxWidth='25rem' mx='auto' mb='1rem'>
 					{/*	<Stack flexDirection='row' gap='1rem'>*/}
 					<Button fullWidth variant='contained' component='label'>
-						EN პირობა
+						EN პირობაApacheDockerHttpClientApacheDockerHttpClientApacheDockerHttpClientApacheDockerHttpClient
 						<input type='file' hidden onChange={(e) => setEnStatement(e.target.files[0])} />
 					</Button>
 					<Button fullWidth variant='contained' component='label'>
@@ -295,20 +294,22 @@ export default function NewTaskCard() {
 						</Typography>
 					</Paper>
 				))}
-				{showNewTestCaseCard ? (
-					<NewTestCaseCard taskId={taskId} handleTestCaseSubmit={handleTestCaseSubmit} />
-				) : (
-					<Paper elevation={4} sx={{ padding: '1rem', marginBottom: '0.5rem' }}>
-						<Button
-							fullWidth
-							variant='contained'
-							sx={{ background: '#3c324e' }}
-							onClick={() => setShowNewTestCaseCard(true)}
-						>
-							ახალი ტესტ-ქეისები
-						</Button>
-					</Paper>
-				)}
+				{ !!taskId &&
+					(showNewTestCaseCard ? (
+						<NewTestCaseCard taskId={taskId} handleTestCaseSubmit={handleTestCaseSubmit} />
+					) : (
+						<Paper elevation={4} sx={{ padding: '1rem', marginBottom: '0.5rem' }}>
+							<Button
+								fullWidth
+								variant='contained'
+								sx={{ background: '#3c324e' }}
+								onClick={() => setShowNewTestCaseCard(true)}
+							>
+								ახალი ტესტ-ქეისები
+							</Button>
+						</Paper>
+					))
+				}
 				<Button
 					fullWidth
 					variant='contained'

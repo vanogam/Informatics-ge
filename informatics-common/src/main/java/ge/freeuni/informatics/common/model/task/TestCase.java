@@ -1,6 +1,8 @@
 package ge.freeuni.informatics.common.model.task;
 
-import javax.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
 
 @Entity
 public class TestCase {
@@ -10,8 +12,6 @@ public class TestCase {
     private String inputFileAddress;
 
     private String OutputFileAddress;
-
-//    private Task task;
 
     @Id
     @GeneratedValue
@@ -39,14 +39,4 @@ public class TestCase {
         OutputFileAddress = outputFileAddress;
     }
 
-//    @ManyToOne(targetEntity = Task.class)
-//    @JoinColumn(name = "taskId", nullable = false)
-//    @Column(name = "taskId")
-//    public Task getTask() {
-//        return task;
-//    }
-//
-//    public void setTask(Task task) {
-//        this.task = task;
-//    }
 }

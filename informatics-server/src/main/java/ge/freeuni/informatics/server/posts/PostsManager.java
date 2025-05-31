@@ -4,27 +4,19 @@ import ge.freeuni.informatics.common.dto.PostDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.contestroom.ContestRoom;
 import ge.freeuni.informatics.common.model.post.Post;
-import ge.freeuni.informatics.repository.contestroom.IContestRoomRepository;
+import ge.freeuni.informatics.common.model.user.User;
 import ge.freeuni.informatics.repository.post.IPostRepository;
+import ge.freeuni.informatics.repository.user.UserJpaRepository;
 import ge.freeuni.informatics.server.user.IUserManager;
-import ge.freeuni.informatics.utils.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class PostsManager implements IPostsManager {
-
-    @Value("${ge.freeuni.informatics.Task.postImageDirectoryAddress}")
-    String postImageDirectoryAddress;
 
     @Autowired
     IPostRepository postRepository;
@@ -35,117 +27,75 @@ public class PostsManager implements IPostsManager {
     @Autowired
     IUserManager userManager;
 
+    @Autowired
+    UserJpaRepository userJpaRepository;
+
     @Override
     public PostDTO getPost(long postId) throws InformaticsServerException {
-        PostDTO postDTO = PostDTO.toDTO(postRepository.getPost(postId));
-        ContestRoom room = roomRepository.getRoom(postDTO.getRoomId());
-        Long userId = null;
-        try {
-            userId = userManager.getAuthenticatedUser().getId();
-        } catch (Exception ignored) {
+        Post post = postRepository.getPost(postId);
+        ContestRoom room = roomRepository.getRoom(post.getRoomId());
 
-        }
+        Long userId = userManager.getAuthenticatedUser().id();
         if (!room.isMember(userId)) {
             throw new InformaticsServerException("permissionDenied");
         }
-        postDTO.setAuthorName(userManager.getUser(postDTO.getAuthorId()).getUsername());
-        return postDTO;
+        return new PostDTO(
+                post.getId(),
+                post.getTitle(),
+                post.getContent(),
+                post.getAuthor().getUsername(),
+                post.getPostDate(),
+                post.getRoomId()
+        );
     }
 
     @Override
     public List<PostDTO> getPosts(long roomId, Integer offset, Integer limit) throws InformaticsServerException {
         ContestRoom room = roomRepository.getRoom(roomId);
+        Long userId = userManager.getAuthenticatedUser().id();
 
-        Long userId = null;
-        try {
-            userId = userManager.getAuthenticatedUser().getId();
-        } catch (Exception ignored) {
-
-        }
         if (!room.isMember(userId)) {
             throw new InformaticsServerException("permissionDenied");
         }
-        List<PostDTO> postDTOList = PostDTO.toDTOs(postRepository.filter(roomId, offset, limit));
-        for (PostDTO postDTO : postDTOList) {
-            postDTO.setAuthorName(userManager.getUser(postDTO.getAuthorId()).getUsername());
-        }
-        return postDTOList;
-    }
-
-    @Override
-    public File getPostImage(long postId) throws InformaticsServerException {
-        Post post = postRepository.getPost(postId);
-        ContestRoom room = roomRepository.getRoom(post.getRoomId());
-        Long currentUser = null;
-        try {
-            currentUser = userManager.getAuthenticatedUser().getId();
-        } catch (Exception ignored) {
-
-        }
-        if (!room.isMember(currentUser)) {
-            throw new InformaticsServerException("permissionDenied");
-        }
-
-        return new File(post.getImagePath());
+        return postRepository.filter(roomId, offset, limit)
+                .stream()
+                .map(post ->
+                    new PostDTO(
+                            post.getId(),
+                            post.getTitle(),
+                            post.getContent(),
+                            post.getAuthor().getUsername(),
+                            post.getPostDate(),
+                            post.getRoomId()
+                    )
+                )
+                .toList();
     }
 
     @Override
     public Long addPost(PostDTO post) throws InformaticsServerException {
-        post.setAuthorId(userManager.getAuthenticatedUser().getId());
-        post.setPostDate(new Date());
         Post postEntity = PostDTO.fromDTO(post);
-        ContestRoom room = roomRepository.getRoom(post.getRoomId());
-        if (!room.getTeachers().contains(userManager.getAuthenticatedUser().getId())) {
+
+        postEntity.setAuthor(userJpaRepository.getReferenceById(userManager.getAuthenticatedUser().id()));
+        postEntity.setPostDate(new Date());
+        ContestRoom room = roomRepository.getRoom(post.roomId());
+        long userId = userManager.getAuthenticatedUser().id();
+        if (room.getTeachers().stream().map(User::getId)
+                .noneMatch(id -> userId == id)) {
             throw new InformaticsServerException("permissionDenied");
         }
-        if (post.getId() != null) {
-            Post entityAtDB = postRepository.getPost(post.getId());
+        if (post.id() != null) {
+            Post entityAtDB = postRepository.getPost(post.id());
 
             if (entityAtDB != null) {
-                if (entityAtDB.getRoomId() != postEntity.getRoomId()) {
+                if (!Objects.equals(entityAtDB.getRoomId(), postEntity.getRoomId())) {
                     throw new InformaticsServerException("invalidAction");
                 }
-                postEntity.setImagePath(entityAtDB.getImagePath());
             } else {
                 throw new InformaticsServerException("notFound");
             }
         }
-        if (postEntity.getId() == null) {
-            postEntity = postRepository.savePost(postEntity);
-        }
+        postEntity = postRepository.savePost(postEntity);
         return postEntity.getId();
-    }
-
-    @Override
-    public void uploadImage(long postId, byte[] image) throws InformaticsServerException {
-        Post post = postRepository.getPost(postId);
-        Post entityAtDB = postRepository.getPost(post.getId());
-        ContestRoom room = roomRepository.getRoom(post.getRoomId());
-        if (!room.getTeachers().contains(userManager.getAuthenticatedUser().getId())) {
-            throw new InformaticsServerException("permissionDenied");
-        }
-
-        try {
-            post.setImagePath(storeImage(postId, image));
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
-        postRepository.savePost(post);
-    }
-
-    private String storeImage(long postId, byte[] image) throws IOException, InformaticsServerException {
-        String folder = FileUtils.buildPath(postImageDirectoryAddress, String.valueOf(postId));
-        Files.createDirectories(Paths.get(folder));
-        String fileAddress = FileUtils.buildPath(folder, FileUtils.getRandomFileName(10));
-        File imageFile = new File(fileAddress);
-        if (imageFile.isFile()) {
-            boolean ignored = imageFile.delete();
-        }
-        if(!imageFile.createNewFile()) {
-            throw new InformaticsServerException("Could not create statement");
-        }
-        OutputStream outputStream = Files.newOutputStream(imageFile.toPath());
-        outputStream.write(image);
-        return fileAddress;
     }
 }

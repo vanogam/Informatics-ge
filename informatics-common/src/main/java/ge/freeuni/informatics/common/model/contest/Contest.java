@@ -1,47 +1,54 @@
 package ge.freeuni.informatics.common.model.contest;
 
 import ge.freeuni.informatics.common.model.task.Task;
-import org.hibernate.annotations.LazyCollection;
-import org.hibernate.annotations.LazyCollectionOption;
-import org.hibernate.annotations.Type;
+import ge.freeuni.informatics.common.model.user.User;
+import jakarta.persistence.*;
 
-import javax.persistence.*;
 import java.util.Date;
 import java.util.List;
 
 @Entity
 public class Contest {
 
+    @Id
     private Long id;
 
+    @Column(nullable = false, unique = true)
     private String name;
 
+    @Column
     private Date startDate;
 
-    private Integer durationInSeconds;
+    @Column
+    private Date endDate;
 
-    private ContestStatus status;
-
+    @Column
     private Long roomId;
 
-    private List<Long> participants;
+    @OneToMany(mappedBy = "participants", fetch = FetchType.LAZY)
+    private List<User> participants;
 
+    @OneToMany
     private List<Task> tasks;
 
+    @Column(nullable = false)
     private boolean upsolvingAfterFinished;
 
+    @Column(nullable = false)
     private boolean upsolving;
 
-    private Standings standings;
+    @OneToMany(mappedBy = "standings", fetch = FetchType.LAZY)
+    private List<ContestantResult> standings;
 
-    private Standings upsolvingStandings;
+    @OneToMany(mappedBy = "upsolving_standings", fetch = FetchType.LAZY)
+    private List<ContestantResult> upsolvingStandings;
 
+    @Column(nullable = false)
     private ScoringType scoringType;
 
+    @Version
     private Integer version;
 
-    @Id
-    @GeneratedValue
     public Long getId() {
         return id;
     }
@@ -66,29 +73,12 @@ public class Contest {
         this.startDate = startDate;
     }
 
-    public Integer getDurationInSeconds() {
-        return durationInSeconds;
+    public Date getEndDate() {
+        return endDate;
     }
 
-    public void setDurationInSeconds(Integer durationInSeconds) {
-        this.durationInSeconds = durationInSeconds;
-    }
-
-    public ContestStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(ContestStatus status) {
-        this.status = status;
-    }
-
-    @ElementCollection
-    public List<Long> getParticipants() {
-        return participants;
-    }
-
-    public void setParticipants(List<Long> participants) {
-        this.participants = participants;
+    public void setEndDate(Date endDate) {
+        this.endDate = endDate;
     }
 
     public Long getRoomId() {
@@ -99,22 +89,20 @@ public class Contest {
         this.roomId = roomId;
     }
 
-    @OneToMany(cascade = CascadeType.ALL)
-    @LazyCollection(LazyCollectionOption.FALSE)
+    public List<User> getParticipants() {
+        return participants;
+    }
+
+    public void setParticipants(List<User> participants) {
+        this.participants = participants;
+    }
+
     public List<Task> getTasks() {
         return tasks;
     }
 
     public void setTasks(List<Task> tasks) {
         this.tasks = tasks;
-    }
-
-    public boolean isUpsolving() {
-        return upsolving;
-    }
-
-    public void setUpsolving(boolean upsolving) {
-        this.upsolving = upsolving;
     }
 
     public boolean isUpsolvingAfterFinished() {
@@ -125,23 +113,27 @@ public class Contest {
         this.upsolvingAfterFinished = upsolvingAfterFinished;
     }
 
-    @Type(type = StandingsType.TYPE)
-    @Column(length = Integer.MAX_VALUE)
-    public Standings getStandings() {
+    public boolean isUpsolving() {
+        return upsolving;
+    }
+
+    public void setUpsolving(boolean upsolving) {
+        this.upsolving = upsolving;
+    }
+
+    public List<ContestantResult> getStandings() {
         return standings;
     }
 
-    public void setStandings(Standings standings) {
+    public void setStandings(List<ContestantResult> standings) {
         this.standings = standings;
     }
 
-    @Type(type = StandingsType.TYPE)
-    @Column(length = Integer.MAX_VALUE)
-    public Standings getUpsolvingStandings() {
+    public List<ContestantResult> getUpsolvingStandings() {
         return upsolvingStandings;
     }
 
-    public void setUpsolvingStandings(Standings upsolvingStandings) {
+    public void setUpsolvingStandings(List<ContestantResult> upsolvingStandings) {
         this.upsolvingStandings = upsolvingStandings;
     }
 
@@ -153,12 +145,32 @@ public class Contest {
         this.scoringType = scoringType;
     }
 
-    @Version
     public Integer getVersion() {
         return version;
     }
 
     public void setVersion(Integer version) {
         this.version = version;
+    }
+
+    @Transient
+    public ContestStatus getStatus() {
+        Date now = new Date();
+        if (startDate == null) {
+            return ContestStatus.PAST;
+        }
+        if (startDate.after(now)) {
+            return ContestStatus.FUTURE;
+        } else if (endDate.before(now)) {
+            return ContestStatus.PAST;
+        } else {
+            return ContestStatus.LIVE;
+        }
+    }
+
+    @Transient
+    public boolean hasParticipant(Long userId) {
+        return participants != null && participants.stream().map(User::getId)
+                .anyMatch(userId::equals);
     }
 }

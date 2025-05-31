@@ -1,7 +1,6 @@
 package ge.freeuni.informatics.server.contestroom;
 
 import ge.freeuni.informatics.common.model.contestroom.ContestRoom;
-import ge.freeuni.informatics.repository.contestroom.IContestRoomRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Component;

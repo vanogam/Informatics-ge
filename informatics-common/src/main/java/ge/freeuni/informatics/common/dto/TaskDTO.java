@@ -1,159 +1,43 @@
 package ge.freeuni.informatics.common.dto;
 
+import ge.freeuni.informatics.common.Language;
 import ge.freeuni.informatics.common.model.task.Task;
 import ge.freeuni.informatics.common.model.task.TaskScoreType;
 import ge.freeuni.informatics.common.model.task.TaskType;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class TaskDTO {
-
-    Integer id;
-
-    Long contestId;
-
-    String code;
-
-    Map<String, String> title = new HashMap<>();
-
-    TaskType taskType;
-
-    TaskScoreType taskScoreType;
-
-    /**
-     * Describes how to distribute score to test cases.
-     * For formatting info, see TaskScoreType class.
-     */
-    String taskScoreParameter;
-
-    Integer timeLimitMillis;
-
-    Integer memoryLimitMB;
-
-    /**
-     * Used to parse and number test case file names.
-     */
-    String inputTemplate;
-
-    String outputTemplate;
-
-    Map<String, String> statements;
-
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public Long getContestId() {
-        return contestId;
-    }
-
-    public void setContestId(Long contestId) {
-        this.contestId = contestId;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-    public Map<String, String> getTitle() {
-        return title;
-    }
-
-    public void setTitle(Map<String, String> title) {
-        this.title = title;
-    }
-
-    public TaskType getTaskType() {
-        return taskType;
-    }
-
-    public void setTaskType(TaskType taskType) {
-        this.taskType = taskType;
-    }
-
-    public TaskScoreType getTaskScoreType() {
-        return taskScoreType;
-    }
-
-    public void setTaskScoreType(TaskScoreType taskScoreType) {
-        this.taskScoreType = taskScoreType;
-    }
-
-    public String getTaskScoreParameter() {
-        return taskScoreParameter;
-    }
-
-    public void setTaskScoreParameter(String taskScoreParameter) {
-        this.taskScoreParameter = taskScoreParameter;
-    }
-
-    public Integer getTimeLimitMillis() {
-        return timeLimitMillis;
-    }
-
-    public void setTimeLimitMillis(Integer timeLimitMillis) {
-        this.timeLimitMillis = timeLimitMillis;
-    }
-
-    public Integer getMemoryLimitMB() {
-        return memoryLimitMB;
-    }
-
-    public void setMemoryLimitMB(Integer memoryLimitMB) {
-        this.memoryLimitMB = memoryLimitMB;
-    }
-
-    public String getInputTemplate() {
-        return inputTemplate;
-    }
-
-    public void setInputTemplate(String inputTemplate) {
-        this.inputTemplate = inputTemplate;
-    }
-
-    public String getOutputTemplate() {
-        return outputTemplate;
-    }
-
-    public void setOutputTemplate(String outputTemplate) {
-        this.outputTemplate = outputTemplate;
-    }
-
-    public Map<String, String> getStatements() {
-        return statements;
-    }
-
-    public void setStatements(Map<String, String> statements) {
-        this.statements = statements;
-    }
+public record TaskDTO(
+    Integer id,
+    Long contestId,
+    String code,
+    String title,
+    TaskType taskType,
+    TaskScoreType taskScoreType,
+    String taskScoreParameter,
+    Integer timeLimitMillis,
+    Integer memoryLimitMB,
+    String inputTemplate,
+    String outputTemplate,
+    Map<Language, String> statements
+) {
 
     public static Task fromDTO(TaskDTO taskDTO) {
         Task task = new Task();
 
-        task.setTaskType(taskDTO.getTaskType());
-        task.setContestId(taskDTO.getContestId());
-        task.setTaskScoreParameter(taskDTO.getTaskScoreParameter());
-        task.setTaskScoreType(taskDTO.getTaskScoreType());
-        task.setId(taskDTO.getId());
-        task.setCode(taskDTO.getCode());
-        task.setInputTemplate(taskDTO.getInputTemplate());
-        task.setOutputTemplate(taskDTO.getOutputTemplate());
-        task.setMemoryLimitMB(taskDTO.getMemoryLimitMB());
-        task.setTimeLimitMillis(taskDTO.getTimeLimitMillis());
-        task.setTitle(taskDTO.getTitle());
-        task.setStatements(taskDTO.getStatements());
+        task.setTaskType(taskDTO.taskType());
+        task.setTaskScoreParameter(taskDTO.taskScoreParameter());
+        task.setTaskScoreType(taskDTO.taskScoreType());
+        task.setId(taskDTO.id());
+        task.setCode(taskDTO.code());
+        task.setInputTemplate(taskDTO.inputTemplate());
+        task.setOutputTemplate(taskDTO.outputTemplate());
+        task.setMemoryLimitMB(taskDTO.memoryLimitMB());
+        task.setTimeLimitMillis(taskDTO.timeLimitMillis());
+        task.setTitle(taskDTO.title());
+        task.setStatements(taskDTO.statements());
 
         return task;
     }
@@ -168,22 +52,20 @@ public class TaskDTO {
     }
 
     public static TaskDTO toDTO(Task task) {
-        TaskDTO taskDTO = new TaskDTO();
-
-        taskDTO.setTaskType(task.getTaskType());
-        taskDTO.setContestId(task.getContestId());
-        taskDTO.setTaskScoreParameter(task.getTaskScoreParameter());
-        taskDTO.setTaskScoreType(task.getTaskScoreType());
-        taskDTO.setId(task.getId());
-        taskDTO.setCode(task.getCode());
-        taskDTO.setInputTemplate(task.getInputTemplate());
-        taskDTO.setOutputTemplate(task.getOutputTemplate());
-        taskDTO.setMemoryLimitMB(task.getMemoryLimitMB());
-        taskDTO.setTimeLimitMillis(task.getTimeLimitMillis());
-        taskDTO.setTitle(task.getTitle());
-        taskDTO.setStatements(task.getStatements());
-
-        return taskDTO;
+        return new TaskDTO(
+            task.getId(),
+            task.getContest().getId(),
+            task.getCode(),
+            task.getTitle(),
+            task.getTaskType(),
+            task.getTaskScoreType(),
+            task.getTaskScoreParameter(),
+            task.getTimeLimitMillis(),
+            task.getMemoryLimitMB(),
+            task.getInputTemplate(),
+            task.getOutputTemplate(),
+            task.getStatements()
+        );
     }
 
     public static List<TaskDTO> toDTOs(List<Task> tasks) {
@@ -194,5 +76,4 @@ public class TaskDTO {
         }
         return taskDTOs;
     }
-
 }

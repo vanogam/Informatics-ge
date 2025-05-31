@@ -1,6 +1,7 @@
 package ge.freeuni.informatics.server.contest;
 
 import ge.freeuni.informatics.common.dto.ContestantResultDTO;
+import ge.freeuni.informatics.common.dto.TaskResultDTO;
 import ge.freeuni.informatics.common.events.ContestChangeEvent;
 import ge.freeuni.informatics.common.events.SubmissionEvent;
 import ge.freeuni.informatics.common.dto.ContestDTO;
@@ -8,11 +9,15 @@ import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.contest.Contest;
 import ge.freeuni.informatics.common.model.contest.ContestStatus;
 import ge.freeuni.informatics.common.model.contest.ContestantResult;
+import ge.freeuni.informatics.common.model.contestroom.ContestRoom;
 import ge.freeuni.informatics.common.model.submission.Submission;
-import ge.freeuni.informatics.repository.contest.IContestRepository;
-import ge.freeuni.informatics.repository.user.IUserRepository;
+import ge.freeuni.informatics.repository.contest.ContestJpaRepository;
+import ge.freeuni.informatics.repository.contest.ContestantResultJpaRepository;
+import ge.freeuni.informatics.repository.contestroom.ContestRoomJpaRepository;
+import ge.freeuni.informatics.repository.user.UserJpaRepository;
 import ge.freeuni.informatics.server.task.ITaskManager;
 import ge.freeuni.informatics.utils.ArrayUtils;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
@@ -20,10 +25,8 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 @Service
 @Scope("singleton")
@@ -42,43 +45,39 @@ public class ContestService {
     private ITaskManager taskManager;
 
     @Autowired
-    private IContestRepository contestRepository;
+    private ContestJpaRepository contestRepository;
 
     @Autowired
-    IUserRepository userRepository;
+    private ContestRoomJpaRepository contestRoomJpaRepository;
+
+    @Autowired
+    private ContestantResultJpaRepository contestantResultJpaRepository;
 
     private final ConcurrentHashMap<Long, ContestDTO> liveContests = new ConcurrentHashMap<>();
 
-    private final ConcurrentHashMap<Long, ContestDTO> upsolvingContests = new ConcurrentHashMap<>();
-
     @PostConstruct
     public void startup() {
-        List<ContestDTO> futureContests = ContestDTO.toDTOs(contestRepository.getContests(null, null, Collections.singletonList(ContestStatus.FUTURE), null, null, null));
-        List<ContestDTO> liveContests = ContestDTO.toDTOs(contestRepository.getContests(null, null, Collections.singletonList(ContestStatus.LIVE), null, null, null));
-        List<ContestDTO> upsolving = ContestDTO.toDTOs(contestRepository.getContests(null, null, Collections.singletonList(ContestStatus.PAST), true, null, null));
-        for (ContestDTO upsolvingContest : upsolving) {
-            upsolvingContests.put(upsolvingContest.getId(), upsolvingContest);
-        }
+        List<ContestDTO> futureContests = contestRepository.findContests(null, null, new Date(), null, null, null, null, null)
+                .stream()
+                .map(ContestDTO::toDTO)
+                .toList();
+        List<ContestDTO> liveContests = contestRepository.findContests(null, null, null, new Date(), new Date(), null, null, null)
+                .stream()
+                .map(ContestDTO::toDTO)
+                .toList();
         scheduleFutureContests(futureContests);
         manageLiveContests(liveContests);
     }
 
     public List<ContestantResultDTO> getStandings(long contestId, Integer offset, Integer size) throws InformaticsServerException {
-        List<ContestantResult> standings = contestManager.getStandings(contestId, offset, size);
         if (liveContests.containsKey(contestId)) {
-            standings = liveContests.get(contestId).getStandings().getStandings();
+            return ArrayUtils.getPage(liveContests.get(contestId).getStandings().stream().toList(), offset, size);
+        } else {
+            return contestManager.getStandings(contestId, offset, size)
+                    .stream()
+                    .map(ContestantResultDTO::toDTO)
+                    .toList();
         }
-        List<ContestantResultDTO> standingsDTO = new ArrayList<>();
-        for (ContestantResult result : standings) {
-            ContestantResultDTO contestantResultDTO = ContestantResultDTO.toDTO(result);
-            try {
-                contestantResultDTO.setUsername(userRepository.getUser(result.getContestantId()).getUsername());
-                standingsDTO.add(contestantResultDTO);
-            } catch (Exception ignored) {
-
-            }
-        }
-        return ArrayUtils.getPage(standingsDTO, offset, size);
     }
 
     public List<Long> getLiveContests() {
@@ -108,45 +107,71 @@ public class ContestService {
     }
 
     private void scheduleContestEnd(ContestDTO contest) {
-        Date endTime = getEndTime(contest);
-
-        if (new Date().after(endTime)) {
+        if (new Date().after(contest.getEndDate())) {
             new ContestEndThread(contest).run();
         } else {
-            taskScheduler.schedule(new ContestEndThread(contest), endTime);
+            taskScheduler.schedule(new ContestEndThread(contest), contest.getEndDate());
         }
     }
 
     @EventListener
-    public void addSubmission(SubmissionEvent event) {
+    public void addSubmission(SubmissionEvent event) throws InformaticsServerException {
         Submission submission = (Submission) event.getSource();
-        ContestDTO contest = liveContests.get(submission.getContestId());
+        ContestDTO contest = liveContests.get(submission.getContest().getId());
+        ContestRoom room = contestRoomJpaRepository.getReferenceById(contest.getId());
+        if (!room.isMember(submission.getUser().getId())) {
+            log.info("User {} is not a member of contest room {}", submission.getUser().getId(), room.getId());
+            throw new InformaticsServerException("permissionDenied");
+        }
         if (contest == null) {
-            if (upsolvingContests.containsKey(submission.getContestId())) {
-                addUpsolvingSubmission(submission);
-            }
+            addUpsolvingSubmission(submission);
             return;
         }
-        for (ContestantResult contestantResult : contest.getStandings().getStandings()) {
-            if (contestantResult.getContestantId() == submission.getUserId()) {
-                contestantResult.setTaskScore(taskManager.getTask(submission.getTaskId()).getCode(), submission.getScore());
+        for (ContestantResultDTO contestantResult : contest.getStandings()) {
+            if (contestantResult.getContestantId() == submission.getUser().getId()) {
+                TaskResultDTO taskResult = contestantResult.getTaskResults().get(submission.getTask().getCode());
+                TaskResultDTO newTaskResult = new TaskResultDTO(submission.getTask().getCode(),
+                        submission.getScore(),
+                        taskResult == null ? 1 : taskResult.attempts() + 1,
+                        getSuccessTime(submission, taskResult, contest));
+                contestantResult.setTaskResult(newTaskResult, contest.getScoringType());
             }
         }
         contestManager.updateContest(contest);
     }
 
-    public void addUpsolvingSubmission(Submission submission) {
-        ContestDTO contest = upsolvingContests.get(submission.getContestId());
-
-        for (ContestantResult contestantResult : contest.getUpsolvingStandings().getStandings()) {
-            if (contestantResult.getContestantId() == submission.getUserId()) {
-                contestantResult.setTaskScore(taskManager.getTask(submission.getTaskId()).getCode(), submission.getScore());
-                contestManager.updateContest(contest);
-                return;
-            }
+    private Long getSuccessTime(Submission submission, TaskResultDTO taskResult, ContestDTO contestDTO) {
+        Long newTime = submission.getSubmissionTime().getTime() - contestDTO.getStartDate().getTime();
+        if (taskResult == null) {
+            return newTime;
         }
-        ContestantResult newContestantResult = new ContestantResult(contest.getScoringType(), (int) submission.getUserId());
-        contest.getUpsolvingStandings().getStandings().add(newContestantResult);
+        if (taskResult.score() < submission.getScore()) {
+            return newTime;
+        }
+        if (taskResult.score().equals(submission.getScore())) {
+            return Math.min(newTime, taskResult.successTime());
+        }
+        return taskResult.successTime();
+    }
+
+    private void addUpsolvingSubmission(Submission submission) throws InformaticsServerException {
+        Contest contest = contestRepository.getReferenceById(submission.getContest().getId());
+
+        long numChanged = contest.getUpsolvingStandings().stream()
+                .filter(result -> result.getContestantId() == submission.getUser().getId())
+                .map(result -> {
+                    float newScore = Math.max(submission.getScore(), result.getTaskResults().get(submission.getTask().getCode()).getScore());
+                    float diff = submission.getScore() - newScore;
+                    result.setTotalScore(result.getTotalScore() + diff);
+                    result.getTaskResults().put(submission.getTask().getCode(), newScore);
+                    contestantResultJpaRepository.save(result);
+                    return result;
+                }).count();
+        if (numChanged > 0) {
+            return;
+        }
+        ContestantResultDTO newContestantResult = new ContestantResult(contest.getScoringType(), (int) submission.getUser().getId());
+        contest.getUpsolvingStandings().add(newContestantResult);
         newContestantResult.setTaskScore(taskManager.getTask(submission.getTaskId()).getCode(), submission.getScore());
         contestManager.updateContest(contest);
     }
@@ -162,15 +187,11 @@ public class ContestService {
                 liveContests.put(contest.getId(), contest);
                 liveContest = contest;
             }
-            for (ContestantResult result : contest.getStandings().getStandings()) {
-                if (liveContest.getStandings().getContestantResult(result.getContestantId()) == null) {
-                    liveContest.getStandings().getStandings().add(result);
-                }
-            }
+
             contest.setStandings(liveContest.getStandings());
             contest.setUpsolvingStandings(liveContest.getUpsolvingStandings());
             liveContests.put(contest.getId(), contest);
-            if (!getEndTime(liveContest).equals(getEndTime(contest))) {
+            if (!liveContest.getEndDate().equals(contest.getEndDate())) {
                 scheduleContestEnd(contest);
             }
         } else {
@@ -187,7 +208,7 @@ public class ContestService {
             return;
         }
         if (contest.getUpsolvingStandings() == null) {
-            contest.setUpsolvingStandings(contest.getStandings());
+            contest.setUpsolvingStandings(contest.getStandings().stream().toList());
         }
         upsolvingContests.put(contest.getId(), contest);
         contestManager.updateContest(contest);
@@ -198,13 +219,6 @@ public class ContestService {
             return;
         }
         upsolvingContests.remove(contest.getId());
-    }
-
-    private Date getEndTime(ContestDTO contest) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(contest.getStartDate());
-        calendar.add(Calendar.SECOND, contest.getDurationInSeconds());
-        return calendar.getTime();
     }
 
     private class ContestStartThread implements Runnable {
@@ -218,7 +232,7 @@ public class ContestService {
 
         @Override
         public void run() {
-            ContestDTO upToDateContest = ContestDTO.toDTO(contestRepository.getContest(contest.getId()));
+            ContestDTO upToDateContest = ContestDTO.toDTO(contestRepository.getReferenceById(contest.getId()));
             if (!contest.getVersion().equals(upToDateContest.getVersion())) {
                 return;
             }

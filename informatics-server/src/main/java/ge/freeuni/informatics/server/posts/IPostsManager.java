@@ -12,9 +12,5 @@ public interface IPostsManager {
 
     List<PostDTO> getPosts(long roomId, Integer offset, Integer limit) throws InformaticsServerException;
 
-    File getPostImage(long postId) throws InformaticsServerException;
-
     Long addPost(PostDTO post) throws InformaticsServerException;
-
-    void uploadImage(long postId, byte[] image) throws InformaticsServerException;
 }

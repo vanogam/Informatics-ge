@@ -30,7 +30,7 @@ export default function MySubmissions() {
 				if (response.data.status === 'SUCCESS')
 					setSubmissions(response.data.submissions)
 				else return <>NO SUBMISSIONS FOUND</>
-			})
+			}, [])
 		const interval = setInterval(() => {
 			axiosInstance
 				.get(`/contest/${contest_id}/submissions`)

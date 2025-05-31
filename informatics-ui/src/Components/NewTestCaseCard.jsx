@@ -9,20 +9,18 @@ import {
 import { useState, useRef } from 'react'
 
 export default function NewTestCaseCard({ handleTestCaseSubmit }) {
-	const supportedLanguages = ['EN', 'KA']
-	const [selectedLanguage, setSelectedLanguage] = useState('EN')
 	const [fileName, setFileName] = useState()
 	const testCaseRef = useRef(null)
 
 	const handleNewTestCase = () => {
 		handleTestCaseSubmit({
 			testCaseFile: testCaseRef.current.files[0],
-			selectedLanguage,
 		})
 	}
 
 	const handleFileUpload = () => {
 		setFileName(testCaseRef.current.files[0].name)
+		handleNewTestCase()
 	}
 	return (
 		<Paper elevation={4} sx={{ padding: '1rem' }}>

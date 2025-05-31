@@ -32,17 +32,17 @@ export default function Main() {
 	const dummy_news_list = [
 		{
 			title: 'დათო ჩეჩელაშვილი Amazon-ში იწყებს მუშაობას',
-			text: 'თავისუფალი უნივერსიტეტის MACS[E]-ის სკოლის მათემატიკისა და კომპიუტერული მეცნიერების მიმართულების მეოთხე კურსის სტუდენტი, დათო	ჩეჩელაშვილი ამაზონის ბერლინის ოფისს Software Development Engineer-ის პოზიციაზე შეუერთდება...',
+			codeText: 'თავისუფალი უნივერსიტეტის MACS[E]-ის სკოლის მათემატიკისა და კომპიუტერული მეცნიერების მიმართულების მეოთხე კურსის სტუდენტი, დათო	ჩეჩელაშვილი ამაზონის ბერლინის ოფისს Software Development Engineer-ის პოზიციაზე შეუერთდება...',
 			image: news1,
 		},
 		{
 			title: 'საბა ცერცვაძე Google-ის გუნდს შეუერთდება',
-			text: '	თავისუფალი უნივერსიტეტის MACS[E]-ის სკოლის კომპიუტერული	მეცნიერებების პროგრამის სტუდენტი, საბა ცერცვაძე სექტემბრიდან	Google-ის ვარშავის ოფისს Google Cloud Engine Managed Infrastructure-ის (GCE Minfra) გუნდში შეუერთდება Software Engineer-ის პოზიციაზე...',
+			codeText: '	თავისუფალი უნივერსიტეტის MACS[E]-ის სკოლის კომპიუტერული	მეცნიერებების პროგრამის სტუდენტი, საბა ცერცვაძე სექტემბრიდან	Google-ის ვარშავის ოფისს Google Cloud Engine Managed Infrastructure-ის (GCE Minfra) გუნდში შეუერთდება Software Engineer-ის პოზიციაზე...',
 			image: news2,
 		},
 		{
 			title: 'სტეფანე გურგენიძე მუშაობას Microsoft-დან Amazon-ში აგრძელებს',
-			text: 'თავისუფალი უნივერსიტეტის MACS[E]-ის სკოლის კომპიუტერული მეცნიერებების პროგრამის სტუდენტი, სტეფანე გურგენიძე მუშაობას Amazon-ის ბარსელონას ოფისში იწყებს Software Development Engineer-ის პოზიციაზე...',
+			codeText: 'თავისუფალი უნივერსიტეტის MACS[E]-ის სკოლის კომპიუტერული მეცნიერებების პროგრამის სტუდენტი, სტეფანე გურგენიძე მუშაობას Amazon-ის ბარსელონას ოფისში იწყებს Software Development Engineer-ის პოზიციაზე...',
 			image: news3,
 		},
 
@@ -106,8 +106,8 @@ export default function Main() {
 						<Typography gutterBottom variant='h5' component='div'>
 							{news.title}
 						</Typography>
-						<Typography variant='body2' color='text.secondary'>
-							{news.text}
+						<Typography variant='body2' color='codeText.secondary'>
+							{news.codeText}
 						</Typography>
 					</CardContent>
 					<CardActions>

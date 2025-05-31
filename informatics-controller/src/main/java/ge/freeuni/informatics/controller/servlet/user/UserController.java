@@ -31,15 +31,18 @@ public class UserController {
     @PostMapping("/register")
     @ResponseBody
     public InformaticsResponse register(@RequestBody RegisterDTO registerDTO) {
-        UserDTO userDTO = new UserDTO();
-        userDTO.setUsername(registerDTO.getUsername());
-        userDTO.setFirstName(registerDTO.getFirstName());
-        userDTO.setEmail(registerDTO.getEmail());
-        userDTO.setLastName(registerDTO.getLastName());
-        userDTO.setPassword(registerDTO.getPassword());
         InformaticsResponse response = new InformaticsResponse();
         try {
-            userManager.createUser(UserDTO.fromDTO(userDTO));
+            userManager.createUser(
+                    new UserDTO(
+                            0,
+                            registerDTO.getUsername(),
+                            registerDTO.getEmail(),
+                            registerDTO.getFirstName(),
+                            registerDTO.getLastName(),
+                            0,
+                            null
+                    ));
             response.setStatus("SUCCESS");
         } catch (Exception ex) {
             response.setStatus("FAIL");

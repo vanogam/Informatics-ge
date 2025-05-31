@@ -1,23 +1,32 @@
 package ge.freeuni.informatics.common.model.task;
 
-import javax.persistence.*;
+import ge.freeuni.informatics.common.Language;
+import ge.freeuni.informatics.common.model.contest.Contest;
+import jakarta.persistence.*;
+
 import java.util.List;
 import java.util.Map;
 
 @Entity
 public class Task {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     Integer id;
 
-    Integer judgeId;
+    @ManyToOne
+    Contest contest;
 
-    Long contestId;
-
+    @Column(unique = true, nullable = false)
     String code;
 
-    Map<String, String> title;
+    String title;
 
-    Map<String, String> statements;
+    @ElementCollection
+    @CollectionTable(name = "task_statements", joinColumns = @JoinColumn(name = "task_id"))
+    @MapKeyColumn(name = "language")
+    @Column(name = "statement")
+    Map<Language, String> statements;
 
     String configAddress;
 
@@ -42,10 +51,9 @@ public class Task {
 
     String outputTemplate;
 
+    @OneToMany(cascade = CascadeType.ALL)
     List<TestCase> testCases;
 
-    @Id
-    @GeneratedValue
     public Integer getId() {
         return id;
     }
@@ -54,20 +62,12 @@ public class Task {
         this.id = id;
     }
 
-    public Integer getJudgeId() {
-        return judgeId;
+    public Contest getContest() {
+        return contest;
     }
 
-    public void setJudgeId(Integer judgeId) {
-        this.judgeId = judgeId;
-    }
-
-    public Long getContestId() {
-        return contestId;
-    }
-
-    public void setContestId(Long contestId) {
-        this.contestId = contestId;
+    public void setContest(Contest contest) {
+        this.contest = contest;
     }
 
     @Column(unique = true)
@@ -79,22 +79,21 @@ public class Task {
         this.code = code;
     }
 
-    @ElementCollection
-    public Map<String, String> getTitle() {
+    public String getTitle() {
         return title;
     }
 
 
-    public void setTitle(Map<String, String> title) {
+    public void setTitle(String title) {
         this.title = title;
     }
 
     @ElementCollection
-    public Map<String, String> getStatements() {
+    public Map<Language, String> getStatements() {
         return statements;
     }
 
-    public void setStatements(Map<String, String> statements) {
+    public void setStatements(Map<Language, String> statements) {
         this.statements = statements;
     }
 
@@ -162,7 +161,6 @@ public class Task {
         this.outputTemplate = outputTemplate;
     }
 
-    @OneToMany(cascade = CascadeType.ALL)
     public List<TestCase> getTestCases() {
         return testCases;
     }

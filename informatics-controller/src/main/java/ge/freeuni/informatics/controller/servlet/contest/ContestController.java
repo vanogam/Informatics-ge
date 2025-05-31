@@ -10,6 +10,7 @@ import ge.freeuni.informatics.server.submission.ISubmissionManager;
 import ge.freeuni.informatics.server.task.ITaskManager;
 import ge.freeuni.informatics.server.user.IUserManager;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +22,12 @@ import java.util.List;
 @RestController
 @RequestMapping("/api")
 public class ContestController {
+
+    @Value("${ge.freeuni.informatics.defaultPageSize}")
+    Integer defaultPageSize;
+
+    @Value("${ge.freeuni.informatics.maxPageSize}")
+    Integer maxPageSize;
 
     @Autowired
     private IContestManager contestManager;
@@ -49,7 +56,7 @@ public class ContestController {
    @GetMapping("/contests")
     public ContestResponse getContestList(ContestListRequest request) {
         ContestResponse response = new ContestResponse();
-        response.setContests(contestManager.getContests(Long.valueOf(request.getRoomId()), null, null, null, null, null));
+        response.setContests(contestManager.getContests(Long.valueOf(request.getRoomId()), null, null, null, null));
         response.setStatus("SUCCESS");
         return response;
     }
@@ -137,8 +144,11 @@ public class ContestController {
     public SubmissionListResponse getSubmissionsList(@PathVariable String contestId,
                                                      GetSubmissionsRequest request) {
         SubmissionListResponse response = new SubmissionListResponse("SUCCESS", null);
+        if (request.getLimit() == null) {
+            request.setLimit(defaultPageSize);
+        }
         try {
-            response.setSubmissions(submissionManager.filter(userManager.getAuthenticatedUser().getId(),
+            response.setSubmissions(submissionManager.filter(userManager.getAuthenticatedUser().id(),
                     request.getTaskId(),
                     Long.parseLong(contestId),
                     null,

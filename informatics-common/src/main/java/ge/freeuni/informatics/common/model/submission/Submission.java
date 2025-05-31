@@ -1,36 +1,43 @@
 package ge.freeuni.informatics.common.model.submission;
 
-import org.hibernate.annotations.Type;
+import ge.freeuni.informatics.common.model.contest.Contest;
+import ge.freeuni.informatics.common.model.task.Task;
+import ge.freeuni.informatics.common.model.user.User;
+import jakarta.persistence.*;
 
-import javax.persistence.*;
 import java.util.Date;
+import java.util.List;
 
 @Entity
 public class Submission {
 
+    @Id
+    @GeneratedValue
     private long id;
 
-    private long cmsId;
+    @ManyToOne
+    private User user;
 
-    private long userId;
+    @ManyToOne
+    private Task task;
 
-    String text;
+    @ManyToOne
+    private Contest contest;
 
-    private Integer taskId;
-
-    private long contestId;
-
-    private long roomId;
-
+    @Column(nullable = false)
     private String fileName;
 
+    @Column(nullable = false)
     private String language;
 
+    @Column(nullable = false)
     private Date submissionTime;
 
+    @Column(nullable = false)
     private SubmissionStatus status;
 
     private Float score;
+
 
     private String compilationResult;
 
@@ -38,10 +45,8 @@ public class Submission {
 
     private Integer currentTest;
 
-    private SubmissionTestResultList submissionTestResultList;
+    private List<SubmissionTestResult> submissionTestResults;
 
-    @Id
-    @GeneratedValue
     public long getId() {
         return id;
     }
@@ -50,53 +55,28 @@ public class Submission {
         this.id = id;
     }
 
-    public long getCmsId() {
-        return cmsId;
+    public User getUser() {
+        return user;
     }
 
-    public void setCmsId(long cmsId) {
-        this.cmsId = cmsId;
+    public void setUser(User user) {
+        this.user = user;
     }
 
-    public long getUserId() {
-        return userId;
+    public Task getTask() {
+        return task;
     }
 
-    public void setUserId(long userId) {
-        this.userId = userId;
+    public void setTask(Task task) {
+        this.task = task;
     }
 
-    public Integer getTaskId() {
-        return taskId;
+    public Contest getContest() {
+        return contest;
     }
 
-    public void setTaskId(Integer taskId) {
-        this.taskId = taskId;
-    }
-
-    @Column(length = 5000)
-    public String getText() {
-        return text;
-    }
-
-    public void setText(String text) {
-        this.text = text;
-    }
-
-    public long getContestId() {
-        return contestId;
-    }
-
-    public void setContestId(long contestId) {
-        this.contestId = contestId;
-    }
-
-    public long getRoomId() {
-        return roomId;
-    }
-
-    public void setRoomId(long roomId) {
-        this.roomId = roomId;
+    public void setContest(Contest contest) {
+        this.contest = contest;
     }
 
     public String getFileName() {
@@ -147,7 +127,6 @@ public class Submission {
         this.compilationResult = compilationResult;
     }
 
-    @Column(length = Integer.MAX_VALUE)
     public String getCompilationMessage() {
         return compilationMessage;
     }
@@ -164,13 +143,11 @@ public class Submission {
         this.currentTest = currentTest;
     }
 
-    @Type(type = SubmissionTestResultListType.TYPE)
-    @Column(length = Integer.MAX_VALUE)
-    public SubmissionTestResultList getSubmissionTestResultList() {
-        return submissionTestResultList;
+    public List<SubmissionTestResult> getSubmissionTestResults() {
+        return submissionTestResults;
     }
 
-    public void setSubmissionTestResultList(SubmissionTestResultList submissionTestResultList) {
-        this.submissionTestResultList = submissionTestResultList;
+    public void setSubmissionTestResults(List<SubmissionTestResult> submissionTestResults) {
+        this.submissionTestResults = submissionTestResults;
     }
 }

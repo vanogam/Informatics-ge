@@ -38,7 +38,6 @@ public class SubmissionController {
 
     @PostMapping("/submit")
     public InformaticsResponse submit(@RequestBody TextSubmitRequest request) {
-        SubmissionDTO submissionDTO = new SubmissionDTO();
         InformaticsResponse response = new InformaticsResponse();
 
         submissionDTO.setLanguage(request.getLanguage().toString());

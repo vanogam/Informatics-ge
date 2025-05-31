@@ -1,12 +1,13 @@
 package ge.freeuni.informatics.repository.submission;
 
 import ge.freeuni.informatics.common.model.submission.Submission;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
-import javax.transaction.Transactional;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,8 +16,8 @@ import java.util.Map;
 @Transactional
 public class SubmissionRepository implements ISubmissionRepository {
 
-    final
-    EntityManager em;
+    @PersistenceContext
+    final EntityManager em;
 
     @Autowired
     public SubmissionRepository(EntityManager em) {
@@ -31,7 +32,6 @@ public class SubmissionRepository implements ISubmissionRepository {
     @Override
     public void registerSubmission(long submissionId, long judgeId) {
         Submission submission = em.find(Submission.class, submissionId);
-        submission.setCmsId(judgeId);
     }
 
     @Override

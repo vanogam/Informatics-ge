@@ -29,7 +29,7 @@ public class InformaticsAuthenticationProvider implements AuthenticationProvider
             if (user == null) {
                 throw new AuthenticationServiceException("Invalid login");
             }
-            return new UsernamePasswordAuthenticationToken(new InformaticsPrincipal(user), null, getRoles(user.getRoles()));
+            return new UsernamePasswordAuthenticationToken(new InformaticsPrincipal(user), null, getRoles(user.getRole()));
         } catch (InformaticsServerException e) {
             throw new RuntimeException(e);
         }

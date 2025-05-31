@@ -9,7 +9,7 @@ public interface IUserManager {
 
     User getUser(Long userId);
 
-    void createUser(User user);
+    void createUser(UserDTO user);
 
     User authenticate(String username, String password) throws InformaticsServerException;
 

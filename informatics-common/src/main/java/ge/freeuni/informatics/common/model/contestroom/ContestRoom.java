@@ -1,28 +1,35 @@
 package ge.freeuni.informatics.common.model.contestroom;
 
-import javax.persistence.*;
+import ge.freeuni.informatics.common.model.contest.Contest;
+import ge.freeuni.informatics.common.model.user.User;
+import jakarta.persistence.*;
+
 import java.util.Set;
 
-@Entity
+@Entity(name = "contest_room")
 public class ContestRoom {
 
     @Transient
-    public static final Integer GLOBAL_ROOM_ID = 1;
-
-    private long id;
-
-    private String name;
-
-    private boolean open;
-
-    private Set<Long> teachers;
-
-    private Set<Long> participants;
-
-    private Set<Long> contests;
+    public static final long GLOBAL_ROOM_ID = 1;
 
     @Id
-    @GeneratedValue
+    private long id;
+
+    @Column(unique = true, nullable = false)
+    private String name;
+
+    @Column(nullable = false)
+    private boolean open;
+
+    @OneToMany
+    private Set<User> teachers;
+
+    @OneToMany
+    private Set<User> participants;
+
+    @OneToMany
+    private Set<Contest> contests;
+
     public long getId() {
         return id;
     }
@@ -47,30 +54,27 @@ public class ContestRoom {
         this.open = open;
     }
 
-    @ElementCollection
-    public Set<Long> getTeachers() {
+    public Set<User> getTeachers() {
         return teachers;
     }
 
-    public void setTeachers(Set<Long> teachers) {
+    public void setTeachers(Set<User> teachers) {
         this.teachers = teachers;
     }
 
-    @ElementCollection
-    public Set<Long> getParticipants() {
+    public Set<User> getParticipants() {
         return participants;
     }
 
-    public void setParticipants(Set<Long> participants) {
+    public void setParticipants(Set<User> participants) {
         this.participants = participants;
     }
 
-    @ElementCollection
-    public Set<Long> getContests() {
+    public Set<Contest> getContests() {
         return contests;
     }
 
-    public void setContests(Set<Long> contests) {
+    public void setContests(Set<Contest> contests) {
         this.contests = contests;
     }
 

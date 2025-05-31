@@ -6,16 +6,17 @@ import ge.freeuni.informatics.common.model.user.User;
 import ge.freeuni.informatics.common.model.user.UserRole;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.security.InformaticsPrincipal;
-import ge.freeuni.informatics.repository.user.IUserRepository;
+import ge.freeuni.informatics.repository.user.PasswordRecoveryJpaRepository;
+import ge.freeuni.informatics.repository.user.UserJpaRepository;
 import ge.freeuni.informatics.utils.FileUtils;
 import ge.freeuni.informatics.utils.MailSender;
 import ge.freeuni.informatics.utils.UserUtils;
+import jakarta.persistence.NoResultException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
-import javax.persistence.NoResultException;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -40,32 +41,37 @@ public class UserManager implements IUserManager {
     @Value("${server.port.front}")
     private String port;
 
-    final IUserRepository userRepository;
+    final UserJpaRepository userRepository;
+
+    final PasswordRecoveryJpaRepository recoveryJpaRepository;
 
     @Autowired
-    public UserManager(IUserRepository userRepository) {
+    public UserManager(UserJpaRepository userRepository,
+                       PasswordRecoveryJpaRepository passwordRecoveryJpaRepository) {
         this.userRepository = userRepository;
+        this.recoveryJpaRepository = passwordRecoveryJpaRepository;
     }
 
     @Override
     public User getUser(Long userId) {
-        return userRepository.getUser(userId);
+        return userRepository.getReferenceById(userId);
     }
 
     @Override
-    public void createUser(User user) {
+    public void createUser(UserDTO userDTO) {
+        User user = UserDTO.fromDTO(userDTO);
         user.setPasswordSalt(UserUtils.getSalt());
         user.setPassword(UserUtils.getHash(user.getPassword(), user.getPasswordSalt()));
         user.setVersion(1);
-        addRole(user, UserRole.STUDENT);
-        userRepository.addUser(user);
+        user.setRole(UserRole.STUDENT.name());
+        userRepository.save(user);
 
     }
 
     @Override
-    public User authenticate(String username, String password) throws InformaticsServerException {
+    public User authenticate(String username, String password) {
         try {
-            User user = userRepository.getUser(username);
+            User user = userRepository.getFirstByUsername(username);
             String hash = UserUtils.getHash(password, user.getPasswordSalt());
             if (hash.equals(user.getPassword())) {
                 return user;
@@ -90,17 +96,16 @@ public class UserManager implements IUserManager {
     @Override
     public UserDTO getAuthenticatedUser() throws InformaticsServerException {
         Object principalObject = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (!(principalObject instanceof InformaticsPrincipal)) {
+        if (!(principalObject instanceof InformaticsPrincipal principal)) {
             throw new InformaticsServerException("notLoggedIn");
         }
-        InformaticsPrincipal principal = (InformaticsPrincipal) principalObject;
         return UserDTO.toDTO(principal.getUser());
     }
 
     @Override
     public void addPasswordRecoveryQuery(String username) throws InformaticsServerException {
         RecoverPassword recoverPassword = new RecoverPassword();
-        User user = userRepository.getUser(username);
+        User user = userRepository.getFirstByUsername(username);
         try {
             recoverPassword.setUserId(user.getId());
         } catch (NoResultException ex) {
@@ -115,15 +120,14 @@ public class UserManager implements IUserManager {
                 emailHost,
                 generateRecoverText(recoverPassword.getLink()),
                 getRecoverSubject());
-        userRepository.addPasswordRecoveryQuery(recoverPassword);
-
+        recoveryJpaRepository.save(recoverPassword);
     }
 
     @Override
     public RecoverPassword verifyRecoveryQuery(String link) throws InformaticsServerException {
         RecoverPassword recoverPassword;
         try {
-            recoverPassword = userRepository.getPasswordRecoveryQuery(link);
+            recoverPassword = recoveryJpaRepository.getFirstByLink(link);
         } catch (NoResultException ex) {
             throw new InformaticsServerException("invalidLink");
         }
@@ -143,26 +147,12 @@ public class UserManager implements IUserManager {
     @Override
     public void recoverPassword(String link, String newPassword) throws InformaticsServerException {
         RecoverPassword recoverPassword = verifyRecoveryQuery(link);
-        User user = userRepository.getUser(recoverPassword.getUserId());
+        User user = userRepository.getReferenceById(recoverPassword.getUserId());
         user.setPasswordSalt(UserUtils.getSalt());
         user.setPassword(UserUtils.getHash(newPassword, user.getPasswordSalt()));
-        userRepository.addUser(user);
+        userRepository.save(user);
         recoverPassword.setUsed(true);
-        userRepository.addPasswordRecoveryQuery(recoverPassword);
-    }
-
-    private void addRole(User user, UserRole role) {
-        if (user.getRoles() == null) {
-            user.setRoles("");
-        }
-        if (user.getRoles().contains(role.name())) {
-            return;
-        }
-        String delimiter = ",";
-        if (user.getRoles().isEmpty()) {
-            delimiter = "";
-        }
-        user.setRoles(user.getRoles() + delimiter + role.name());
+        recoveryJpaRepository.save(recoverPassword);
     }
 
     private String getRecoverSubject() {

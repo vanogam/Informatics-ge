@@ -1,6 +1,6 @@
 package ge.freeuni.informatics.controller.model;
 
-public class ContestListRequest {
+public class ContestListRequest extends PagingRequest {
 
     private Integer roomId;
 

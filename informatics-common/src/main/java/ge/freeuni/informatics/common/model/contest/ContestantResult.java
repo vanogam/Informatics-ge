@@ -1,34 +1,57 @@
 package ge.freeuni.informatics.common.model.contest;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
-import java.util.HashMap;
 import java.util.Map;
 
-public class ContestantResult implements Comparable<ContestantResult> {
+import jakarta.persistence.*;
 
+@Entity
+@Table(name = "contestant_result", indexes = {
+        @Index(name = "idx_total_score", columnList = "totalScore")
+})
+public class ContestantResult {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
+    private Long contestantId;
+
+    @ManyToOne
+    @JoinColumn(name = "contest_id", nullable = false)
+    private Contest contest;
+
+    @Column(name = "totalScore", nullable = false)
     private Float totalScore;
+    @ElementCollection
 
-    private long contestantId;
+    @CollectionTable(name = "task_results", joinColumns = @JoinColumn(name = "standings_id"))
+    @MapKeyColumn(name = "task_code")
+    @Column(name = "task_result")
+    private Map<String, TaskResult> taskResults;
 
-    private final Map<String, Float> scores;
-
-    private ScoringType type;
-
-    public ContestantResult() {
-        this.totalScore = 0F;
-        this.scores = new HashMap<>();
+    public Long getId() {
+        return id;
     }
 
-    public ContestantResult(ScoringType type, Integer contestantId) {
-        this.type = type;
-        this.totalScore = 0F;
-        this.scores = new HashMap<>();
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Long getContestantId() {
+        return contestantId;
+    }
+
+    public void setContestant(Long contestantId) {
         this.contestantId = contestantId;
     }
 
-    public long getContestantId() {
-        return contestantId;
+    public Contest getContest() {
+        return contest;
+    }
+
+    public void setContest(Contest contest) {
+        this.contest = contest;
     }
 
     public Float getTotalScore() {
@@ -39,59 +62,11 @@ public class ContestantResult implements Comparable<ContestantResult> {
         this.totalScore = totalScore;
     }
 
-    public void setContestantId(long contestantId) {
-        this.contestantId = contestantId;
+    public Map<String, TaskResult> getTaskResults() {
+        return taskResults;
     }
 
-    @JsonAnyGetter
-    public Map<String, Float> getScores() {
-        return scores;
-    }
-
-    @JsonAnySetter
-    public void set(String name, Float value) {
-        scores.put(name, value);
-    }
-
-    public void setType(ScoringType type) {
-        this.type = type;
-    }
-
-    public ScoringType getType() {
-        return type;
-    }
-
-    public void removeTask(String taskCode) {
-        if (scores.containsKey(taskCode)) {
-            totalScore -= getTaskScore(taskCode);
-        }
-        scores.remove(taskCode);
-    }
-
-    public void setTaskScore(String taskCode, Float score) {
-        if (!this.scores.containsKey(taskCode)) {
-            this.scores.put(taskCode, 0F);
-        }
-        float initialScore = this.scores.get(taskCode);
-
-        if (type == ScoringType.BEST_SUBMISSION) {
-            float newScore = Math.max(initialScore, score);
-            this.scores.put(taskCode, newScore);
-        } else {
-            this.scores.put(taskCode, score);
-        }
-        totalScore = totalScore + scores.get(taskCode) - initialScore;
-    }
-
-    public Float getTaskScore(String taskCode) {
-        if (!this.scores.containsKey(taskCode)) {
-            this.scores.put(taskCode, 0F);
-        }
-        return scores.get(taskCode);
-    }
-
-    @Override
-    public int compareTo(ContestantResult o) {
-        return (int)(100F * totalScore - 100F * o.totalScore);
+    public void setTaskResults(Map<String, TaskResult> taskResults) {
+        this.taskResults = taskResults;
     }
 }

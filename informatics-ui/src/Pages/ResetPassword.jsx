@@ -70,7 +70,7 @@ export default function ResetPassword() {
 							),
 							}}
 						id="register-email"
-						type="text"
+						type="codeText"
 						autoComplete="current-username"
 						inputRef={username}
 					/>

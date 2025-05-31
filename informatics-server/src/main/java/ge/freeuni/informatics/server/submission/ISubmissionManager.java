@@ -11,8 +11,6 @@ public interface ISubmissionManager {
 
     List<SubmissionDTO> filter(Long userId, Long taskId, Long contestId, Long roomId, Integer offset, Integer limit) throws InformaticsServerException;
 
-    void addSubmissionViaText(Submission submission, String text) throws InformaticsServerException;
-
     void registerSubmission(Long submissionId, Long cmsId);
 
 }

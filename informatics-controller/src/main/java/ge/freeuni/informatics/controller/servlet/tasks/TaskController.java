@@ -78,7 +78,7 @@ public class TaskController {
             return ResponseEntity.ok(TaskDTO.toDTO(taskManager.getTask(id)));
     }
 
-    @PostMapping("/save-task")
+    @PostMapping("/task")
     ResponseEntity<TaskDTO> saveTask(@RequestBody AddTaskRequest request) {
         TaskDTO taskDTO = new TaskDTO();
         taskDTO.setId(request.getTaskId());
@@ -95,6 +95,7 @@ public class TaskController {
         try {
             return ResponseEntity.ok(taskManager.addTask(taskDTO, request.getContestId()));
         } catch (InformaticsServerException ex) {
+            log.error("Error while saving the task", ex);
             return ResponseEntity.badRequest().build();
         }
     }

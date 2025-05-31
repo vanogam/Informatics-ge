@@ -5,18 +5,18 @@ import ge.freeuni.informatics.common.dto.TaskDTO;
 import ge.freeuni.informatics.common.dto.UserDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.contest.Contest;
-import ge.freeuni.informatics.common.model.contest.ContestStatus;
 import ge.freeuni.informatics.common.model.contest.ContestantResult;
 import ge.freeuni.informatics.common.model.contestroom.ContestRoom;
 import ge.freeuni.informatics.common.model.task.Task;
 import ge.freeuni.informatics.common.model.task.TaskInfo;
 import ge.freeuni.informatics.common.model.task.TestCase;
 import ge.freeuni.informatics.judgeintegration.IJudgeIntegration;
-import ge.freeuni.informatics.repository.contest.IContestRepository;
+import ge.freeuni.informatics.repository.contest.ContestJpaRepository;
 import ge.freeuni.informatics.repository.task.ITaskRepository;
 import ge.freeuni.informatics.server.contestroom.IContestRoomManager;
 import ge.freeuni.informatics.server.user.IUserManager;
 import ge.freeuni.informatics.utils.FileUtils;
+import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,7 +38,7 @@ public class TaskManager implements ITaskManager {
     ITaskRepository taskRepository;
 
     @Autowired
-    IContestRepository contestRepository;
+    ContestJpaRepository contestRepository;
 
     @Autowired
     IJudgeIntegration judgeIntegration;
@@ -63,35 +63,36 @@ public class TaskManager implements ITaskManager {
         return taskRepository.getTask(taskId);
     }
 
-   @Override
-   @SuppressWarnings("unchecked")
+    @Override
     public List<String> getTaskNames(long contestId, String language) throws InformaticsServerException {
-        Contest contest = null;
+        Contest contest;
         try {
-            contest = contestRepository.getContest(contestId);
+            contest = contestRepository.getReferenceById(contestId);
         } catch (Exception ex) {
             throw new InformaticsServerException("contestNotFound");
         }
-        return contest.getTasks().stream().map(task -> task.getTitle().getOrDefault(language, task.getCode())).collect(Collectors.toList());
+        return contest.getTasks().stream().map(Task::getTitle).toList();
     }
 
     @Override
     public List<TaskInfo> getUpsolvingTasks(long roomId, Integer offset, Integer limit) throws InformaticsServerException {
         ContestRoom room = roomManager.getRoom(roomId);
         UserDTO currentUser = userManager.getAuthenticatedUser();
-        if (!room.isMember(currentUser.getId())) {
+        if (!room.isMember(currentUser.id())) {
             throw new InformaticsServerException("permissionDenied");
         }
-        List<Contest> contests = contestRepository.getContests(roomId, null, Arrays.asList(ContestStatus.PAST), true, null, null);
+        List<Contest> contests = contestRepository.findUpsolvingContests(roomId, new Date());
         List<TaskInfo> result = new ArrayList<>();
         for (Contest contest : contests) {
             for (Task task : contest.getTasks()) {
                 TaskDTO taskDTO = TaskDTO.toDTO(task);
-                ContestantResult contestantResult = contest.getUpsolvingStandings().getContestantResult(currentUser.getId());
+                ContestantResult contestantResult = contest.getUpsolvingStandings().stream()
+                        .filter(res -> res.getContestantId() == currentUser.id())
+                        .findFirst().orElse(null);
                 if (contestantResult == null) {
                     result.add(new TaskInfo(taskDTO, 0F));
                 } else {
-                    result.add(new TaskInfo(taskDTO, contestantResult.getTaskScore(task.getCode())));
+                    result.add(new TaskInfo(taskDTO, contestantResult.getTaskResults().get(task.getCode()).getScore()));
                 }
             }
         }
@@ -100,32 +101,30 @@ public class TaskManager implements ITaskManager {
 
 
     public Map<String, String> fillTaskNames(Long contestId) {
-        Contest contest = contestRepository.getContest(contestId);
-        Map<String, String> nameMap = new HashMap<>();
-        for (Task task : contest.getTasks()) {
-            for (String lang : task.getTitle().keySet()) {
-                nameMap.put(task.getCode() + ":" + lang, task.getTitle().get(lang));
-            }
-        }
-        return nameMap;
+        Contest contest = contestRepository.getReferenceById(contestId);
+        return contest.getTasks().stream().collect(Collectors.toMap(Task::getCode, Task::getTitle));
     }
 
-   @Override
+    @Override
     public List<TaskInfo> getContestTasks(long contestId, int offset, int limit) throws InformaticsServerException {
-        Contest contest = contestRepository.getContest(contestId);
+        Contest contest = contestRepository.getReferenceById(contestId);
         ContestRoom room = roomManager.getRoom(contest.getRoomId());
         UserDTO currentUser = userManager.getAuthenticatedUser();
-        if (!room.isMember(currentUser.getId())) {
+        if (!room.isMember(currentUser.id())) {
             throw new InformaticsServerException("permissionDenied");
         }
         List<TaskInfo> result = new ArrayList<>();
         for (Task task : contest.getTasks()) {
             TaskDTO taskDTO = TaskDTO.toDTO(task);
-            ContestantResult contestantResult = contest.getStandings().getContestantResult(currentUser.getId());
+            ContestantResult contestantResult = contest.getStandings()
+                    .stream()
+                    .filter(res -> res.getContestantId() == currentUser.id())
+                    .findFirst()
+                    .orElse(null);
             if (contestantResult == null) {
                 result.add(new TaskInfo(taskDTO, 0F));
             } else {
-                result.add(new TaskInfo(taskDTO, contestantResult.getTaskScore(task.getCode())));
+                result.add(new TaskInfo(taskDTO, contestantResult.getTaskResults().get(task.getCode()).getScore()));
             }
         }
         return result;
@@ -133,17 +132,23 @@ public class TaskManager implements ITaskManager {
 
     @Override
     public TaskDTO addTask(TaskDTO taskDTO, long contestId) throws InformaticsServerException {
-        Contest contest = contestRepository.getContest(contestId);
-        if (contest == null || !checkAddTaskPermission(contest)) {
+        Contest contest;
+        try {
+            contest = contestRepository.getReferenceById(contestId);
+        } catch (EntityNotFoundException ex) {
+            log.error("Contest with id {} not found", contestId, ex);
+            throw new InformaticsServerException("contestNotFound");
+        }
+        if (!checkAddTaskPermission(contest)) {
             throw new InformaticsServerException("permissionDenied");
         }
-        taskDTO.setContestId(contestId);
         Task task = TaskDTO.fromDTO(taskDTO);
+        task.setContest(contest);
         judgeIntegration.addTask(TaskDTO.toDTO(task));
         task = taskRepository.addTask(task);
         if (!contest.getTasks().contains(task)) {
             contest.getTasks().add(task);
-            contestRepository.addContest(contest);
+            contestRepository.save(contest);
         }
         return TaskDTO.toDTO(task);
     }
@@ -155,16 +160,16 @@ public class TaskManager implements ITaskManager {
     @Override
     public File getStatement(int taskId, Language language) throws InformaticsServerException {
         Task task = taskRepository.getTask(taskId);
-        Contest contest = contestRepository.getContest(task.getContestId());
+        Contest contest = task.getContest();
         ContestRoom room = roomManager.getRoom(contest.getRoomId());
-        Long currentUser = userManager.getAuthenticatedUser().getId();
+        Long currentUser = userManager.getAuthenticatedUser().id();
         if (!room.isOpen() && !room.isMember(currentUser)) {
             throw new InformaticsServerException("permissionDenied");
         }
-        if (!task.getStatements().containsKey(language.name())) {
+        if (!task.getStatements().containsKey(language)) {
             throw new InformaticsServerException("statementNotAvailable");
         }
-        return new File(task.getStatements().get(language.name()));
+        return new File(task.getStatements().get(language));
     }
 
     @Override
@@ -172,7 +177,7 @@ public class TaskManager implements ITaskManager {
         Task task = taskRepository.getTask(taskId);
 
         try {
-            task.getStatements().put(language.name(), storeStatement(language, task.getCode(), statement));
+            task.getStatements().put(language, storeStatement(language, task.getCode(), statement));
             taskRepository.addTask(task);
         } catch (IOException e) {
             throw new InformaticsServerException("Error while storing statement.");
@@ -255,7 +260,7 @@ public class TaskManager implements ITaskManager {
 
     private void addTestcaseLocal(Task task, int testIndex, byte[] inputContent, byte[] outputContent) throws InformaticsServerException {
         TestCase testCase = new TestCase();
-        testIndex --;
+        testIndex--;
         if (task.getTestCases() == null) {
             task.setTestCases(new ArrayList<>());
         }
@@ -280,10 +285,10 @@ public class TaskManager implements ITaskManager {
     private boolean checkAddTaskPermission(Contest contest) throws InformaticsServerException {
         UserDTO user = userManager.getAuthenticatedUser();
         ContestRoom room = roomManager.getRoom(contest.getRoomId());
-        if (user.getRoles().contains("ADMIN")) {
+        if ("ADMIN".equals(user.role())) {
             return true;
         }
-        return room.getTeachers().contains(user.getId());
+        return room.getTeachers().stream().anyMatch(u -> u.getId() == user.id());
     }
 
     private String createTestFile(String testName, String taskCode, String subFolder, byte[] fileContent) throws IOException, InformaticsServerException {
@@ -291,11 +296,12 @@ public class TaskManager implements ITaskManager {
         Files.createDirectories(Paths.get(folder));
         String fileAddress = FileUtils.buildPath(folder, testName);
         File test = new File(fileAddress);
-        if(!test.createNewFile()) {
+        if (!test.createNewFile()) {
             throw new InformaticsServerException("Could not create test file");
         }
-        OutputStream outputStream = Files.newOutputStream(test.toPath());
-        outputStream.write(fileContent);
+        try (OutputStream outputStream = Files.newOutputStream(test.toPath())) {
+            outputStream.write(fileContent);
+        }
         return fileAddress;
     }
 
@@ -305,11 +311,12 @@ public class TaskManager implements ITaskManager {
         String fileName = FileUtils.getRandomFileName(5) + ".zip";
         String fileAddress = FileUtils.buildPath(folder, fileName);
         File testsZip = new File(fileAddress);
-        if(!testsZip.createNewFile()) {
+        if (!testsZip.createNewFile()) {
             throw new InformaticsServerException("Could not create tests zip");
         }
-        OutputStream outputStream = Files.newOutputStream(testsZip.toPath());
-        outputStream.write(fileContent);
+        try (OutputStream outputStream = Files.newOutputStream(testsZip.toPath())) {
+            outputStream.write(fileContent);
+        }
         return fileAddress;
     }
 
@@ -321,11 +328,12 @@ public class TaskManager implements ITaskManager {
         if (statementFile.isFile()) {
             boolean ignored = statementFile.delete();
         }
-        if(!statementFile.createNewFile()) {
+        if (!statementFile.createNewFile()) {
             throw new InformaticsServerException("Could not create statement");
         }
-        OutputStream outputStream = Files.newOutputStream(statementFile.toPath());
-        outputStream.write(statement);
+        try (OutputStream outputStream = Files.newOutputStream(statementFile.toPath())) {
+            outputStream.write(statement);
+        }
         return fileAddress;
     }
 

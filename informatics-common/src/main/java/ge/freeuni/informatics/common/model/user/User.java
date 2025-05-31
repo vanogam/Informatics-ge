@@ -1,31 +1,41 @@
 package ge.freeuni.informatics.common.model.user;
 
-import javax.persistence.*;
+
+import jakarta.persistence.*;
 
 @Entity
+@Table(name = "user")
 public class User {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
+    @Column(unique = true, nullable = false)
     private String username;
 
+    @Column(name = "password", nullable = false)
     private String password;
 
+    @Column(name = "password_salt", nullable = false)
     private String passwordSalt;
 
+    @Column(name = "first_name", nullable = false)
     private String firstName;
 
+    @Column(name = "last_name", nullable = false)
     private String lastName;
 
-    private String roles;
+    @Column(name = "role", nullable = false)
+    private String role;
 
+    @Column(name = "email", nullable = false)
     private String email;
 
+    @Version
     private Integer version;
 
-    @Id
-    @GeneratedValue
-    public Long getId() {
+    public long getId() {
         return id;
     }
 
@@ -33,7 +43,6 @@ public class User {
         this.id = id;
     }
 
-    @Column(unique = true)
     public String getUsername() {
         return username;
     }
@@ -74,21 +83,12 @@ public class User {
         this.lastName = lastName;
     }
 
-    public String getRoles() {
-        return roles;
+    public String getRole() {
+        return role;
     }
 
-    public void setRoles(String roles) {
-        this.roles = roles;
-    }
-
-    @Version
-    public Integer getVersion() {
-        return version;
-    }
-
-    public void setVersion(Integer version) {
-        this.version = version;
+    public void setRole(String role) {
+        this.role = role;
     }
 
     public String getEmail() {
@@ -97,6 +97,14 @@ public class User {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
     }
 
     @Override

@@ -1,33 +1,31 @@
 package ge.freeuni.informatics.common.model.post;
 
-import ge.freeuni.informatics.common.model.contestroom.ContestRoom;
-import ge.freeuni.informatics.common.model.user.User;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.OneToOne;
+import ge.freeuni.informatics.common.model.user.User;
+import jakarta.persistence.*;
+
 import java.util.Date;
 
 @Entity
 public class Post {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
+    @Column(nullable = false)
     String title;
 
+    @Column(nullable = false, columnDefinition = "TEXT")
     String content;
 
-    String imagePath;
-
-    Long authorId;
+    @ManyToOne
+    User author;
 
     Date postDate;
 
     Long roomId;
 
-    @Id
-    @GeneratedValue
     public Long getId() {
         return id;
     }
@@ -52,12 +50,12 @@ public class Post {
         this.content = content;
     }
 
-    public Long getAuthorId() {
-        return authorId;
+    public User getAuthor() {
+        return author;
     }
 
-    public void setAuthorId(Long authorId) {
-        this.authorId = authorId;
+    public void setAuthor(User author) {
+        this.author = author;
     }
 
     public Date getPostDate() {
@@ -66,14 +64,6 @@ public class Post {
 
     public void setPostDate(Date postDate) {
         this.postDate = postDate;
-    }
-
-    public String getImagePath() {
-        return imagePath;
-    }
-
-    public void setImagePath(String imagePath) {
-        this.imagePath = imagePath;
     }
 
     public Long getRoomId() {

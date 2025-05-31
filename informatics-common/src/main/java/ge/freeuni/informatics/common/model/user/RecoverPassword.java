@@ -1,12 +1,19 @@
 package ge.freeuni.informatics.common.model.user;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+
 import java.util.Date;
 
 @Entity
 public class RecoverPassword {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    long id;
 
     long userId;
 
@@ -16,7 +23,6 @@ public class RecoverPassword {
 
     Date createTime;
 
-    @Id
     public long getUserId() {
         return userId;
     }
@@ -33,7 +39,6 @@ public class RecoverPassword {
         this.used = used;
     }
 
-    @Column(unique = true)
     public String getLink() {
         return link;
     }

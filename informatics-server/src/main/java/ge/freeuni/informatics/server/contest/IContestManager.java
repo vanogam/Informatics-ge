@@ -16,7 +16,7 @@ public interface IContestManager {
 
     ContestDTO getContest(Long contestId) throws InformaticsServerException;
 
-    List<ContestDTO> getContests(Long roomId, String name, List<ContestStatus> statuses, Boolean upsolving, Date minStartDate, Date maxStartDate);
+    List<ContestDTO> getContests(Long roomId, String name, Boolean upsolving, Date minStartDate, Date maxStartDate);
 
     ContestDTO updateContest(ContestDTO contest);
 

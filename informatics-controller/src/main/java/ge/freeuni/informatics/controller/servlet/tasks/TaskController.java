@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.util.HashMap;
 import java.util.List;
 
 @RestController
@@ -75,23 +76,25 @@ public class TaskController {
 
     @GetMapping("/task/{id}")
     ResponseEntity<TaskDTO> getTask(@PathVariable Integer id) {
-            return ResponseEntity.ok(TaskDTO.toDTO(taskManager.getTask(id)));
+        return ResponseEntity.ok(TaskDTO.toDTO(taskManager.getTask(id)));
     }
 
     @PostMapping("/task")
     ResponseEntity<TaskDTO> saveTask(@RequestBody AddTaskRequest request) {
-        TaskDTO taskDTO = new TaskDTO();
-        taskDTO.setId(request.getTaskId());
-        taskDTO.setTaskType(request.getTaskType());
-        taskDTO.setContestId(Long.valueOf(request.getContestId()));
-        taskDTO.setCode(request.getCode());
-        taskDTO.setTitle(request.getTitle());
-        taskDTO.setTaskScoreType(request.getTaskScoreType());
-        taskDTO.setTaskScoreParameter(request.getTaskScoreParameter());
-        taskDTO.setMemoryLimitMB(request.getMemoryLimitMB());
-        taskDTO.setTimeLimitMillis(request.getTimeLimitMillis());
-        taskDTO.setInputTemplate(request.getInputTemplate());
-        taskDTO.setOutputTemplate(request.getOutputTemplate());
+        TaskDTO taskDTO = new TaskDTO(
+                request.getTaskId(),
+                Long.valueOf(request.getContestId()),
+                request.getCode(),
+                request.getTitle(),
+                request.getTaskType(),
+                request.getTaskScoreType(),
+                request.getTaskScoreParameter(),
+                request.getTimeLimitMillis(),
+                request.getMemoryLimitMB(),
+                request.getInputTemplate(),
+                request.getOutputTemplate(),
+                new HashMap<>()
+        );
         try {
             return ResponseEntity.ok(taskManager.addTask(taskDTO, request.getContestId()));
         } catch (InformaticsServerException ex) {
@@ -101,7 +104,7 @@ public class TaskController {
     }
 
     @PostMapping("/add-testcase")
-    InformaticsResponse addTestcase(@RequestParam MultipartFile[] files, @RequestParam Integer testId, @RequestParam Integer taskId){
+    InformaticsResponse addTestcase(@RequestParam MultipartFile[] files, @RequestParam Integer testId, @RequestParam Integer taskId) {
         if (files.length != 2) {
             return new InformaticsResponse("FAIL", "incorrectNumberOfFiles");
         }
@@ -127,7 +130,7 @@ public class TaskController {
     }
 
     @PostMapping("/add-testcases")
-    InformaticsResponse addTestcases(@ModelAttribute AddTestcasesRequest request){
+    InformaticsResponse addTestcases(@ModelAttribute AddTestcasesRequest request) {
         try {
             taskManager.addTestcases(request.getTaskId(), request.getFile().getBytes());
         } catch (InformaticsServerException ex) {

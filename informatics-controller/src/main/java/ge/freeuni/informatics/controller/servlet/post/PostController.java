@@ -22,15 +22,15 @@ public class PostController {
 
     @Autowired
     IPostsManager postsManager;
-    @GetMapping(value = "/posts/{postId}/image", produces = MediaType.IMAGE_PNG_VALUE)
-    byte[] getPostImage(@PathVariable Long postId) {
-        try {
-            File image = postsManager.getPostImage(postId);
-            return Files.readAllBytes(image.toPath());
-        } catch (InformaticsServerException | IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
+//    @GetMapping(value = "/posts/{postId}/image", produces = MediaType.IMAGE_PNG_VALUE)
+//    byte[] getPostImage(@PathVariable Long postId) {
+//        try {
+//            File image = postsManager.getPostImage(postId);
+//            return Files.readAllBytes(image.toPath());
+//        } catch (InformaticsServerException | IOException e) {
+//            throw new RuntimeException(e);
+//        }
+//    }
 
     @GetMapping(value = "/room/{roomId}/posts")
     GetPostsResponse getPosts(@PathVariable Long roomId, PagingRequest request) {
@@ -59,17 +59,17 @@ public class PostController {
             return new AddPostResponse("FAIL", ex.getCode(), null);
         }
     }
-
-    @PostMapping(value = "/posts/{postId}/upload")
-    InformaticsResponse uploadImage(@RequestParam MultipartFile image, @PathVariable Long postId) {
-        try {
-            postsManager.uploadImage(postId, image.getBytes());
-            return new InformaticsResponse("SUCCESS", null);
-        } catch (InformaticsServerException ex) {
-            return new InformaticsResponse("FAIL", ex.getCode());
-        } catch (IOException e) {
-            return new InformaticsResponse("FAIL", "cantUploadFile");
-        }
-    }
+//
+//    @PostMapping(value = "/posts/{postId}/upload")
+//    InformaticsResponse uploadImage(@RequestParam MultipartFile image, @PathVariable Long postId) {
+//        try {
+//            postsManager.uploadImage(postId, image.getBytes());
+//            return new InformaticsResponse("SUCCESS", null);
+//        } catch (InformaticsServerException ex) {
+//            return new InformaticsResponse("FAIL", ex.getCode());
+//        } catch (IOException e) {
+//            return new InformaticsResponse("FAIL", "cantUploadFile");
+//        }
+//    }
 
 }

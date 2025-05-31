@@ -9,6 +9,7 @@ import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.contest.Contest;
 import ge.freeuni.informatics.common.model.contest.ContestStatus;
 import ge.freeuni.informatics.common.model.contest.ContestantResult;
+import ge.freeuni.informatics.common.model.contest.TaskResult;
 import ge.freeuni.informatics.common.model.contestroom.ContestRoom;
 import ge.freeuni.informatics.common.model.submission.Submission;
 import ge.freeuni.informatics.repository.contest.ContestJpaRepository;
@@ -157,23 +158,48 @@ public class ContestService {
     private void addUpsolvingSubmission(Submission submission) throws InformaticsServerException {
         Contest contest = contestRepository.getReferenceById(submission.getContest().getId());
 
-        long numChanged = contest.getUpsolvingStandings().stream()
+        long numChanged = 0;
+        contest.getUpsolvingStandings().stream()
                 .filter(result -> result.getContestantId() == submission.getUser().getId())
-                .map(result -> {
-                    float newScore = Math.max(submission.getScore(), result.getTaskResults().get(submission.getTask().getCode()).getScore());
-                    float diff = submission.getScore() - newScore;
-                    result.setTotalScore(result.getTotalScore() + diff);
-                    result.getTaskResults().put(submission.getTask().getCode(), newScore);
+                .forEach(result -> {
+
+                    if (!result.getTaskResults().containsKey(submission.getTask().getCode())) {
+                        TaskResult newResult = createTaskResult(submission);
+                        result.getTaskResults().put(submission.getTask().getCode(), newResult);
+                        result.setTotalScore(result.getTotalScore() + submission.getScore());
+                    }
+                    TaskResult taskResult = result.getTaskResults().get(submission.getTask().getCode());
+                    if (taskResult.getScore() > submission.getScore()) {
+                        result.setTotalScore(result.getTotalScore() + (submission.getScore() - taskResult.getScore()));
+                        taskResult.setScore(submission.getScore());
+                        taskResult.setSuccessTime(submission.getSubmissionTime().getTime());
+
+                    }
                     contestantResultJpaRepository.save(result);
-                    return result;
-                }).count();
-        if (numChanged > 0) {
+                });
+        if (contest.getUpsolvingStandings().stream().anyMatch(res -> res.getContestantId() == submission.getUser().getId())) {
             return;
         }
-        ContestantResultDTO newContestantResult = new ContestantResult(contest.getScoringType(), (int) submission.getUser().getId());
+        ContestantResult newContestantResult = new ContestantResult();
+        newContestantResult.setContestant(submission.getUser().getId());
+        newContestantResult.setContest(contest);
+        newContestantResult.setTotalScore(submission.getScore());
+        newContestantResult.setTaskResults(new HashMap<>());
+        TaskResult newTaskResult = createTaskResult(submission);
+
+        newContestantResult.getTaskResults().put(submission.getTask().getCode(), newTaskResult);
         contest.getUpsolvingStandings().add(newContestantResult);
-        newContestantResult.setTaskScore(taskManager.getTask(submission.getTaskId()).getCode(), submission.getScore());
-        contestManager.updateContest(contest);
+        contestantResultJpaRepository.save(newContestantResult);
+        contestRepository.save(contest);
+    }
+
+    private TaskResult createTaskResult(Submission submission) {
+        TaskResult taskResult = new TaskResult();
+        taskResult.setAttempts(1);
+        taskResult.setScore(submission.getScore());
+        taskResult.setTaskCode(submission.getTask().getCode());
+        taskResult.setSuccessTime(submission.getSubmissionTime().getTime());
+        return taskResult;
     }
 
     @EventListener
@@ -194,31 +220,7 @@ public class ContestService {
             if (!liveContest.getEndDate().equals(contest.getEndDate())) {
                 scheduleContestEnd(contest);
             }
-        } else {
-            if (contest.isUpsolving()) {
-                manageUpsolvingOn(contest);
-            } else {
-                manageUpsolvingOff(contest);
-            }
         }
-    }
-
-    private void manageUpsolvingOn(ContestDTO contest) {
-        if (upsolvingContests.containsKey(contest.getId())) {
-            return;
-        }
-        if (contest.getUpsolvingStandings() == null) {
-            contest.setUpsolvingStandings(contest.getStandings().stream().toList());
-        }
-        upsolvingContests.put(contest.getId(), contest);
-        contestManager.updateContest(contest);
-    }
-
-    private void manageUpsolvingOff(ContestDTO contest) {
-        if (!upsolvingContests.containsKey(contest.getId())) {
-            return;
-        }
-        upsolvingContests.remove(contest.getId());
     }
 
     private class ContestStartThread implements Runnable {

@@ -16,7 +16,7 @@ public record SubmissionDTO(
     SubmissionStatus status,
     Integer currentTest,
     Float score,
-    int taskId,
+    long taskId,
     long contestId,
     String taskName,
     String contestName,
@@ -27,6 +27,33 @@ public record SubmissionDTO(
     String compilationMessage,
     List<SubmissionTestResult> results
 ) {
+    public SubmissionDTO(
+            String language,
+            String username,
+            long contestId,
+            long taskId,
+            Date submissionTime,
+            String fileName) {
+        this(
+                0,
+                username,
+                null,
+                null,
+                null,
+                taskId,
+                contestId,
+                null,
+                null,
+                language,
+                fileName,
+                submissionTime,
+                null,
+                null,
+                null
+        );
+
+    }
+
     public static SubmissionDTO toDTO(Submission submission) {
         return new SubmissionDTO(
             submission.getId(),

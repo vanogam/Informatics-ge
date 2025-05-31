@@ -1,6 +1,7 @@
 package ge.freeuni.informatics.server.contestroom;
 
 import ge.freeuni.informatics.common.model.contestroom.ContestRoom;
+import ge.freeuni.informatics.repository.contestroom.ContestRoomJpaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Component;
@@ -10,10 +11,10 @@ import java.util.List;
 @Component
 public class ContestRoomManager implements IContestRoomManager {
 
-    final IContestRoomRepository contestRoomRepository;
+    final ContestRoomJpaRepository contestRoomRepository;
 
     @Autowired
-    public ContestRoomManager(IContestRoomRepository contestRoomRepository) {
+    public ContestRoomManager(ContestRoomJpaRepository contestRoomRepository) {
         this.contestRoomRepository = contestRoomRepository;
     }
 
@@ -24,7 +25,7 @@ public class ContestRoomManager implements IContestRoomManager {
 
     @Override
     public ContestRoom getRoom(Long roomId) {
-        return contestRoomRepository.getRoom(roomId);
+        return contestRoomRepository.getReferenceById(roomId);
     }
 
     @Override

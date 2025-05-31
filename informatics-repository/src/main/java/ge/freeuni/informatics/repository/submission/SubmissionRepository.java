@@ -30,16 +30,6 @@ public class SubmissionRepository implements ISubmissionRepository {
     }
 
     @Override
-    public void registerSubmission(long submissionId, long judgeId) {
-        Submission submission = em.find(Submission.class, submissionId);
-    }
-
-    @Override
-    public Submission getSubmission(long id) {
-        return em.find(Submission.class, id);
-    }
-
-    @Override
     public List<Submission> getSubmissions(Long userId, Long taskId, Long contestId, Long roomId, Integer offset, Integer limit) {
         StringBuilder sql = new StringBuilder("SELECT s FROM Submission s WHERE 1 = 1 ");
         Map<String, Object> parameters = new HashMap<>();

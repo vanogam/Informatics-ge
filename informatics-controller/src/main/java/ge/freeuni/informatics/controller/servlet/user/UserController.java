@@ -5,14 +5,14 @@ import ge.freeuni.informatics.common.dto.AuthenticationDetails;
 import ge.freeuni.informatics.common.dto.UserDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.server.user.IUserManager;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @RestController
@@ -55,14 +55,14 @@ public class UserController {
     public ResponseEntity<LoginResponse> login(@RequestBody AuthenticationDetails authenticationDetails, HttpServletRequest request) {
         try {
             if (userManager.isLoggedIn()) {
-                if (userManager.getAuthenticatedUser().getUsername().equals(authenticationDetails.getUsername())) {
-                    return ResponseEntity.ok(new LoginResponse(userManager.getAuthenticatedUser().getUsername()));
+                if (userManager.getAuthenticatedUser().username().equals(authenticationDetails.username())) {
+                    return ResponseEntity.ok(new LoginResponse(userManager.getAuthenticatedUser().username()));
                 } else {
                     return ResponseEntity.badRequest().body(new LoginResponse(null, "loggedInWithDifferentUser"));
                 }
             }
-            request.login(authenticationDetails.getUsername(), authenticationDetails.getPassword());
-            return ResponseEntity.ok(new LoginResponse(userManager.getAuthenticatedUser().getUsername()));
+            request.login(authenticationDetails.username(), authenticationDetails.password());
+            return ResponseEntity.ok(new LoginResponse(userManager.getAuthenticatedUser().username()));
         } catch (InformaticsServerException ex) {
             return ResponseEntity.badRequest().body(new LoginResponse(null, ex.getCode()));
         } catch (ServletException e) {

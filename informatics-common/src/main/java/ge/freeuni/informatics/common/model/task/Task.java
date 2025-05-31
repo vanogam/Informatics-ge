@@ -12,7 +12,7 @@ public class Task {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Integer id;
+    long id;
 
     @ManyToOne
     Contest contest;
@@ -54,11 +54,11 @@ public class Task {
     @OneToMany(cascade = CascadeType.ALL)
     List<TestCase> testCases;
 
-    public Integer getId() {
+    public long getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(long id) {
         this.id = id;
     }
 
@@ -174,10 +174,7 @@ public class Task {
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof Task) {
-            if (id == null) {
-                return false;
-            }
-            return id.equals(((Task) obj).id);
+            return id == ((Task) obj).id;
         }
         return false;
     }

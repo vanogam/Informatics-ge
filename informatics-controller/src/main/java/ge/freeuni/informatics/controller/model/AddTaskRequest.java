@@ -6,13 +6,13 @@ import java.util.Map;
 
 public class AddTaskRequest {
 
-    private Integer taskId;
+    private Long taskId;
 
     private Integer contestId;
 
     private String code;
 
-    private Map<String, String> title;
+    private String title;
 
     private TaskType taskType;
 
@@ -32,11 +32,11 @@ public class AddTaskRequest {
 
     private String outputTemplate;
 
-    public Integer getTaskId() {
+    public Long getTaskId() {
         return taskId;
     }
 
-    public void setTaskId(Integer taskId) {
+    public void setTaskId(Long taskId) {
         this.taskId = taskId;
     }
 
@@ -56,11 +56,11 @@ public class AddTaskRequest {
         this.code = code;
     }
 
-    public Map<String, String> getTitle() {
+    public String getTitle() {
         return title;
     }
 
-    public void setTitle(Map<String, String> title) {
+    public void setTitle(String title) {
         this.title = title;
     }
 

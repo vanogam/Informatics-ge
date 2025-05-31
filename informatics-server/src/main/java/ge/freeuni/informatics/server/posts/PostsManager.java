@@ -5,6 +5,7 @@ import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.contestroom.ContestRoom;
 import ge.freeuni.informatics.common.model.post.Post;
 import ge.freeuni.informatics.common.model.user.User;
+import ge.freeuni.informatics.repository.contestroom.ContestRoomJpaRepository;
 import ge.freeuni.informatics.repository.post.IPostRepository;
 import ge.freeuni.informatics.repository.user.UserJpaRepository;
 import ge.freeuni.informatics.server.user.IUserManager;
@@ -22,7 +23,7 @@ public class PostsManager implements IPostsManager {
     IPostRepository postRepository;
 
     @Autowired
-    IContestRoomRepository roomRepository;
+    ContestRoomJpaRepository roomRepository;
 
     @Autowired
     IUserManager userManager;
@@ -33,7 +34,7 @@ public class PostsManager implements IPostsManager {
     @Override
     public PostDTO getPost(long postId) throws InformaticsServerException {
         Post post = postRepository.getPost(postId);
-        ContestRoom room = roomRepository.getRoom(post.getRoomId());
+        ContestRoom room = roomRepository.getReferenceById(post.getRoomId());
 
         Long userId = userManager.getAuthenticatedUser().id();
         if (!room.isMember(userId)) {
@@ -51,7 +52,7 @@ public class PostsManager implements IPostsManager {
 
     @Override
     public List<PostDTO> getPosts(long roomId, Integer offset, Integer limit) throws InformaticsServerException {
-        ContestRoom room = roomRepository.getRoom(roomId);
+        ContestRoom room = roomRepository.getReferenceById(roomId);
         Long userId = userManager.getAuthenticatedUser().id();
 
         if (!room.isMember(userId)) {
@@ -78,7 +79,7 @@ public class PostsManager implements IPostsManager {
 
         postEntity.setAuthor(userJpaRepository.getReferenceById(userManager.getAuthenticatedUser().id()));
         postEntity.setPostDate(new Date());
-        ContestRoom room = roomRepository.getRoom(post.roomId());
+        ContestRoom room = roomRepository.getReferenceById(post.roomId());
         long userId = userManager.getAuthenticatedUser().id();
         if (room.getTeachers().stream().map(User::getId)
                 .noneMatch(id -> userId == id)) {

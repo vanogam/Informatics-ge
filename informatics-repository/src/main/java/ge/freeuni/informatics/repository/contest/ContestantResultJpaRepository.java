@@ -1,5 +1,6 @@
 package ge.freeuni.informatics.repository.contest;
 
+import ge.freeuni.informatics.common.model.contest.ContestantResult;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;

@@ -1,7 +1,6 @@
 package ge.freeuni.informatics.server.contest;
 
 import ge.freeuni.informatics.common.dto.ContestDTO;
-import ge.freeuni.informatics.common.dto.ContestantResultDTO;
 import ge.freeuni.informatics.common.dto.UserDTO;
 import ge.freeuni.informatics.common.dto.UserSimpleDTO;
 import ge.freeuni.informatics.common.model.contest.Contest;
@@ -26,6 +25,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 @Component
@@ -86,10 +86,10 @@ public class ContestManager implements IContestManager {
 
     @Override
     public List<ContestDTO> getContests(Long roomId, String name, Boolean upsolving, Date minStartDate, Date maxStartDate,
-                                        Integer offset, Integer limit) {
-        Pageable pageable = PageRequest.of(offset, limit);
+                                        Integer page, Integer size) {
+        Pageable pageable = PageRequest.of(page, size);
         return contestRepository.findContests(roomId, name, minStartDate, maxStartDate, null, null, upsolving, pageable)
-                .stream();
+                .stream()
                 .map(ContestDTO::toDTO)
                 .toList();
     }
@@ -133,8 +133,7 @@ public class ContestManager implements IContestManager {
             }
             if (contest.getParticipants().stream().noneMatch(u -> u.getId() == userId)) {
                 contest.getParticipants().add(userManager.getUser(userId));
-                contest.getStandings().add(new ContestantResult(contest.getScoringType(),
-                        (int) userId));
+                contest.getStandings().add(createContestantResult(contest, userId));
             }
             try {
                 contestRepository.saveAndPublish(contest);
@@ -148,6 +147,14 @@ public class ContestManager implements IContestManager {
         }
     }
 
+    private ContestantResult createContestantResult(Contest contest, long userId) {
+        ContestantResult contestantResult = new ContestantResult();
+        contestantResult.setContest(contest);
+        contestantResult.setContestant(userId);
+        contestantResult.setTotalScore(0f);
+        contestantResult.setTaskResults(new HashMap<>());
+        return contestantResult;
+    }
     @Override
     public void unregisterUser(long contestId) throws InformaticsServerException {
         Contest contest = contestRepository.getReferenceById(contestId);
@@ -159,7 +166,11 @@ public class ContestManager implements IContestManager {
         if (contest.getStatus() == ContestStatus.LIVE || contest.getStatus() == ContestStatus.PAST) {
             throw new InformaticsServerException("actionNotAvailable");
         }
-        contest.getParticipants().remove(userId);
+        contest.setParticipants(
+                contest.getParticipants()
+                        .stream().filter(u -> u.getId() != userId)
+                        .toList()
+        );
         for (ContestantResult contestantResult : contest.getStandings()) {
             if (contestantResult.getContestantId() == userId) {
                 contest.getStandings().remove(contestantResult);
@@ -171,25 +182,26 @@ public class ContestManager implements IContestManager {
 
     @Override
     public List<ContestantResult> getStandings(long contestId, Integer offset, Integer size) throws InformaticsServerException {
-        Contest contest = contestRepository.getContest(contestId);
+        Contest contest = contestRepository.getReferenceById(contestId);
         ContestRoom room = contestRoomManager.getRoom(contest.getRoomId());
-        long userId = userManager.getAuthenticatedUser().getId();
+        long userId = userManager.getAuthenticatedUser().id();
         if (!room.isMember(userId)) {
             throw new InformaticsServerException("permissionDenied");
         }
-        List<ContestantResult> fullStandings = contest.getStandings().getStandings();
+        List<ContestantResult> fullStandings = contest.getStandings();
         return ArrayUtils.getPage(fullStandings, offset, size);
     }
 
     @Override
     public boolean isCurrentUserRegistered(long contestId) throws InformaticsServerException {
-        Contest contest = contestRepository.getContest(contestId);
-        return contest.getParticipants().contains(userManager.getAuthenticatedUser().getId());
+        Contest contest = contestRepository.getReferenceById(contestId);
+        long userId = userManager.getAuthenticatedUser().id();
+        return contest.getParticipants().stream().map(User::getId).anyMatch(id -> id == userId);
     }
 
     @Override
     public List<UserSimpleDTO> getRegistrants(long contestId) throws InformaticsServerException {
-        Contest contest = contestRepository.getContest(contestId);
+        Contest contest = contestRepository.getReferenceById(contestId);
         ContestRoom room = contestRoomManager.getRoom(contest.getRoomId());
         if (room.isOpen() || !room.isMember(userManager.getAuthenticatedUser().id())) {
             throw new InformaticsServerException("permissionDenied");

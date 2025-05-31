@@ -46,5 +46,19 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  }
+  },
+  "name": "informatics-ui",
+  "version": "1.0.0",
+  "description": "Informatics UI",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vanogam/Informatics-ge.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/vanogam/Informatics-ge/issues"
+  },
+  "homepage": "https://github.com/vanogam/Informatics-ge#readme"
 }

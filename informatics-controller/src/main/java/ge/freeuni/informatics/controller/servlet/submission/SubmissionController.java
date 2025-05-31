@@ -4,9 +4,12 @@ import ge.freeuni.informatics.controller.model.*;
 import ge.freeuni.informatics.common.dto.SubmissionDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.CodeLanguage;
+import ge.freeuni.informatics.server.files.FileManager;
 import ge.freeuni.informatics.server.submission.ISubmissionManager;
 import ge.freeuni.informatics.server.user.IUserManager;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -19,10 +22,13 @@ public class SubmissionController {
 
     final ISubmissionManager submissionManager;
 
+    FileManager fileManager;
+
     @Autowired
-    public SubmissionController(IUserManager userManager, ISubmissionManager submissionManager) {
+    public SubmissionController(IUserManager userManager, ISubmissionManager submissionManager, FileManager fileManager) {
         this.userManager = userManager;
         this.submissionManager = submissionManager;
+        this.fileManager = fileManager;
     }
 
     @GetMapping("/get-languages")
@@ -37,22 +43,38 @@ public class SubmissionController {
     }
 
     @PostMapping("/submit")
-    public InformaticsResponse submit(@RequestBody TextSubmitRequest request) {
+    public ResponseEntity<InformaticsResponse> submit(@RequestBody TextSubmitRequest request) {
         InformaticsResponse response = new InformaticsResponse();
 
-        submissionDTO.setLanguage(request.getLanguage().toString());
-        submissionDTO.setTaskId(request.getTaskId());
-        submissionDTO.setSubmissionTime(new Date());
-        submissionDTO.setText(request.getSubmissionText());
-        submissionDTO.setContestId(request.getContestId());
+        SubmissionDTO submissionDTO;
         try {
-            submissionManager.addSubmissionViaText(SubmissionDTO.fromDTO(submissionDTO), request.getSubmissionText());
+            submissionDTO = new SubmissionDTO(
+                    request.getLanguage().toString(),
+                    userManager.getAuthenticatedUser().username(),
+                    request.getContestId(),
+                    request.getTaskId(),
+                    new Date(),
+                    fileManager.saveTextSubmission(
+                            new Date(),
+                            CodeLanguage.valueOf(request.getLanguage().toString()),
+                            request.getContestId(),
+                            request.getTaskId(),
+                            request.getSubmissionText())
+                    );
+        } catch (InformaticsServerException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new InformaticsResponse());
+        }
+
+
+        try {
+            submissionManager.addSubmission(submissionDTO);
             response.setStatus("SUCCESS");
-            return response;
+            return ResponseEntity.ok(response);
         } catch (InformaticsServerException e) {
             response.setStatus("FAIL");
             response.setMessage(e.getCode());
-            return response;
+            return ResponseEntity.badRequest().body(response);
         }
     }
 }

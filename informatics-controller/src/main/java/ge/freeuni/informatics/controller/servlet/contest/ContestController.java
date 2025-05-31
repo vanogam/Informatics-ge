@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -54,11 +55,16 @@ public class ContestController {
     }
     
    @GetMapping("/contests")
-    public ContestResponse getContestList(ContestListRequest request) {
+    public ResponseEntity<ContestResponse> getContestList(ContestListRequest request) {
         ContestResponse response = new ContestResponse();
-        response.setContests(contestManager.getContests(Long.valueOf(request.getRoomId()), null, null, null, null));
+        try {
+            response.setContests(contestManager.getContests(Long.valueOf(request.getRoomId()), null, null, null, null, null, null));
+        } catch (InformaticsServerException e) {
+            response.setMessage(e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
         response.setStatus("SUCCESS");
-        return response;
+        return ResponseEntity.ok(response);
     }
     
     @GetMapping("/contest/{id}/is-registered")
@@ -81,11 +87,14 @@ public class ContestController {
 
     @PostMapping("/create-contest")
     public ResponseEntity<CreateContestResponse> createContest(@RequestBody CreateContestRequest contestRequest) {
+        Calendar endDate = Calendar.getInstance();
+        endDate.setTime(convertToDate(contestRequest.getStartDate()));
+        endDate.add(Calendar.SECOND, contestRequest.getDurationInSeconds());
         ContestDTO contestDTO = new ContestDTO();
         contestDTO.setId(contestRequest.getContestId());
         contestDTO.setName(contestRequest.getName());
         contestDTO.setRoomId(contestRequest.getRoomId());
-        contestDTO.setDurationInSeconds(contestRequest.getDurationInSeconds());
+        contestDTO.setEndDate(endDate.getTime());
         contestDTO.setStartDate(convertToDate(contestRequest.getStartDate()));
         contestDTO.setUpsolvingAfterFinish(contestRequest.isUpsolvingAfterFinish());
         contestDTO.setUpsolving(contestRequest.isUpsolving());

@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 public record TaskDTO(
-    Integer id,
+    Long id,
     Long contestId,
     String code,
     String title,

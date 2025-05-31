@@ -13,7 +13,7 @@ public interface ITaskManager {
 
     List<String> getTaskNames(long contestId, String language) throws InformaticsServerException;
 
-    Task getTask(int taskId);
+    Task getTask(long taskId);
 
     TaskDTO addTask(TaskDTO task, long contestId) throws InformaticsServerException;
 
@@ -24,20 +24,20 @@ public interface ITaskManager {
 
     List<TaskInfo> getContestTasks(long contestId, int offset, int limit) throws InformaticsServerException;
 
-    void removeTask(int taskId, long contest);
+    void removeTask(long taskId, long contest);
 
-    File getStatement(int taskId, Language language) throws InformaticsServerException;
+    File getStatement(long taskId, Language language) throws InformaticsServerException;
 
-    void addStatement(int taskId, byte[] statement, Language language) throws InformaticsServerException;
+    void addStatement(long taskId, byte[] statement, Language language) throws InformaticsServerException;
 
-    void addTestcase(int taskId, int testIndex, byte[] inputContent, byte[] outputContent) throws InformaticsServerException;
+    void addTestcase(long taskId, int testIndex, byte[] inputContent, byte[] outputContent) throws InformaticsServerException;
 
-    void addTestcases(int taskId, byte[] testsZip) throws InformaticsServerException;
+    void addTestcases(long taskId, byte[] testsZip) throws InformaticsServerException;
 
-    void addManager(int taskId, byte[] manager);
+    void addManager(long taskId, byte[] manager);
 
-    void removeManager(int taskId, String managerName);
+    void removeManager(long taskId, String managerName);
 
-    void removeTestCase(int taskId, long testcaseId);
+    void removeTestCase(long taskId, long testcaseId);
 
 }

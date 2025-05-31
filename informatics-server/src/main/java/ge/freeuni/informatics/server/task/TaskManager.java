@@ -10,9 +10,9 @@ import ge.freeuni.informatics.common.model.contestroom.ContestRoom;
 import ge.freeuni.informatics.common.model.task.Task;
 import ge.freeuni.informatics.common.model.task.TaskInfo;
 import ge.freeuni.informatics.common.model.task.TestCase;
-import ge.freeuni.informatics.judgeintegration.IJudgeIntegration;
 import ge.freeuni.informatics.repository.contest.ContestJpaRepository;
-import ge.freeuni.informatics.repository.task.ITaskRepository;
+import ge.freeuni.informatics.repository.task.TaskRepository;
+import ge.freeuni.informatics.repository.task.TestcaseRepository;
 import ge.freeuni.informatics.server.contestroom.IContestRoomManager;
 import ge.freeuni.informatics.server.user.IUserManager;
 import ge.freeuni.informatics.utils.FileUtils;
@@ -35,19 +35,19 @@ public class TaskManager implements ITaskManager {
     Logger log;
 
     @Autowired
-    ITaskRepository taskRepository;
+    TaskRepository taskRepository;
 
     @Autowired
     ContestJpaRepository contestRepository;
-
-    @Autowired
-    IJudgeIntegration judgeIntegration;
 
     @Autowired
     IUserManager userManager;
 
     @Autowired
     IContestRoomManager roomManager;
+
+    @Autowired
+    TestcaseRepository testcaseRepository;
 
     @Value("${ge.freeuni.informatics.Task.statementDirectoryAddress}")
     String statementsDirectoryAddress;
@@ -59,8 +59,8 @@ public class TaskManager implements ITaskManager {
     String tempDirectoryAddress;
 
     @Override
-    public Task getTask(int taskId) {
-        return taskRepository.getTask(taskId);
+    public Task getTask(long taskId) {
+        return taskRepository.getReferenceById(taskId);
     }
 
     @Override
@@ -144,8 +144,7 @@ public class TaskManager implements ITaskManager {
         }
         Task task = TaskDTO.fromDTO(taskDTO);
         task.setContest(contest);
-        judgeIntegration.addTask(TaskDTO.toDTO(task));
-        task = taskRepository.addTask(task);
+        task = taskRepository.save(task);
         if (!contest.getTasks().contains(task)) {
             contest.getTasks().add(task);
             contestRepository.save(contest);
@@ -154,12 +153,12 @@ public class TaskManager implements ITaskManager {
     }
 
     @Override
-    public void removeTask(int taskId, long contest) {
+    public void removeTask(long taskId, long contest) {
     }
 
     @Override
-    public File getStatement(int taskId, Language language) throws InformaticsServerException {
-        Task task = taskRepository.getTask(taskId);
+    public File getStatement(long taskId, Language language) throws InformaticsServerException {
+        Task task = taskRepository.getReferenceById(taskId);
         Contest contest = task.getContest();
         ContestRoom room = roomManager.getRoom(contest.getRoomId());
         Long currentUser = userManager.getAuthenticatedUser().id();
@@ -173,32 +172,28 @@ public class TaskManager implements ITaskManager {
     }
 
     @Override
-    public void addStatement(int taskId, byte[] statement, Language language) throws InformaticsServerException {
-        Task task = taskRepository.getTask(taskId);
+    public void addStatement(long taskId, byte[] statement, Language language) throws InformaticsServerException {
+        Task task = taskRepository.getReferenceById(taskId);
 
         try {
             task.getStatements().put(language, storeStatement(language, task.getCode(), statement));
-            taskRepository.addTask(task);
+            taskRepository.save(task);
         } catch (IOException e) {
             throw new InformaticsServerException("Error while storing statement.");
         }
     }
 
     @Override
-    public void addTestcase(int taskId, int testIndex, byte[] inputContent, byte[] outputContent) throws InformaticsServerException {
-        Task task = taskRepository.getTask(taskId);
-        if (task == null) {
-            throw new InformaticsServerException("Task does not exist");
-        }
+    public void addTestcase(long taskId, int testIndex, byte[] inputContent, byte[] outputContent) throws InformaticsServerException {
+        Task task = taskRepository.getReferenceById(taskId);
         addTestcaseLocal(task, testIndex, inputContent, outputContent);
-        taskRepository.addTask(task);
-        judgeIntegration.setTestcases(task);
+        taskRepository.save(task);
     }
 
     @Override
-    public void addTestcases(int taskId, byte[] testsZip) throws InformaticsServerException {
+    public void addTestcases(long taskId, byte[] testsZip) throws InformaticsServerException {
         String testsFolder;
-        Task task = taskRepository.getTask(taskId);
+        Task task = taskRepository.getReferenceById(taskId);
         try {
             testsFolder = FileUtils.unzip(createTempZip(testsZip));
         } catch (IOException ex) {
@@ -239,22 +234,22 @@ public class TaskManager implements ITaskManager {
                 log.error("Unexpected exception", ex);
             }
         }
-        taskRepository.addTask(task);
-        judgeIntegration.setTestcases(task);
+        taskRepository.save(task);
+        //judgeIntegration.setTestcases(task);
     }
 
     @Override
-    public void addManager(int taskId, byte[] manager) {
-
-    }
-
-    @Override
-    public void removeManager(int taskId, String managerName) {
+    public void addManager(long taskId, byte[] manager) {
 
     }
 
     @Override
-    public void removeTestCase(int taskId, long testcaseId) {
+    public void removeManager(long taskId, String managerName) {
+
+    }
+
+    @Override
+    public void removeTestCase(long taskId, long testcaseId) {
 
     }
 
@@ -280,6 +275,7 @@ public class TaskManager implements ITaskManager {
         } else {
             task.getTestCases().set(testIndex, testCase);
         }
+        testcaseRepository.save(testCase);
     }
 
     private boolean checkAddTaskPermission(Contest contest) throws InformaticsServerException {

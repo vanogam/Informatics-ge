@@ -26,6 +26,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -58,11 +59,33 @@ public class ContestService {
 
     @PostConstruct
     public void startup() {
-        List<ContestDTO> futureContests = contestRepository.findContests(null, null, new Date(), null, null, null, null, null)
+        List<ContestDTO> futureContests = contestRepository.findContests(null,
+                        null,
+                        new Date(),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        false,
+                        false,
+                        true,
+                        true)
                 .stream()
                 .map(ContestDTO::toDTO)
                 .toList();
-        List<ContestDTO> liveContests = contestRepository.findContests(null, null, null, new Date(), new Date(), null, null, null)
+        List<ContestDTO> liveContests = contestRepository.findContests(null,
+                        null,
+                        null,
+                        new Date(),
+                        new Date(),
+                        null,
+                        null,
+                        null,
+                        false,
+                        false,
+                        true,
+                        true)
                 .stream()
                 .map(ContestDTO::toDTO)
                 .toList();
@@ -108,10 +131,10 @@ public class ContestService {
     }
 
     private void scheduleContestEnd(ContestDTO contest) {
-        if (new Date().after(contest.getEndDate())) {
+        if (contest.getEndDate() == null || new Date().after(contest.getEndDate())) {
             new ContestEndThread(contest).run();
         } else {
-            taskScheduler.schedule(new ContestEndThread(contest), contest.getEndDate());
+            taskScheduler.schedule(new ContestEndThread(contest), Instant.ofEpochMilli(contest.getEndDate().getTime()));
         }
     }
 
@@ -182,7 +205,6 @@ public class ContestService {
         }
         ContestantResult newContestantResult = new ContestantResult();
         newContestantResult.setContestant(submission.getUser().getId());
-        newContestantResult.setContest(contest);
         newContestantResult.setTotalScore(submission.getScore());
         newContestantResult.setTaskResults(new HashMap<>());
         TaskResult newTaskResult = createTaskResult(submission);

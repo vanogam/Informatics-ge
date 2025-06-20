@@ -8,6 +8,7 @@ import { useRef, useState, useContext } from 'react'
 import { AuthContext } from '../store/authentication'
 import { toast } from 'react-toastify'
 import { AxiosContext, getAxiosInstance } from '../utils/axiosInstance'
+import getMessage from "./lang";
 
 export default function Register() {
 	const [popUp, setPopUp] = useState(false)
@@ -38,7 +39,8 @@ export default function Register() {
 		axiosInstance
 			.post(`/register`, body)
 			.then((response) => {
-				toast.success('Register Success')
+				console.log("!!!" + response)
+				toast.success(getMessage('ka', 'registerSuccess'))
 				setPopUp(false)
 				axiosInstance
 					.post('/login', {
@@ -47,10 +49,11 @@ export default function Register() {
 						},
 						{ withCredentials: true })
 					.then((response) => {
+						console.log("reg" + response)
 						if (response.data.status === 'SUCCESS') {
-							axiosInstance.get('/get-user').then((res) => {
-								let roles = res.data.roles
-								authContext.login({ username: response.data.message, roles: roles })
+							axiosInstance.get('/user').then((res) => {
+								let role = res.data.role
+								authContext.login({ username: response.data.message, role: role })
 							})
 							setPopUp(false)
 							toast.success('Login Success')
@@ -62,10 +65,6 @@ export default function Register() {
 					.catch((error) => {
 						console.error(error)
 					})
-			})
-			.catch((error) => {
-				console.error(error)
-				toast.error('Error while registering')
 			})
 	}
 

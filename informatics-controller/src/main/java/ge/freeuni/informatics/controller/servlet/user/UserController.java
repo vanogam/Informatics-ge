@@ -10,10 +10,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.io.IOException;
 
 @RestController
 @RequestMapping("/api")
@@ -30,7 +29,7 @@ public class UserController {
 
     @PostMapping("/register")
     @ResponseBody
-    public InformaticsResponse register(@RequestBody RegisterDTO registerDTO) {
+    public ResponseEntity<InformaticsResponse> register(@RequestBody RegisterDTO registerDTO) {
         InformaticsResponse response = new InformaticsResponse();
         try {
             userManager.createUser(
@@ -42,12 +41,16 @@ public class UserController {
                             registerDTO.getLastName(),
                             0,
                             null
-                    ));
-            response.setStatus("SUCCESS");
-        } catch (Exception ex) {
-            response.setStatus("FAIL");
+                    ), registerDTO.getPassword());
+            return ResponseEntity.ok(response);
+        } catch (InformaticsServerException ex) {
+            log.error("Registration failed for user: {}", registerDTO.getUsername(), ex);
+            response.setMessage(ex.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
-        return response;
+        catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
     @PostMapping("/login")
@@ -70,22 +73,17 @@ public class UserController {
         }
     }
 
-    @GetMapping("/login")
-    public void login() {
-
-    }
-
     @PostMapping("/logout")
-    public void logout(HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
         try {
             request.logout();
-            response.sendRedirect("/");
-        } catch (ServletException | IOException ex) {
-            throw new RuntimeException(ex);
+            return ResponseEntity.ok().build();
+        } catch (Exception ex) {
+            return ResponseEntity.internalServerError().build();
         }
     }
 
-    @GetMapping("/get-user")
+    @GetMapping("/user")
     public ResponseEntity<UserDTO> getUser() {
         try {
             return ResponseEntity.ok(userManager.getAuthenticatedUser());
@@ -99,9 +97,9 @@ public class UserController {
         try {
             userManager.verifyRecoveryQuery(link);
         } catch (InformaticsServerException ex) {
-            return new InformaticsResponse("FAIL", ex.getMessage());
+            return new InformaticsResponse(ex.getMessage());
         }
-        return new InformaticsResponse("SUCCESS", null);
+        return new InformaticsResponse(null);
     }
 
     @PostMapping("/recover/request")
@@ -109,9 +107,9 @@ public class UserController {
         try {
             userManager.addPasswordRecoveryQuery(request.getUsername());
         } catch (InformaticsServerException ex) {
-            return new InformaticsResponse("FAIL", ex.getMessage());
+            return new InformaticsResponse(ex.getMessage());
         }
-        return new InformaticsResponse("SUCCESS", null);
+        return new InformaticsResponse(null);
     }
 
     @PostMapping("/recover/update-password/{link}")
@@ -119,9 +117,9 @@ public class UserController {
         try {
             userManager.recoverPassword(link, request.getNewPassword());
         } catch (InformaticsServerException ex) {
-            return new InformaticsResponse("FAIL", ex.getMessage());
+            return new InformaticsResponse(ex.getMessage());
         }
-        return new InformaticsResponse("SUCCESS", null);
+        return new InformaticsResponse(null);
     }
 
 }

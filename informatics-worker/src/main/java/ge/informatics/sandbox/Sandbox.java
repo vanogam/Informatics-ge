@@ -14,6 +14,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -73,13 +74,18 @@ public class Sandbox implements AutoCloseable {
                 .withTarInputStream(file)
                 .withRemotePath(destPath)
                 .exec();
-        log.info("File uploaded successfully");
+        log.info("File uploaded to container successfully");
     }
 
     public void downloadFile(String src, String dest) {
-        dockerClient.copyArchiveFromContainerCmd(containerId, src)
-                .withHostPath(dest)
-                .exec();
+        try (InputStream inputStream = dockerClient.copyArchiveFromContainerCmd(containerId, src)
+                .exec()) {
+            FileOutputStream fos = new FileOutputStream(dest);
+            fos.write(inputStream.readAllBytes());
+        } catch (IOException e) {
+            log.error("Error while writing file to destination: {}", dest, e);
+            throw new RuntimeException("Error while writing file to destination: " + dest, e);
+        }
         log.info("File copied successfully");
     }
 
@@ -120,28 +126,28 @@ public class Sandbox implements AutoCloseable {
      * @return Compilation result and message
      */
     public CompilationResult compile(Task task, File submission) {
-        Executor executor = task.getLanguage().getExecutor();
+        Executor executor = task.language().getExecutor();
         if (executor == null) {
-            log.error("No executor found for language {}", task.getLanguage().getName());
-            throw new RuntimeException("No executor found for language" + task.getLanguage().getName());
+            log.error("No executor found for language {}", task.language().getName());
+            throw new RuntimeException("No executor found for language" + task.language().getName());
         }
         try {
             prepareEnvironment(submission, executor);
-            log.info("Preparation done for submission: {}", task.getSubmissionId());
+            log.info("Preparation done for submission: {}", task.submissionId());
         } catch (Exception e) {
-            log.error("Error while setting up environment for submission {}",task.getSubmissionId() ,e);
+            log.error("Error while setting up environment for submission {}",task.submissionId() ,e);
             throw new RuntimeException(e);
             // TODO: System error response
         }
         try {
             CompilationResult result = executor.compileSubmission(dockerClient, containerId);
             if (result.isSuccess()) {
-                fileService.uploadFile(submissionBinary(), "submission" + task.getSubmissionId(), this);
+                fileService.uploadFile(submissionBinary(), "submission" + task.submissionId(), this);
             }
-            log.info("Compilation result: submission {}, result {}", task.getSubmissionId(), result.isSuccess() ? "success" : "failed");
+            log.info("Compilation result: submission {}, result {}", task.submissionId(), result.isSuccess() ? "success" : "failed");
             return result;
         } catch (Exception e) {
-            log.error("Error while compiling submission {}", task.getSubmissionId(), e);
+            log.error("Error while compiling submission {}", task.submissionId(), e);
             throw new RuntimeException(e);
             // TODO: System error response
         }
@@ -149,25 +155,35 @@ public class Sandbox implements AutoCloseable {
 
     public TestResult execute(Task task) {
         try {
-            Executor executor = task.getLanguage().getExecutor();
+            Executor executor = task.language().getExecutor();
+            clearSubmissionDirectory();
             loadChecker(task);
             loadSubmission(task);
-            loadTest(task.getTestId(), task.getCode());
-            log.debug("Test {} loaded for submission", task.getTestId());
+            loadTest(task.testId(), task.code());
+            log.debug("Test {} loaded for submission", task.testId());
             return executor.execute(dockerClient, containerId, task);
         } catch (Exception e) {
-            log.error("Error while compiling submission {}",task.getSubmissionId(), e);
+            log.error("Error while compiling submission {}",task.submissionId(), e);
             throw new RuntimeException(e);
             // TODO: System error response
         }
     }
 
+    private void loadSubmission(Task task) throws IOException, InterruptedException {
+        String remotePath = "worker/shared/submission" + task.submissionId();
+        fileService.downloadFile(remotePath, "/sandbox/submission", "submission", this, false);
+        changePermissions(dockerClient, containerId,
+                "/sandbox/submission/submission",
+                CONTESTANT_USER, "700");
+        log.info("Submission loaded for task {}", task.code());
+    }
+
     private void loadChecker(Task task) throws InterruptedException, IOException {
-        if (task.getCheckerType().getExecutable() == null) {
-            copyFile("/sandbox/tasks/" + task.getCode() + "/checker", task.getCode(),
+        if (task.checkerType().getExecutable() == null) {
+            copyFile("/sandbox/tasks/" + task.code() + "/checker", task.code(),
                     "/sandbox/checker/checker");
         } else {
-            copyFile("/sandbox/checkers/" + task.getCheckerType().getExecutable(), "/sandbox/checker/checker");
+            copyFile("/sandbox/checkers/" + task.checkerType().getExecutable(), "/sandbox/checker/checker");
             changePermissions(dockerClient, containerId, "/sandbox/checker/checker", CHECKER_USER, "700");
         }
     }
@@ -181,7 +197,7 @@ public class Sandbox implements AutoCloseable {
                 .exec();
     }
 
-    private void clearSubmissionDirectory() throws InterruptedException {
+    void clearSubmissionDirectory() throws InterruptedException {
         executeCommandSync(dockerClient, containerId, "rm -rf /sandbox/submission/*");
         log.debug("Cleared submission directory");
     }
@@ -196,9 +212,11 @@ public class Sandbox implements AutoCloseable {
         log.debug("Loaded test {} for task {}", testId, taskCode);
     }
 
-    private void copyFile(String src, String remoteName, String dest) throws IOException, InterruptedException {
+    private void copyFile(String src, String remoteName, String dest) throws InterruptedException, IOException {
         if (!fileExists(src)) {
-            fileService.downloadFile(remoteName, src, this);
+            String secDir = src.substring(0, src.lastIndexOf("/"));
+            String srcName = src.substring(src.lastIndexOf("/") + 1);
+            fileService.downloadFile(remoteName, secDir, srcName, this, true);
         }
         copyFile(src, dest);
     }

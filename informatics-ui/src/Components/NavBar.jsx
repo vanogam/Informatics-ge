@@ -9,7 +9,8 @@ import Login from './Login'
 import Register from './Register'
 import { AuthContext } from '../store/authentication'
 import PersonIcon from '@mui/icons-material/Person'
-import { AxiosContext, getAxiosInstance } from '../utils/axiosInstance'
+import { AxiosContext } from '../utils/axiosInstance'
+import getMessage from "./lang";
 function Navbar() {
 	const authContext = useContext(AuthContext)
 	const axiosInstance = useContext(AxiosContext)
@@ -34,7 +35,6 @@ function Navbar() {
 		axiosInstance
 			.post('/logout', {})
 			.then((response) => {
-				toast.success('Logout Successful')
 				authContext.logout()
 			})
 			.catch((error) => console.log(error))
@@ -53,7 +53,6 @@ function Navbar() {
 		>
 			<Button
 				sx={{
-					// marginLeft: '5%',
 					fontSize: 20,
 					fontWeight: 'bold',
 					color: '#e1dce6',

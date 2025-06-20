@@ -32,6 +32,10 @@ public class Config {
         }
     }
 
+    public static void setProperties(String key, String value) {
+        properties.setProperty(key, value);
+    }
+
 
     public static String get(String key) {
         return properties.getProperty(key);

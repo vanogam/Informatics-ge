@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets;
 public class HttpFileService implements FileService {
     private static final Logger log = LogManager.getLogger(HttpFileService.class);
 
-    public void downloadFile(String remoteName, String destinationPath, Sandbox sandbox) {
+    public void downloadFile(String remoteName, String destinationPath, String destinationName, Sandbox sandbox, boolean shouldArchive) throws IOException {
         String domain = Config.get("fileServerDomain.url");
         String user = Config.get("fileServerDomain.user");
         String password = Config.get("fileServerDomain.password");

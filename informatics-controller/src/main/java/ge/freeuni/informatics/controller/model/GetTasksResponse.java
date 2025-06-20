@@ -8,8 +8,10 @@ public class GetTasksResponse extends InformaticsResponse {
 
     List<TaskInfo> tasks;
 
-    public GetTasksResponse(String status, String message) {
-        super(status, message);
+    public  GetTasksResponse() {}
+
+    public GetTasksResponse(String message) {
+        super(message);
     }
 
     public List<TaskInfo> getTasks() {

@@ -13,6 +13,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -147,6 +148,18 @@ private static void addFileToTar(TarArchiveOutputStream tarOutputStream, File fi
         return null; // PID not found
     }
 
+    public static void compressFileInContainer(String srcPath, String srcName, String destPath, DockerClient dockerClient, String containerId) {
+        String command = String.format("tar -czf %s -C %s %s", destPath, srcPath, srcName);
+        try {
+            CommandResult result = Utils.executeCommandSync(dockerClient, containerId, command);
+            if (result.getExitCode() != 0) {
+                throw new RuntimeException("Error compressing file: " + result.getStderr().toString(StandardCharsets.UTF_8));
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Command execution interrupted", e);
+        }
+    }
+
     public static class CommandResult {
         private final int exitCode;
         private final boolean timeout;
@@ -166,6 +179,7 @@ private static void addFileToTar(TarArchiveOutputStream tarOutputStream, File fi
             this.stderr = stderr;
             this.timeout = false;
         }
+
 
         public boolean isTimeout() {
             return timeout;

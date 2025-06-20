@@ -9,7 +9,7 @@ public class RegistrantsResponse extends InformaticsResponse {
     List<UserSimpleDTO> registrants;
 
     public RegistrantsResponse(String status, String message, List<UserSimpleDTO> registrants) {
-        super(status, message);
+        super(message);
         this.registrants = registrants;
     }
 

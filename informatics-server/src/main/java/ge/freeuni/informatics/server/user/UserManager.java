@@ -58,27 +58,31 @@ public class UserManager implements IUserManager {
     }
 
     @Override
-    public void createUser(UserDTO userDTO) {
+    public void createUser(UserDTO userDTO, String password) throws InformaticsServerException {
         User user = UserDTO.fromDTO(userDTO);
+        user.setId(null);
         user.setPasswordSalt(UserUtils.getSalt());
-        user.setPassword(UserUtils.getHash(user.getPassword(), user.getPasswordSalt()));
+        user.setPassword(UserUtils.getHash(password, user.getPasswordSalt()));
         user.setVersion(1);
         user.setRole(UserRole.STUDENT.name());
-        userRepository.save(user);
-
+        try {
+            userRepository.save(user);
+        } catch (Exception e) {
+            throw new InformaticsServerException("usernameAlreadyExists");
+        }
     }
 
     @Override
     public User authenticate(String username, String password) {
-        try {
-            User user = userRepository.getFirstByUsername(username);
-            String hash = UserUtils.getHash(password, user.getPasswordSalt());
-            if (hash.equals(user.getPassword())) {
-                return user;
-            }
-        } catch (NoResultException ignored) {
+        User user = userRepository.getFirstByUsername(username);
+        if (user == null) {
             return null;
         }
+        String hash = UserUtils.getHash(password, user.getPasswordSalt());
+        if (hash.equals(user.getPassword())) {
+            return user;
+        }
+
         return null;
     }
 

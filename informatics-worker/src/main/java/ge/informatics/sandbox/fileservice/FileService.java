@@ -2,6 +2,8 @@ package ge.informatics.sandbox.fileservice;
 
 import ge.informatics.sandbox.Sandbox;
 
+import java.io.IOException;
+
 public interface FileService {
     static FileService getInstance(String type) {
         if (type.equals("local")) {
@@ -12,6 +14,6 @@ public interface FileService {
             throw new IllegalArgumentException("Unknown file service type: " + type);
         }
     }
-    void downloadFile(String remoteName, String destinationPath, Sandbox sandbox);
-    void uploadFile(String localPath, String remoteName, Sandbox sandbox);
+    void downloadFile(String remoteName, String destinationPath, String destinationName, Sandbox sandbox, boolean isArchive) throws IOException;
+    void uploadFile(String localPath, String remoteName, Sandbox sandbox) throws IOException;
 }

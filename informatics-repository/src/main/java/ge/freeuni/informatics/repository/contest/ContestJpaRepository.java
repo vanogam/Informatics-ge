@@ -1,18 +1,21 @@
 package ge.freeuni.informatics.repository.contest;
 
+import com.sun.mail.imap.protocol.ID;
 import ge.freeuni.informatics.common.events.ContestChangeEvent;
 import ge.freeuni.informatics.common.model.contest.Contest;
 import ge.freeuni.informatics.common.model.user.User;
 import ge.freeuni.informatics.utils.BeanUtils;
+import jakarta.persistence.TemporalType;
+import org.hibernate.Hibernate;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Temporal;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -22,24 +25,56 @@ public interface ContestJpaRepository extends JpaRepository<Contest, Long> {
 
     @Query("""
                 SELECT c FROM Contest c WHERE
-                    (:roomId IS NULL OR c.roomId = :roomId) AND
-                    (:name IS NULL OR c.name LIKE %:name%) AND
-                    (:minStartDate IS NULL OR c.startDate > :minStartDate) AND
-                    (:maxStartDate IS NULL OR c.startDate <= :maxStartDate) AND
-                    (:minEndDate IS NULL OR c.endDate > :minEndDate) AND
-                    (:maxEndDate IS NULL OR c.endDate <= :maxEndDate) AND
-                    (:upsolving IS NULL OR c.upsolving = :upsolving)
+                    ( :roomId IS NULL OR c.roomId = :roomId) AND
+                    ( :name IS NULL OR c.name LIKE %:name%) AND
+                    ( CAST(:minStartDate AS timestamp) IS NULL OR (c.startDate IS NOT NULL AND c.startDate > CAST(:minStartDate AS timestamp))) AND
+                    ( CAST(:minStartDate AS timestamp) IS NULL OR (c.startDate IS NOT NULL AND c.startDate <= CAST(:maxStartDate AS timestamp))) AND
+                    ( CAST(:minStartDate AS timestamp) IS NULL OR (c.endDate IS NOT NULL AND c.endDate > CAST(:minEndDate AS timestamp))) AND
+                    ( CAST(:minStartDate AS timestamp) IS NULL OR (c.endDate IS NOT NULL AND c.endDate <= CAST(:maxEndDate AS timestamp))) AND
+                    ( :upsolving IS NULL OR c.upsolving = :upsolving)
             """)
     List<Contest> findContests(
             @Param("roomId") Long roomId,
             @Param("name") String name,
-            @Param("minStartDate") Date minStartDate,
-            @Param("maxStartDate") Date maxStartDate,
-            @Param("minStartDate") Date minEndDate,
-            @Param("maxStartDate") Date maxEndDate,
+            @Param("minStartDate") @Temporal(TemporalType.TIMESTAMP) Date minStartDate,
+            @Param("maxStartDate") @Temporal(TemporalType.TIMESTAMP) Date maxStartDate,
+            @Param("minEndDate") @Temporal(TemporalType.TIMESTAMP) Date minEndDate,
+            @Param("maxEndDate") @Temporal(TemporalType.TIMESTAMP) Date maxEndDate,
             @Param("upsolving") Boolean upsolving,
             Pageable pageable
     );
+
+    default List<Contest> findContests(
+            Long roomId,
+            String name,
+            Date minStartDate,
+            Date maxStartDate,
+            Date minEndDate,
+            Date maxEndDate,
+            Boolean upsolving,
+            Pageable pageable,
+            boolean loadParticipants,
+            boolean loadTasks,
+            boolean loadStandings,
+            boolean loadUpsolvingStandings
+    ) {
+        List<Contest> contests = findContests(roomId, name, minStartDate, maxStartDate, minEndDate, maxEndDate, upsolving, pageable);
+        return contests.stream().map(contest -> {
+            if (loadParticipants) {
+                Hibernate.initialize(contest.getParticipants());
+            }
+            if (loadTasks) {
+                Hibernate.initialize(contest.getTasks());
+            }
+            if (loadStandings) {
+                Hibernate.initialize(contest.getStandings());
+            }
+            if (loadUpsolvingStandings) {
+                Hibernate.initialize(contest.getUpsolvingStandings());
+            }
+            return contest;
+        }).toList();
+    }
 
     @Query("""
                 SELECT c FROM Contest c WHERE
@@ -50,31 +85,29 @@ public interface ContestJpaRepository extends JpaRepository<Contest, Long> {
     List<Contest> findUpsolvingContests(@Param("roomId") Long roomId,
                                         @Param("time") Date time);
 
-    default Contest saveAndPublish(Contest contest) {
+    default Contest saveAndPublish(Contest contest, ApplicationEventPublisher eventPublisher) {
         contest = save(contest);
-        BeanUtils.getBean(ApplicationEventPublisher.class).publishEvent(new ContestChangeEvent(contest));
+        eventPublisher.publishEvent(new ContestChangeEvent(contest));
         return contest;
     }
 
-    default void removeParticipant(Long contestId, Long userId) {
-        Contest contest = getReferenceById(contestId);
-
-        if (contest.getParticipants() != null) {
-            contest.getParticipants().removeIf(user -> user.getId() == userId);
+    default Contest getById(Long id, boolean loadParticipants, boolean loadTasks, boolean loadStandings, boolean loadUpsolvingStandings) {
+        Contest contest = getReferenceById(id);
+        if (contest == null) {
+            return null;
         }
-
-        saveAndPublish(contest);
-    }
-
-    default void addParticipant(Long contestId, User user) {
-        Contest contest = getReferenceById(contestId);
-
-        if (contest.getParticipants() == null) {
-            contest.setParticipants(new ArrayList<>());
+        if (loadParticipants) {
+            Hibernate.initialize(contest.getParticipants());
         }
-        if (contest.getParticipants().stream().noneMatch(u -> u.getId() == user.getId())) {
-            contest.getParticipants().add(user);
+        if (loadTasks) {
+            Hibernate.initialize(contest.getTasks());
         }
-        saveAndPublish(contest);
+        if (loadStandings) {
+            Hibernate.initialize(contest.getStandings());
+        }
+        if (loadUpsolvingStandings) {
+            Hibernate.initialize(contest.getUpsolvingStandings());
+        }
+        return contest;
     }
 }

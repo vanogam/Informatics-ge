@@ -1,23 +1,41 @@
 package ge.freeuni.informatics.common.model.submission;
 
+import jakarta.persistence.Embeddable;
+
+@Embeddable
 public class SubmissionTestResult {
 
-    private String idx;
+    /**
+     * Final score for the test case from 0.0 to 1.0.
+     */
+    private Float score;
 
+    /**
+     * First 1000 symbols of contestant output for the test case.
+     */
     private String outcome;
 
-    private String text;
+    /**
+     * Compilers message.
+     */
+    private String message;
 
-    private Float time;
+    /**
+     * Time in milliseconds taken to run the test case.
+     */
+    private Integer time;
 
+    /**
+     * Memory in kilobytes used to run the test case.
+     */
     private Integer memory;
 
-    public String getIdx() {
-        return idx;
+    public Float getScore() {
+        return score;
     }
 
-    public void setIdx(String idx) {
-        this.idx = idx;
+    public void setScore(Float score) {
+        this.score = score;
     }
 
     public String getOutcome() {
@@ -28,19 +46,11 @@ public class SubmissionTestResult {
         this.outcome = outcome;
     }
 
-    public String getText() {
-        return text;
-    }
-
-    public void setText(String text) {
-        this.text = text;
-    }
-
-    public Float getTime() {
+    public Integer getTime() {
         return time;
     }
 
-    public void setTime(Float time) {
+    public void setTime(Integer time) {
         this.time = time;
     }
 

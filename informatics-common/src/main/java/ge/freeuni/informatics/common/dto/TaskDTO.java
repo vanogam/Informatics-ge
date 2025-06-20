@@ -10,18 +10,19 @@ import java.util.List;
 import java.util.Map;
 
 public record TaskDTO(
-    Long id,
-    Long contestId,
-    String code,
-    String title,
-    TaskType taskType,
-    TaskScoreType taskScoreType,
-    String taskScoreParameter,
-    Integer timeLimitMillis,
-    Integer memoryLimitMB,
-    String inputTemplate,
-    String outputTemplate,
-    Map<Language, String> statements
+        Long id,
+        Long contestId,
+        String code,
+        String title,
+        TaskType taskType,
+        TaskScoreType taskScoreType,
+        String taskScoreParameter,
+        Integer timeLimitMillis,
+        Integer memoryLimitMB,
+        String inputTemplate,
+        String outputTemplate,
+        Map<Language, String> statements,
+        List<String> testCases
 ) {
 
     public static Task fromDTO(TaskDTO taskDTO) {
@@ -53,18 +54,21 @@ public record TaskDTO(
 
     public static TaskDTO toDTO(Task task) {
         return new TaskDTO(
-            task.getId(),
-            task.getContest().getId(),
-            task.getCode(),
-            task.getTitle(),
-            task.getTaskType(),
-            task.getTaskScoreType(),
-            task.getTaskScoreParameter(),
-            task.getTimeLimitMillis(),
-            task.getMemoryLimitMB(),
-            task.getInputTemplate(),
-            task.getOutputTemplate(),
-            task.getStatements()
+                task.getId(),
+                task.getContest().getId(),
+                task.getCode(),
+                task.getTitle(),
+                task.getTaskType(),
+                task.getTaskScoreType(),
+                task.getTaskScoreParameter(),
+                task.getTimeLimitMillis(),
+                task.getMemoryLimitMB(),
+                task.getInputTemplate(),
+                task.getOutputTemplate(),
+                task.getStatements(),
+                task.getTestCases() == null ? null : task.getTestCases().stream()
+                        .map(testCase -> testCase.getKey())
+                        .toList()
         );
     }
 

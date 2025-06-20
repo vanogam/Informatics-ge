@@ -30,14 +30,14 @@ public class Submission {
     @Column(nullable = false)
     private String language;
 
-    @Column(nullable = false)
     private Date submissionTime;
+
+    private Integer submissionMemory;
 
     @Column(nullable = false)
     private SubmissionStatus status;
 
     private Float score;
-
 
     private String compilationResult;
 
@@ -45,7 +45,10 @@ public class Submission {
 
     private Integer currentTest;
 
+    @ElementCollection
     private List<SubmissionTestResult> submissionTestResults;
+
+    private Long roomId;
 
     public long getId() {
         return id;
@@ -103,6 +106,14 @@ public class Submission {
         this.submissionTime = submissionTime;
     }
 
+    public Integer getSubmissionMemory() {
+        return submissionMemory;
+    }
+
+    public void setSubmissionMemory(Integer submissionMemory) {
+        this.submissionMemory = submissionMemory;
+    }
+
     public SubmissionStatus getStatus() {
         return status;
     }
@@ -145,6 +156,13 @@ public class Submission {
 
     public List<SubmissionTestResult> getSubmissionTestResults() {
         return submissionTestResults;
+    }
+
+    public Long getRoomId() {
+        return roomId;
+    }
+    public void setRoomId(Long roomId) {
+        this.roomId = roomId;
     }
 
     public void setSubmissionTestResults(List<SubmissionTestResult> submissionTestResults) {

@@ -80,6 +80,12 @@ public class ContestRoom {
 
     @Transient
     public boolean isMember(Long userId) {
-        return participants.contains(userId) || teachers.contains(userId) || id == GLOBAL_ROOM_ID;
+        return participants.stream().map(User::getId).anyMatch(userId::equals) ||
+               teachers.stream().map(User::getId).anyMatch(userId::equals) || id == GLOBAL_ROOM_ID;
+    }
+
+    @Transient
+    public boolean isTeacher(Long userId) {
+        return teachers.stream().map(User::getId).anyMatch(userId::equals);
     }
 }

@@ -10,7 +10,7 @@ public class SaveTaskResponse extends InformaticsResponse {
     }
 
     public SaveTaskResponse(String status, String message, TaskDTO taskDTO) {
-        super(status, message);
+        super(message);
         this.taskDTO = taskDTO;
     }
 

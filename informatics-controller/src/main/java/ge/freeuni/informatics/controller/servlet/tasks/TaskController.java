@@ -9,13 +9,13 @@ import ge.freeuni.informatics.server.task.ITaskManager;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
-import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -33,32 +33,32 @@ public class TaskController {
     String defaultLanguage;
 
     @GetMapping("/room/{id}/tasks")
-    GetTasksResponse getTasks(@PathVariable Long id, PagingRequest request) {
+    ResponseEntity<GetTasksResponse> getTasks(@PathVariable Long id, PagingRequest request) {
         try {
             if (request == null) {
                 request = new PagingRequest();
             }
             List<TaskInfo> taskInfos = taskManager.getUpsolvingTasks(id, request.getOffset(), request.getLimit());
-            GetTasksResponse response = new GetTasksResponse("SUCCESS", null);
+            GetTasksResponse response = new GetTasksResponse(null);
             response.setTasks(taskInfos);
-            return response;
+            return ResponseEntity.ok(response);
         } catch (InformaticsServerException ex) {
-            return new GetTasksResponse("FAIL", ex.getCode());
+            return ResponseEntity.badRequest().body(new GetTasksResponse(ex.getCode()));
         }
     }
 
     @GetMapping("/contest/{id}/tasks")
-    GetTasksResponse getContestTasks(@PathVariable Long id, PagingRequest request) {
+    ResponseEntity<GetTasksResponse> getContestTasks(@PathVariable Long id, PagingRequest request) {
         try {
             if (request == null) {
                 request = new PagingRequest();
             }
             List<TaskInfo> taskInfos = taskManager.getContestTasks(id, request.getOffset(), request.getLimit());
-            GetTasksResponse response = new GetTasksResponse("SUCCESS", null);
+            GetTasksResponse response = new GetTasksResponse();
             response.setTasks(taskInfos);
-            return response;
+            return ResponseEntity.ok(response);
         } catch (InformaticsServerException ex) {
-            return new GetTasksResponse("FAIL", ex.getCode());
+            return ResponseEntity.badRequest().body(new GetTasksResponse(ex.getMessage()));
         }
     }
 
@@ -93,80 +93,101 @@ public class TaskController {
                 request.getMemoryLimitMB(),
                 request.getInputTemplate(),
                 request.getOutputTemplate(),
-                new HashMap<>()
+                new HashMap<>(),
+                new ArrayList<>()
         );
         try {
-            return ResponseEntity.ok(taskManager.addTask(taskDTO, request.getContestId()));
+            return ResponseEntity.ok(taskManager.addTask(request.getContestId(), taskDTO));
         } catch (InformaticsServerException ex) {
             log.error("Error while saving the task", ex);
             return ResponseEntity.badRequest().build();
         }
     }
 
-    @PostMapping("/add-testcase")
-    InformaticsResponse addTestcase(@RequestParam MultipartFile[] files, @RequestParam Integer testId, @RequestParam Integer taskId) {
-        if (files.length != 2) {
-            return new InformaticsResponse("FAIL", "incorrectNumberOfFiles");
-        }
-        byte[] input = {}, output = {};
-        for (MultipartFile file : files) {
-            try {
-                if (file.getName().equals("input")) {
-                    input = file.getBytes();
-                } else {
-                    output = file.getBytes();
-                }
-            } catch (IOException ex) {
-                log.error("Error during file upload", ex);
-                return new InformaticsResponse("FAIL", "fileUploadError");
-            }
-        }
+    @PostMapping("/task/{taskId}/testcases")
+    ResponseEntity<AddTestcasesResponse> addTestcases(@RequestParam Long taskId, @ModelAttribute AddTestcasesRequest request) {
         try {
-            taskManager.addTestcase(taskId, testId, input, output);
-        } catch (InformaticsServerException ex) {
-            return new InformaticsResponse("FAIL", ex.getCode());
+            return ResponseEntity.ok(new AddTestcasesResponse(taskManager.addTestcases(taskId, request.getFile().getBytes())));
+        } catch (InformaticsServerException e) {
+            return ResponseEntity.internalServerError()
+                    .body(new AddTestcasesResponse(e.getCode()));
+        } catch (IOException e) {
+            return ResponseEntity.badRequest().body(new AddTestcasesResponse("fileUploadError"));
         }
-        return new InformaticsResponse("SUCCESS", null);
     }
 
-    @PostMapping("/add-testcases")
-    InformaticsResponse addTestcases(@ModelAttribute AddTestcasesRequest request) {
+    @GetMapping("/task/{taskId}/testcase/{testKey}")
+    ResponseEntity<InputStreamResource> getSingleTestcase(@PathVariable Long taskId, @PathVariable String testKey) {
         try {
-            taskManager.addTestcases(request.getTaskId(), request.getFile().getBytes());
+            File file = taskManager.getTestcaseZip(taskId, testKey);
+            return ResponseEntity.ok()
+                    .header("Content-Disposition", "attachment; filename=\"" + file.getName() + "\"")
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(new InputStreamResource(new FileInputStream(file)));
         } catch (InformaticsServerException ex) {
-            return new InformaticsResponse("FAIL", ex.getCode());
+            return ResponseEntity.badRequest().build();
+        } catch (IOException ex) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/task/{taskId}/testcases")
+    ResponseEntity<InputStreamResource> getTestcases(@PathVariable Long taskId) {
+        try {
+            File file = taskManager.getTestcasesZip(taskId);
+            return ResponseEntity.ok()
+                    .header("Content-Disposition", "attachment; filename=\"" + file.getName() + "\"")
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(new InputStreamResource(new FileInputStream(file)));
+        } catch (InformaticsServerException ex) {
+            return ResponseEntity.badRequest().build();
+        } catch (IOException ex) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @PostMapping("/task/{taskId}/testcase")
+    InformaticsResponse addSingleTestcase(@PathVariable Long taskId, @ModelAttribute AddSingleTestcaseRequest request) {
+        try {
+            taskManager.addTestcase(taskId, request.getInputFile().getBytes(), request.getOutputFile().getBytes(),
+                    request.getInputFile().getName(), request.getOutputFile().getName()
+            );
+        } catch (InformaticsServerException ex) {
+            return new InformaticsResponse(ex.getCode());
         } catch (IOException ex) {
             log.error("Error during file upload", ex);
-            return new InformaticsResponse("FAIL", "fileUploadError");
+            return new InformaticsResponse("fileUploadError");
         }
-        return new InformaticsResponse("SUCCESS", null);
+        return new InformaticsResponse(null);
     }
 
-    @PostMapping("/upload-statement")
-    InformaticsResponse uploadStatement(@RequestParam MultipartFile statement, @RequestParam Integer taskId, @RequestParam LanguageDTO language) {
+    @DeleteMapping("/task/{taskId}/testcase/{testKey}")
+    ResponseEntity<InformaticsResponse> deleteSingleTestcase(@PathVariable Long taskId, @PathVariable String testKey) {
         try {
-            taskManager.addStatement(taskId, statement.getBytes(), Language.valueOf(language.name()));
+            taskManager.removeTestCase(taskId, testKey);
         } catch (InformaticsServerException ex) {
-            return new InformaticsResponse("FAIL", ex.getCode());
-        } catch (IOException ex) {
-            log.error("Error during file upload", ex);
-            return new InformaticsResponse("FAIL", "fileUploadError");
+            log.error("Error during deleting testcase", ex);
+            return ResponseEntity.badRequest().body(new InformaticsResponse(ex.getMessage()));
         }
-        return new InformaticsResponse("SUCCESS", null);
+        return ResponseEntity.ok(new InformaticsResponse(null));
     }
 
-    @GetMapping(value = "/statements/{task_id}/{language}", produces = MediaType.APPLICATION_PDF_VALUE)
-    byte[] getStatement(@PathVariable(required = false) LanguageDTO language,
-                        @PathVariable Integer task_id) {
+    @PostMapping("/task/{taskId}/statement")
+    ResponseEntity<Void> uploadStatement(@PathVariable Long taskId, @RequestBody AddStatementRequest request) {
+        taskManager.addStatement(taskId, request.statement(), request.language());
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping(value = "/task/{taskId}/statement/{language}", produces = MediaType.APPLICATION_PDF_VALUE)
+    ResponseEntity<String> getStatement(@PathVariable(required = false) Language language,
+                                        @PathVariable Integer taskId) {
         if (language == null) {
-            language = LanguageDTO.valueOf(defaultLanguage);
+            language = Language.valueOf(defaultLanguage);
         }
         try {
-            File file = taskManager.getStatement(task_id, Language.valueOf(language.name()));
-            return Files.readAllBytes(file.toPath());
-        } catch (InformaticsServerException | IOException ex) {
-            log.error("Error during sending statement", ex);
-            return null;
+            return ResponseEntity.ok(taskManager.getStatement(taskId, Language.valueOf(language.name())));
+        } catch (InformaticsServerException ex) {
+            return ResponseEntity.badRequest().body(ex.getMessage());
         }
     }
 }

@@ -2,6 +2,9 @@ package ge.informatics.sandbox;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ge.informatics.sandbox.fileservice.FileService;
+import ge.informatics.sandbox.model.Stage;
+import ge.informatics.sandbox.model.TestResult;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import ge.informatics.sandbox.model.Task;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -10,6 +13,10 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Properties;
@@ -18,6 +25,7 @@ public class JobConsumer {
     private static final Logger log = LogManager.getLogger(JobConsumer.class);
     private final KafkaConsumer<String, String> consumer;
     private final Sandbox sandbox;
+    private final FileService fileService;
 
     public JobConsumer(String bootstrapServers, String groupId, String id) {
         Properties props = new Properties();
@@ -29,10 +37,11 @@ public class JobConsumer {
 
         this.consumer = new KafkaConsumer<>(props);
         this.sandbox = new Sandbox(id);
+        this.fileService = FileService.getInstance(Config.get("fileservice.type"));
     }
 
-    public void listenToContestTopic() {
-        String topic = "contest";
+    public void listenToSubmissionTopic() {
+        String topic = "submission-topic";
         consumer.subscribe(Collections.singletonList(topic));
 
         log.info("Listening to topic: " + topic);
@@ -43,7 +52,8 @@ public class JobConsumer {
                 for (ConsumerRecord<String, String> record : records) {
                     try {
                         processMessage(record.value());
-                    } catch (JsonProcessingException e) {
+                        consumer.commitSync();
+                    } catch (IOException e) {
                         log.error("Failed to process message {}", record.value(), e);
                         throw new RuntimeException(e);
                     }
@@ -54,16 +64,22 @@ public class JobConsumer {
         }
     }
 
-    private void processMessage(String message) throws JsonProcessingException {
-        // Assuming the message is in JSON format: {"taskCode": "T1", "testId": "01", "submissionId": "123"}
+    private void processMessage(String message) throws IOException {
         log.info("Received message: " + message);
 
         ObjectMapper objectMapper = new ObjectMapper();
         Task task = objectMapper.readValue(message, Task.class);
-
-
-
-        // Add further processing logic here
+        if (task.stage() == Stage.COMPILATION) {
+            Files.createDirectories(Path.of("/sandbox/tmp/"));
+            fileService.downloadFile(Config.get("fileStorageDirectory.url") + "/" + task.contestId() + "/" + task.code(), task.submissionId(),
+                                     "/sandbox/tmp/" + task.submissionId(),
+                    sandbox,
+                    true
+                    );
+            sandbox.compile(task, new File("/sandbox/tmp/" + task.submissionId()));
+        } else if (task.stage() == Stage.TESTING) {
+            TestResult result = sandbox.execute(task);
+        }
     }
 
     public static void main(String[] args) {
@@ -72,6 +88,6 @@ public class JobConsumer {
         }
 
         JobConsumer consumer = new JobConsumer("localhost:9092", "contest", "1");
-        consumer.listenToContestTopic();
+        consumer.listenToSubmissionTopic();
     }
 }

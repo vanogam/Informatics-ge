@@ -9,6 +9,10 @@ public class TestCase {
 
     private Long id;
 
+    private String key;
+
+    private Long taskId;
+
     private String inputFileAddress;
 
     private String OutputFileAddress;
@@ -21,6 +25,22 @@ public class TestCase {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
+    }
+
+    public Long getTaskId() {
+        return taskId;
+    }
+
+    public void setTaskId(Long taskId) {
+        this.taskId = taskId;
     }
 
     public String getInputFileAddress() {

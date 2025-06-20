@@ -50,14 +50,14 @@ public class CppExecutor implements Executor {
                 client,
                 containerId,
                 "/usr/bin/time -v su -c '/sandbox/submission/submission' " + Sandbox.CONTESTANT_USER + " < /sandbox/submission/input > /sandbox/submission/output",
-                task.getTimeLimitMillis() + 500,
-                task.getMemoryLimitKB() + 10 * 1024
+                task.timeLimitMillis() + 500,
+                task.memoryLimitKB() + 10 * 1024
         );
         TestResult.Builder builder = new TestResult.Builder();
 
         if (result.isTimeout()) {
             return builder.withStatus(TestStatus.TIME_LIMIT_EXCEEDED)
-                    .withTimeMillis(task.getTimeLimitMillis())
+                    .withTimeMillis(task.timeLimitMillis())
                     .withExitCode(0)
                     .withScore(0.0)
                     .withErrorMessage("Execution timed out")
@@ -74,14 +74,14 @@ public class CppExecutor implements Executor {
         Map<String, String> metrics = parseResult(result.getStderr().toString(StandardCharsets.UTF_8));
         int memory = Integer.parseInt(metrics.get(MEMORY_KEY));
         builder.withMemoryKB(memory);
-        if (parseTime(metrics.get(TIME_KEY)) > task.getTimeLimitMillis()) {
-            return builder.withTimeMillis(task.getTimeLimitMillis())
+        if (parseTime(metrics.get(TIME_KEY)) > task.timeLimitMillis()) {
+            return builder.withTimeMillis(task.timeLimitMillis())
                     .withStatus(TestStatus.TIME_LIMIT_EXCEEDED)
                     .withScore(0.0)
                     .build();
         }
         builder.withTimeMillis(parseTime(metrics.get(TIME_KEY)));
-        if (memory > task.getMemoryLimitKB()) {
+        if (memory > task.memoryLimitKB()) {
             return builder.withStatus(TestStatus.MEMORY_LIMIT_EXCEEDED)
                     .withScore(0.0)
                     .build();

@@ -5,7 +5,7 @@ public class IsRegisteredResponse extends InformaticsResponse {
     Boolean registered;
 
     public IsRegisteredResponse(String status, String message, Boolean registered) {
-        super(status, message);
+        super(message);
         this.registered = registered;
     }
 

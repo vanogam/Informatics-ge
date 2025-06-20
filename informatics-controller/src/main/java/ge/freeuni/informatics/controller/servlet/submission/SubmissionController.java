@@ -31,15 +31,14 @@ public class SubmissionController {
         this.fileManager = fileManager;
     }
 
-    @GetMapping("/get-languages")
-    public GetLanguagesResponse getLanguages() {
+    @GetMapping("/languages")
+    public ResponseEntity<GetLanguagesResponse> getLanguages() {
         GetLanguagesResponse response = new GetLanguagesResponse();
-        response.setStatus("SUCCESS");
         response.setLanguages(new ArrayList<>());
         for (CodeLanguage language : CodeLanguage.values()) {
             response.getLanguages().add(new CodeLanguageDTO(language.toString(), language.getDescription()));
         }
-        return response;
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/submit")
@@ -66,13 +65,10 @@ public class SubmissionController {
                     .body(new InformaticsResponse());
         }
 
-
         try {
             submissionManager.addSubmission(submissionDTO);
-            response.setStatus("SUCCESS");
             return ResponseEntity.ok(response);
         } catch (InformaticsServerException e) {
-            response.setStatus("FAIL");
             response.setMessage(e.getCode());
             return ResponseEntity.badRequest().body(response);
         }

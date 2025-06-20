@@ -5,6 +5,7 @@ import { NavLink } from 'react-router-dom'
 import { AuthContext } from '../store/authentication'
 import { toast } from 'react-toastify'
 import { AxiosContext, getAxiosInstance } from '../utils/axiosInstance'
+import getMessage from "./lang";
 
 export default function Login() {
 	const [popUp, setPopUp] = useState(false)
@@ -15,13 +16,12 @@ export default function Login() {
 	const axiosInstance = useContext(AxiosContext)
 
 	const handleLoginResponse = async (response) => {
-		axiosInstance.get('/get-user').then((res) => {
-			let roles = res.data.roles
-			console.log(res, roles)
+		axiosInstance.get('/user').then((res) => {
+			let role = res.data.role
 			setPopUp(false)
-			toast.success('Login Success')
+			toast.success(getMessage('ka', 'loginSuccess'))
 			setCredentialsError(false)
-			authContext.login({ username: response.data.username, roles: roles })
+			authContext.login({ username: response.data.username, role: role })
 		})
 	}
 

@@ -39,6 +39,7 @@ hs_err_pid*
 
 # misc
 .DS_Store
+.env
 .env.local
 .env.development.local
 .env.test.local
@@ -47,3 +48,4 @@ hs_err_pid*
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+/informatics-ui/cert/

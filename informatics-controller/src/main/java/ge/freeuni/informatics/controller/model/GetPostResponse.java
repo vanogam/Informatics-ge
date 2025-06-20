@@ -2,14 +2,12 @@ package ge.freeuni.informatics.controller.model;
 
 import ge.freeuni.informatics.common.dto.PostDTO;
 
-import java.util.List;
-
 public class GetPostResponse extends InformaticsResponse {
 
     PostDTO post;
 
     public GetPostResponse(String status, String message, PostDTO post) {
-        super(status, message);
+        super(message);
         this.post = post;
     }
 

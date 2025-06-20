@@ -160,24 +160,36 @@ public class ContestDTO {
         contestDTO.setStartDate(contest.getStartDate());
         contestDTO.setEndDate(contest.getEndDate());
         contestDTO.setName(contest.getName());
-        if (contest.getParticipants() != null) {
-            contestDTO.setParticipants(contest.getParticipants()
-                    .stream()
-                    .map(UserDTO::toDTO)
-                    .collect(Collectors.toList()));
-        }
-        contestDTO.setStandings(contest.getStandings()
-                .stream()
-                .map(ContestantResultDTO::toDTO)
-                .collect(Collectors.toCollection(TreeSet::new)));
-        contestDTO.setTasks(TaskDTO.toDTOs(contest.getTasks()));
+
         contestDTO.setUpsolving(contest.isUpsolving());
         contestDTO.setUpsolvingAfterFinish(contest.isUpsolvingAfterFinished());
         contestDTO.setScoringType(contest.getScoringType());
         contestDTO.setVersion(contest.getVersion());
-        contestDTO.setUpsolvingStandings(contest.getUpsolvingStandings()
-                .stream().map(ContestantResultDTO::toDTO)
-                .collect(Collectors.toList()));
+        try {
+            contestDTO.setTasks(TaskDTO.toDTOs(contest.getTasks()));
+            if (contest.getParticipants() != null) {
+                contestDTO.setParticipants(contest.getParticipants()
+                        .stream()
+                        .map(UserDTO::toDTO)
+                        .collect(Collectors.toList()));
+            }
+        } catch (Exception ignored) {}
+        try {
+            if (contest.getScoringType() != null) {
+                contestDTO.setStandings(contest.getStandings()
+                        .stream()
+                        .map(ContestantResultDTO::toDTO)
+                        .collect(Collectors.toCollection(TreeSet::new)));
+            }
+        } catch (Exception ignored) {}
+        try {
+            if (contest.getUpsolvingStandings() != null) {
+                contestDTO.setUpsolvingStandings(contest.getUpsolvingStandings()
+                        .stream().map(ContestantResultDTO::toDTO)
+                        .collect(Collectors.toList()));
+            }
+        } catch (Exception ignored) {
+        }
         return contestDTO;
     }
 
@@ -195,17 +207,23 @@ public class ContestDTO {
                     .collect(Collectors.toList())
             );
         }
-        contest.setTasks(TaskDTO.fromDTOs(contestDTO.getTasks()));
-        contest.setStandings(contestDTO.getStandings()
-                .stream()
-                .map(ContestantResultDTO::fromDTO)
-                .toList()
-        );
+        if (contestDTO.getTasks() != null) {
+            contest.setTasks(TaskDTO.fromDTOs(contestDTO.getTasks()));
+        }
+        if (contest.getScoringType() != null) {
+            contest.setStandings(contestDTO.getStandings()
+                    .stream()
+                    .map(ContestantResultDTO::fromDTO)
+                    .toList()
+            );
+        }
         contest.setUpsolving(contestDTO.isUpsolving());
         contest.setUpsolvingAfterFinished(contestDTO.isUpsolvingAfterFinish());
         contest.setScoringType(contestDTO.getScoringType());
         contest.setVersion(contestDTO.getVersion());
-        contest.setUpsolvingStandings(contestDTO.getUpsolvingStandings().stream().map(ContestantResultDTO::fromDTO).toList());
+        if (contestDTO.getUpsolvingStandings() != null) {
+            contest.setUpsolvingStandings(contestDTO.getUpsolvingStandings().stream().map(ContestantResultDTO::fromDTO).toList());
+        }
         return contest;
     }
 }

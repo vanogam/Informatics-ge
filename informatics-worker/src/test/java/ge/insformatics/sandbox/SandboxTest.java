@@ -1,13 +1,12 @@
 package ge.insformatics.sandbox;
 
 
+import ge.informatics.sandbox.Config;
 import ge.informatics.sandbox.model.*;
 import ge.informatics.sandbox.Sandbox;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.github.dockerjava.api.DockerClient;
@@ -21,11 +20,11 @@ import static org.junit.jupiter.api.Assertions.*;
 public class SandboxTest {
     private static final Logger log = LogManager.getLogger(SandboxTest.class);
     private final String contestFiles = Objects.requireNonNull(getClass().getClassLoader().getResource("testTask")).getPath();
-    private static final Task task = new Task("testTask",  Language.CPP, 1000, 256 * 1024, "01", Task.CheckerType.TOKEN, "1");
+    private static final Task task = new Task("testTask",  "1", Language.CPP, 1000, 256 * 1024, Stage.COMPILATION, "01", Task.CheckerType.TOKEN, "1");
     private static Sandbox sandbox;
 
     @BeforeAll
-    public static void setUp() throws Exception {
+    public static void setUp() {
         log.error("Cleaning up environment...");
         DockerClient dockerClient = createDockerClient();
         dockerClient.listContainersCmd()
@@ -46,10 +45,11 @@ public class SandboxTest {
                     }
                 });
         sandbox = new Sandbox("test1");
+        Config.setProperties("fileStorageDirectory.url", SandboxTest.class.getClassLoader().getResource("").getPath());
     }
 
     @Test
-    public void testCompilation() throws Exception {
+    public void testCompilation() {
         CompilationResult result = sandbox.compile(task,
                 new File(getClass().getClassLoader().getResource("ce.cpp").getPath()));
         assertFalse(result.isSuccess());

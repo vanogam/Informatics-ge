@@ -51,7 +51,7 @@ public class PostController {
     }
 
 
-    @PostMapping(value = "/add-post")
+    @PostMapping(value = "/post")
     AddPostResponse addPost(@RequestBody PostDTO postDTO) {
         try {
             return new AddPostResponse("SUCCESS", null, postsManager.addPost(postDTO));

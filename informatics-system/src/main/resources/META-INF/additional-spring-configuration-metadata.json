@@ -72,7 +72,7 @@
     },
     {
       "name": "ge.freeuni.informatics.server.user.passwordRecoveryValidityMinutes",
-      "type": "java.lang.String",
+      "type": "java.lang.Integer",
       "description": "Description for ge.freeuni.informatics.server.user.passwordRecoveryValidityMinutes."
     },
     {
@@ -104,5 +104,15 @@
       "name": "server.port.front",
       "type": "java.lang.String",
       "description": "Description for server.port.front."
+    },
+    {
+      "name": "ge.freeuni.informatics.Task.userDirectoryAddress",
+      "type": "java.lang.String",
+      "description": "Description for ge.freeuni.informatics.Task.userDirectoryAddress."
+    },
+    {
+      "name": "ge.freeuni.informatics.maxImageSizeMB",
+      "type": "java.lang.Integer",
+      "description": "Description for ge.freeuni.informatics.maxImageSizeMB."
     }
   ] }

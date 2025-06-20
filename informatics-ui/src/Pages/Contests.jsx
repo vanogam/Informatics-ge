@@ -25,7 +25,7 @@ function handleContestsResponse(response, setRows, isLoggedIn) {
 		const contestId = contest.id
 		const contestName = contest.name
 		const contestStartDate = contest.startDate
-		const contestDuration = (contest.durationInSeconds / 3600).toFixed(2)
+		const contestDuration = !contest.startDate ? 0 : ((contest.endDate - contest.startDate) / 3600 / 1000).toFixed(2);
 		const contestStatus = contest.status
 		// axios
 		// 	.get(`${process.env.REACT_APP_HOST}/contest/${contest.id}/is-registered`, {
@@ -36,7 +36,7 @@ function handleContestsResponse(response, setRows, isLoggedIn) {
 			name: contestName,
 			status: contestStatus,
 			startDate: contestStartDate,
-			duration: contestDuration.toString() + ' სთ',
+			duration: contestDuration ? contestDuration.toString() + ' სთ' : '',
 			results: '',
 			submissions: '',
 		}
@@ -61,7 +61,6 @@ export default function Contests() {
 			.then((response) => handleContestsResponse(response, setRows, isLoggedIn))
 			.catch((error) => console.log(error))
 	}, [])
-	console.log(authContext.roles)
 	return (
 		<main>
 			<Typography
@@ -85,7 +84,7 @@ export default function Contests() {
 				მონაწილეობა.
 			</Typography>
 			<Container maxWidth="lg">
-				{authContext.roles.includes('ADMIN') && (
+				{authContext.role === 'ADMIN' && (
 					<Button
 						variant="contained"
 						color="secondary"
@@ -106,7 +105,7 @@ export default function Contests() {
 								<TableCell align="right">სტატუსი</TableCell>
 								<TableCell align="right">შედეგები</TableCell>
 								<TableCell align="right">მცდელობები</TableCell>
-								{authContext.roles.includes('ADMIN') ? <TableCell></TableCell> : null}
+								{authContext.role === 'ADMIN' ? <TableCell></TableCell> : null}
 							</TableRow>
 						</TableHead>
 						<TableBody>
@@ -150,14 +149,14 @@ export default function Contests() {
 												{<TerminalIcon></TerminalIcon>}
 										</NavLink>
 									</TableCell>
-									{authContext.roles.includes('ADMIN') && (
+									{authContext.role === 'ADMIN' && (
 										<TableCell>
 											<Button
 												variant="contained"
 												color="secondary"
 												sx={{ backgroundColor: '#2f2d47' }}
 												component={NavLink}
-												to={`/edit-contest/${row.id}`}
+												to={`/contest/${row.id}/edit`}
 											>
 												რედაქტირება
 											</Button>

@@ -10,7 +10,7 @@ public class CreateContestResponse extends InformaticsResponse {
     }
 
     public CreateContestResponse(String status, String message, ContestDTO contest) {
-        super(status, message);
+        super(message);
         this.contest = contest;
     }
 

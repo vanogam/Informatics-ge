@@ -12,7 +12,7 @@ public class TasksResponse extends InformaticsResponse {
     private ContestantResult contestantResult;
 
     public TasksResponse(String status, String message) {
-        super(status, message);
+        super(message);
     }
 
     public List<TaskDTO> getTasks() {

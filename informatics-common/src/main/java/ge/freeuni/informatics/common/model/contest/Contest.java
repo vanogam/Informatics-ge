@@ -11,6 +11,7 @@ import java.util.List;
 public class Contest {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false, unique = true)
@@ -25,7 +26,7 @@ public class Contest {
     @Column
     private Long roomId;
 
-    @OneToMany(mappedBy = "participants", fetch = FetchType.LAZY)
+    @OneToMany
     private List<User> participants;
 
     @OneToMany
@@ -37,10 +38,12 @@ public class Contest {
     @Column(nullable = false)
     private boolean upsolving;
 
-    @OneToMany(mappedBy = "standings", fetch = FetchType.LAZY)
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "contest_id")
     private List<ContestantResult> standings;
 
-    @OneToMany(mappedBy = "upsolving_standings", fetch = FetchType.LAZY)
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "upsolving_contest_id")
     private List<ContestantResult> upsolvingStandings;
 
     @Column(nullable = false)

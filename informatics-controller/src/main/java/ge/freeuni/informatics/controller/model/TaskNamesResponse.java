@@ -7,7 +7,7 @@ public class TaskNamesResponse extends InformaticsResponse {
     List<String> taskNames;
 
     public TaskNamesResponse(String status, String message, List<String> taskNames) {
-        super(status, message);
+        super(message);
         this.taskNames = taskNames;
     }
 

@@ -9,7 +9,7 @@ public class SubmissionListResponse extends InformaticsResponse {
     List<SubmissionDTO> submissions;
 
     public SubmissionListResponse(String status, String message) {
-        super(status, message);
+        super(message);
     }
 
     public List<SubmissionDTO> getSubmissions() {

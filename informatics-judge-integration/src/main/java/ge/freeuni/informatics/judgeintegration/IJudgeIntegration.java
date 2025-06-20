@@ -7,13 +7,6 @@ import ge.freeuni.informatics.common.model.task.Task;
 
 public interface IJudgeIntegration {
 
-    void addTask(TaskDTO taskDTO) throws InformaticsServerException;
-
     void addSubmission(Task task, Submission submission) throws InformaticsServerException;
-
-    void setTestcases(Task task) throws InformaticsServerException;
-
-    void editTask();
-
 
 }

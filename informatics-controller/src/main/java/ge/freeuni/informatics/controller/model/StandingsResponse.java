@@ -12,7 +12,7 @@ public class StandingsResponse extends InformaticsResponse {
     private Map<String, String> taskNameMap;
 
     public StandingsResponse(String status, String message) {
-        super(status, message);
+        super(message);
     }
 
     public List<ContestantResultDTO> getStandings() {

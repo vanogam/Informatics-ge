@@ -11,12 +11,12 @@ import java.util.List;
 @Component
 public class ContestRoomManager implements IContestRoomManager {
 
-    final ContestRoomJpaRepository contestRoomRepository;
-
     @Autowired
-    public ContestRoomManager(ContestRoomJpaRepository contestRoomRepository) {
-        this.contestRoomRepository = contestRoomRepository;
-    }
+    private ContestRoomJpaRepository contestRoomRepository;
+
+//    public ContestRoomManager(ContestRoomJpaRepository contestRoomRepository) {
+//        this.contestRoomRepository = contestRoomRepository;
+//    }
 
     @Override
     @Secured({"ADMIN", "TEACHER"})

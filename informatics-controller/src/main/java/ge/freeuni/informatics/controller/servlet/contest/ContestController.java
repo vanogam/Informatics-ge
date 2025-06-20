@@ -48,7 +48,12 @@ public class ContestController {
     @GetMapping("/contest/{id}")
     public ResponseEntity<ContestDTO> getContest(@PathVariable long id) {
         try {
-            return ResponseEntity.ok(contestManager.getContest(id));
+            return ResponseEntity.ok(contestManager.getContest(id,
+                    false,
+                    true,
+                    true,
+                    true
+                    ));
         } catch (InformaticsServerException ex) {
             return ResponseEntity.notFound().build();
         }
@@ -57,13 +62,20 @@ public class ContestController {
    @GetMapping("/contests")
     public ResponseEntity<ContestResponse> getContestList(ContestListRequest request) {
         ContestResponse response = new ContestResponse();
+        if (request.getLimit() == null) {
+            request.setLimit(defaultPageSize);
+        } else if (request.getLimit() > maxPageSize) {
+            request.setLimit(maxPageSize);
+        }
+        if (request.getOffset() == null) {
+            request.setOffset(0);
+        }
         try {
-            response.setContests(contestManager.getContests(Long.valueOf(request.getRoomId()), null, null, null, null, null, null));
+            response.setContests(contestManager.getContests(Long.valueOf(request.getRoomId()), null, null, null, null, request.getOffset(), request.getLimit()));
         } catch (InformaticsServerException e) {
             response.setMessage(e.getMessage());
             return ResponseEntity.badRequest().body(response);
         }
-        response.setStatus("SUCCESS");
         return ResponseEntity.ok(response);
     }
     
@@ -87,15 +99,25 @@ public class ContestController {
 
     @PostMapping("/create-contest")
     public ResponseEntity<CreateContestResponse> createContest(@RequestBody CreateContestRequest contestRequest) {
-        Calendar endDate = Calendar.getInstance();
-        endDate.setTime(convertToDate(contestRequest.getStartDate()));
-        endDate.add(Calendar.SECOND, contestRequest.getDurationInSeconds());
+        if ((contestRequest.getStartDate() == null && contestRequest.getDurationInSeconds() != null)
+            || (contestRequest.getStartDate() != null && contestRequest.getDurationInSeconds() == null)
+        ) {
+            return ResponseEntity.badRequest().body(new CreateContestResponse("FAIL", "startDateAndDurationError", null));
+        }
         ContestDTO contestDTO = new ContestDTO();
+
+        Calendar endDate = Calendar.getInstance();
+        if (contestRequest.getStartDate() != null) {
+            endDate.setTime(convertToDate(contestRequest.getStartDate()));
+            endDate.add(Calendar.SECOND, contestRequest.getDurationInSeconds());
+            contestDTO.setEndDate(endDate.getTime());
+        }
         contestDTO.setId(contestRequest.getContestId());
         contestDTO.setName(contestRequest.getName());
         contestDTO.setRoomId(contestRequest.getRoomId());
-        contestDTO.setEndDate(endDate.getTime());
-        contestDTO.setStartDate(convertToDate(contestRequest.getStartDate()));
+        if (contestRequest.getStartDate() != null) {
+            contestDTO.setStartDate(convertToDate(contestRequest.getStartDate()));
+        }
         contestDTO.setUpsolvingAfterFinish(contestRequest.isUpsolvingAfterFinish());
         contestDTO.setUpsolving(contestRequest.isUpsolving());
         contestDTO.setScoringType(contestRequest.getScoringType());
@@ -111,9 +133,9 @@ public class ContestController {
         try {
             contestManager.deleteContest(contestId);
         } catch (InformaticsServerException ex) {
-            return new InformaticsResponse("FAIL", ex.getCode());
+            return new InformaticsResponse(ex.getCode());
         }
-        return new InformaticsResponse("SUCCESS", null);
+        return new InformaticsResponse(null);
     }
 
     @PostMapping("/contest/{contestId}/register")
@@ -121,9 +143,9 @@ public class ContestController {
         try {
             contestManager.registerUser(contestId);
         } catch (InformaticsServerException ex) {
-            return new InformaticsResponse("FAIL", ex.getCode());
+            return new InformaticsResponse(ex.getCode());
         }
-        return new InformaticsResponse("SUCCESS", null);
+        return new InformaticsResponse(null);
     }
 
     @PostMapping("/contest/{contestId}/unregister")
@@ -131,9 +153,9 @@ public class ContestController {
         try {
             contestManager.unregisterUser(Long.parseLong(contestId));
         } catch (InformaticsServerException ex) {
-            return new InformaticsResponse("FAIL", ex.getCode());
+            return new InformaticsResponse(ex.getCode());
         }
-        return new InformaticsResponse("SUCCESS", null);
+        return new InformaticsResponse(null);
     }
 
     @GetMapping("/contest/{contestId}/standings")

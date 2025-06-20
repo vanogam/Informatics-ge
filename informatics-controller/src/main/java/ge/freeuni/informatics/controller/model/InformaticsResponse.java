@@ -6,15 +6,11 @@ public class InformaticsResponse {
 
     }
 
-    public InformaticsResponse(String status, String message) {
-        this.status = status;
+    public InformaticsResponse(String message) {
         this.message = message;
     }
 
     private String message;
-
-    // TODO Remove after migration to status codes
-    private String status;
 
     public String getMessage() {
         return message;
@@ -24,11 +20,4 @@ public class InformaticsResponse {
         this.message = message;
     }
 
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
 }

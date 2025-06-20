@@ -76,7 +76,7 @@ public record SubmissionDTO(
 
     public static Submission fromDTO(SubmissionDTO submissionDTO) {
         Submission submission = new Submission();
-        submission.setId(submissionDTO.id());
+        // Submission can't be edited by user, so id should not be set here.
         submission.setLanguage(submissionDTO.language());
         submission.setSubmissionTime(submissionDTO.submissionTime());
         submission.setCompilationResult(submissionDTO.compilationResult());

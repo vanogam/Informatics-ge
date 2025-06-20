@@ -1,51 +1,64 @@
-import { createContext, useCallback, useEffect, useState } from 'react'
+import {createContext, useCallback, useContext, useEffect, useState} from 'react'
 import Cookies from 'js-cookie';
+import {AxiosContext} from '../utils/axiosInstance'
+import {renewCsrfToken} from "../utils/csrfUtils";
+
+
 export const AuthContext = createContext({
-	isLoggedIn: false,
-	username: '',
-	roles: [],
-	login: () => {},
-	logout: () => {},
+    isLoggedIn: false,
+    username: '',
+    role: '',
+    login: () => {
+    },
+    logout: () => {
+    },
 })
 
 export const AuthContextProvider = (props) => {
-	const [isLoggedIn, setIsLoggedIn] = useState(false)
-	const [username, setUsername] = useState('')
-	useEffect(() => {
-		if (Cookies.get('username')) {
-			setIsLoggedIn(true)
-			setUsername(Cookies.get('username'))
-		} else {
-			setIsLoggedIn(false)
-			setUsername('')
-		}
-	}, [])
+    const axiosInstance = useContext(AxiosContext)
+    const [isLoggedIn, setIsLoggedIn] = useState(false)
+    const [role, setRole] = useState('')
+    const [username, setUsername] = useState('')
+    useEffect(() => {
+        const fetchUsername = async () => {
+            axiosInstance.get('/user').then((response) => {
+                setUsername(response.data.username);
+                setRole(response.data.role);
+                setIsLoggedIn(true);
+            }).catch((error) => {
+                setIsLoggedIn(false);
+                setUsername('');
+                setRole('');
+            })
+        };
 
-	const logoutHandler = useCallback(() => {
-		Cookies.remove('username')
-		Cookies.remove('roles')
-		setIsLoggedIn(false)
-		setUsername('')
-	}, [])
+        fetchUsername();
+    }, []);
 
-	const loginHandler = useCallback(({ username, roles }) => {
-		Cookies.set('username', username)
-		Cookies.set('roles', roles)
-		setIsLoggedIn(true)
-		setUsername(Cookies.get('username'))
-	}, [])
+    const logoutHandler = useCallback(() => {
+        setIsLoggedIn(false)
+        setUsername('')
+        setRole('')
+        renewCsrfToken()
+    }, [])
 
-	const contextValue = {
-		isLoggedIn: isLoggedIn,
-		username: isLoggedIn ? Cookies.get('username') : '',
-		roles: isLoggedIn ? Cookies.get('roles') : '',
-		login: loginHandler,
-		logout: logoutHandler,
-	}
+    const loginHandler = useCallback(({username, role}) => {
+        setIsLoggedIn(true)
+        setRole(role)
+        setUsername(username)
+    }, [])
 
-	return (
-		<AuthContext.Provider value={contextValue}>
-			{props.children}
-		</AuthContext.Provider>
-	)
+    const contextValue = {
+        isLoggedIn: isLoggedIn,
+        username: isLoggedIn ? username : '',
+        role: isLoggedIn ? role : '',
+        login: loginHandler,
+        logout: logoutHandler,
+    }
+
+    return (
+        <AuthContext.Provider value={contextValue}>
+            {props.children}
+        </AuthContext.Provider>
+    )
 }

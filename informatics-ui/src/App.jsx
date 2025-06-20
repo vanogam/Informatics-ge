@@ -9,16 +9,26 @@ import ResetPassword from './Pages/ResetPassword'
 import Archive from './Pages/Archive'
 import Contest from './Pages/Contest'
 import Problem from './Pages/Problem'
-import NewContest from './Pages/NewContest'
-import EditContest from './Pages/EditContest'
+import NewContest from './Pages/contest/NewContest'
+import EditContest from './Pages/contest/EditContest'
 import Results from './Pages/Results'
 import MySubmissions from './Pages/MySubmissions'
 import ContestSubmissions from './Pages/ContestSubmissions'
 import NewNews from './Pages/NewNews'
 import NewTaskCard from './Components/NewTaskCard'
 import Error from './Pages/Error'
+import { useEffect } from 'react'
+import axios from 'axios'
+import Cookies from "js-cookie";
+import { renewCsrfToken } from './utils/csrfUtils'
 
 function App() {
+	useEffect(() => {
+		if (Cookies.get('XSRF-TOKEN') === undefined) {
+			renewCsrfToken();
+		}
+	}, []);
+
 	return (
 		<div className='App'>
 			<Box display='flex' flexDirection='column'>
@@ -47,7 +57,7 @@ function App() {
 					</Route>
 
 					<Route
-						path='/contest/:contest_id/:problem_id'
+						path='/contest/:contest_id/problem/:problem_id'
 						element={<Problem />}
 					/>
 					<Route
@@ -59,10 +69,10 @@ function App() {
 						element={<ContestSubmissions />}
 					/>
 					<Route path='/addContest' element={<NewContest />} />
-					<Route path='/edit-contest/:contest_id' element={<EditContest />} />\
-					<Route path='/contest/:contest_id/add-task' element={<NewTaskCard />} />\
-					<Route path='/task/:task_id' element={<NewTaskCard />} />\
-					<Route path='/new-news' element={<NewNews />} />
+					<Route path='/contest/:contest_id/edit' element={<EditContest />} />\
+					<Route path='/contest/:contest_id/task/add' element={<NewTaskCard />} />\
+					<Route path='/task/:taskId' element={<NewTaskCard />} />\
+					<Route path='/news/add' element={<NewNews />} />
 					<Route element={<Error/>} />
 				</Routes>
 			</Box>

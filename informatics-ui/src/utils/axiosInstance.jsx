@@ -3,6 +3,8 @@ import { toast } from 'react-toastify'
 import getMessage from '../Components/lang'
 import { AuthContext } from '../store/authentication'
 import { createContext, useContext } from 'react'
+import Cookies from 'js-cookie';
+
 export const AxiosContext = createContext(null)
 
 export const AxiosInstanceProvider = (props) => {
@@ -16,6 +18,7 @@ export const AxiosInstanceProvider = (props) => {
         headers: {
           'Access-Control-Allow-Origin': `*`,
           'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept',
+          'X-CSRF-Token': Cookies.get('XSRF-TOKEN') || '',
         },
       },
     );
@@ -23,21 +26,29 @@ export const AxiosInstanceProvider = (props) => {
     axiosInstance.interceptors.response.use((response) => {
       return response
     }, (error) => {
-      switch (error.response.status) {
-        case 500:
-          toast.error(getMessage('ka', 'unexpectedException'));
-          break;
-        case 403:
-          toast.error(getMessage('ka', 'insufficientPrivileges'));
-          break;
-        case 401:
-          authContext.logout();
-          toast.error(getMessage('ka', 'pleaseLogin'));
-          break;
-        case 400:
-          console.log(error.response)
-          toast.error(getMessage('ka', error.response.message))
+      const config = error.config || {};
+      console.log(error.config)
+      if (error.config.url === '/user') {
+        return;
       }
+      if (!config.ignoreErrors) {
+        switch (error.response.status) {
+          case 500:
+            toast.error(getMessage('ka', 'unexpectedException'));
+            break;
+          case 403:
+            toast.error(getMessage('ka', 'insufficientPrivileges'));
+            break;
+          case 401:
+            authContext.logout();
+            toast.error(getMessage('ka', 'pleaseLogin'), { toastId: 'pleaseLogin' });
+            break;
+          case 400:
+            console.log(error.response)
+            toast.error(getMessage('ka', error.response.data.message))
+        }
+      }
+      throw error
     })
 
     return axiosInstance

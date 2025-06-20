@@ -5,7 +5,7 @@ public class AddPostResponse extends InformaticsResponse{
     private Long postId;
 
     public AddPostResponse(String status, String message, Long postId) {
-        super(status, message);
+        super(message);
         this.postId = postId;
     }
 

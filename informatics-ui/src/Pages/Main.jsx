@@ -23,10 +23,8 @@ export default function Main() {
 	const axiosInstance = useContext(AxiosContext)
 	const authContext = useContext(AuthContext)
 	const [news, setNews] = useState([])
-	const [roles, setRoles] = useState([])
 	useEffect(() => {
 		loadNews(null, setNews);
-		setRoles(() => Cookies.get('roles'))
 	}, [])
 
 	const dummy_news_list = [
@@ -78,7 +76,7 @@ export default function Main() {
 					width: '70%',
 				}}
 			/>
-			{roles?.includes('ADMIN') && (
+			{authContext.role === 'ADMIN' && (
 				<Button
 					variant='contained'
 					color='secondary'

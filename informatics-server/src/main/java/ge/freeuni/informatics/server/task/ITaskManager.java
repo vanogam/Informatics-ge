@@ -8,6 +8,7 @@ import ge.freeuni.informatics.common.model.task.Task;
 import ge.freeuni.informatics.common.model.task.TaskInfo;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
 public interface ITaskManager {
@@ -30,7 +31,7 @@ public interface ITaskManager {
 
     void addStatement(long taskId, String statement, Language language);
 
-    Task addTestcase(long taskId, byte[] inputContent, byte[] outputContent, String inputName, String outputName) throws InformaticsServerException;
+    AddTestcasesResult addTestcase(long taskId, byte[] inputContent, byte[] outputContent, String inputName, String outputName) throws InformaticsServerException;
 
     File getTestcaseZip(long taskId, String testcaseKey) throws InformaticsServerException;
 

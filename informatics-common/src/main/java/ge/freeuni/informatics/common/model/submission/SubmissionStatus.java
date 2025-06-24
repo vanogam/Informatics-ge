@@ -5,6 +5,7 @@ public enum SubmissionStatus {
     RUNNING,
     COMPILING,
     FINISHED,
+    SYSTEM_ERROR,
     COMPILATION_ERROR,
     TIME_LIMIT_EXCEEDED,
     MEMORY_LIMIT_EXCEEDED,

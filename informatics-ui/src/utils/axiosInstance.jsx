@@ -27,7 +27,6 @@ export const AxiosInstanceProvider = (props) => {
       return response
     }, (error) => {
       const config = error.config || {};
-      console.log(error.config)
       if (error.config.url === '/user') {
         return;
       }
@@ -40,11 +39,13 @@ export const AxiosInstanceProvider = (props) => {
             toast.error(getMessage('ka', 'insufficientPrivileges'));
             break;
           case 401:
+            if (error.config.url.endsWith('/submissions')) {
+              return;
+            }
             authContext.logout();
             toast.error(getMessage('ka', 'pleaseLogin'), { toastId: 'pleaseLogin' });
             break;
           case 400:
-            console.log(error.response)
             toast.error(getMessage('ka', error.response.data.message))
         }
       }

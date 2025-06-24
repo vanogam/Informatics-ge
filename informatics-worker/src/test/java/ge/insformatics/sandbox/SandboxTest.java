@@ -4,12 +4,14 @@ package ge.insformatics.sandbox;
 import ge.informatics.sandbox.Config;
 import ge.informatics.sandbox.model.*;
 import ge.informatics.sandbox.Sandbox;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import com.github.dockerjava.api.DockerClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.util.Objects;
 
@@ -18,9 +20,20 @@ import static ge.informatics.sandbox.Utils.createDockerClient;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SandboxTest {
-    private static final Logger log = LogManager.getLogger(SandboxTest.class);
+    private static final Logger log = LoggerFactory.getLogger(SandboxTest.class);
     private final String contestFiles = Objects.requireNonNull(getClass().getClassLoader().getResource("testTask")).getPath();
-    private static final Task task = new Task("testTask",  "1", Language.CPP, 1000, 256 * 1024, Stage.COMPILATION, "01", Task.CheckerType.TOKEN, "1");
+    private static final Task task = new Task("testTask",
+            "1",
+            "1",
+            "correct.cpp",
+            Language.CPP,
+            1000,
+            256 * 1024,
+            "01",
+            "01.in",
+            "01.out",
+            Task.CheckerType.TOKEN,
+            Stage.COMPILATION);
     private static Sandbox sandbox;
 
     @BeforeAll
@@ -46,6 +59,14 @@ public class SandboxTest {
                 });
         sandbox = new Sandbox("test1");
         Config.setProperties("fileStorageDirectory.url", SandboxTest.class.getClassLoader().getResource("").getPath());
+    }
+
+    @AfterAll
+    public static void tearDown() throws Exception {
+        log.error("Cleaning up environment...");
+        if (sandbox != null) {
+            sandbox.close();
+        }
     }
 
     @Test
@@ -102,6 +123,6 @@ public class SandboxTest {
         assertTrue(compilationResult.isSuccess());
         TestResult result = sandbox.execute(task);
 
-        assertEquals(0.0, result.getScore(), result.getErrorMessage());
+        assertEquals(0.0, result.getScore(), result.getMessage());
     }
 }

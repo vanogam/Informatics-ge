@@ -14,6 +14,6 @@ public interface FileService {
             throw new IllegalArgumentException("Unknown file service type: " + type);
         }
     }
-    void downloadFile(String remoteName, String destinationPath, String destinationName, Sandbox sandbox, boolean isArchive) throws IOException;
+    void downloadFile(String remoteName, String destinationPath, String destinationName, Sandbox sandbox, boolean shouldArchive) throws IOException;
     void uploadFile(String localPath, String remoteName, Sandbox sandbox) throws IOException;
 }

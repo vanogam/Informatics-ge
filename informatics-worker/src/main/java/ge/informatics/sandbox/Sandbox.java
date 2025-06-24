@@ -10,8 +10,8 @@ import ge.informatics.sandbox.model.CompilationResult;
 
 import ge.informatics.sandbox.model.Task;
 import ge.informatics.sandbox.model.TestResult;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -26,7 +26,7 @@ import static ge.informatics.sandbox.Utils.*;
 public class Sandbox implements AutoCloseable {
     public static final String CONTESTANT_USER = "contestant";
     public static final String CHECKER_USER = "checker";
-    private static final Logger log = LogManager.getLogger(Sandbox.class);
+    private static final Logger log = LoggerFactory.getLogger(Sandbox.class);
     private final FileService fileService;
 
     private final String id;
@@ -90,13 +90,24 @@ public class Sandbox implements AutoCloseable {
     }
 
     private void loadCheckers() throws IOException, InterruptedException {
-        File checker = new File(Objects.requireNonNull(getClass().getClassLoader().getResource("tokenChecker.cpp")).getFile());
+        InputStream inputStream = Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("tokenChecker.cpp"));
+        File checker = File.createTempFile("checker", ".tmp");
+        try (FileOutputStream fos = new FileOutputStream(checker)) {
+            fos.write(inputStream.readAllBytes());
+        } catch (IOException e) {
+            log.error("Error while writing tokenChecker.cpp to /tmp", e);
+            throw new RuntimeException("Error while writing tokenChecker.cpp to /tmp", e);
+        }
         dockerClient.copyArchiveToContainerCmd(containerId)
                 .withTarInputStream(compressFile(checker, "tokenChecker.cpp"))
                 .withRemotePath("/sandbox/checkers/")
                 .exec();
-        CppExecutor.compile(dockerClient, containerId, "sandbox/checkers/tokenChecker.cpp", "/sandbox/checkers/tokenChecker");
-        changePermissions(dockerClient, containerId, "sandbox/checkers/tokenChecker", CHECKER_USER, "700");
+        CompilationResult result = CppExecutor.compile(dockerClient, containerId, "/sandbox/checkers/tokenChecker.cpp", "/sandbox/checkers/tokenChecker");
+        if (!result.isSuccess()) {
+            log.error("Failed to compile token checker: {}", result.getErrorMessage());
+            throw new RuntimeException("Failed to compile token checker: " + result.getErrorMessage());
+        }
+        changePermissions(dockerClient, containerId, "/sandbox/checkers/tokenChecker", CHECKER_USER, "700");
         executeCommandSync(dockerClient, containerId, "rm -rf /sandbox/checkers/tokenChecker.cpp");
     }
 
@@ -137,7 +148,6 @@ public class Sandbox implements AutoCloseable {
         } catch (Exception e) {
             log.error("Error while setting up environment for submission {}",task.submissionId() ,e);
             throw new RuntimeException(e);
-            // TODO: System error response
         }
         try {
             CompilationResult result = executor.compileSubmission(dockerClient, containerId);
@@ -149,7 +159,6 @@ public class Sandbox implements AutoCloseable {
         } catch (Exception e) {
             log.error("Error while compiling submission {}", task.submissionId(), e);
             throw new RuntimeException(e);
-            // TODO: System error response
         }
     }
 
@@ -159,7 +168,7 @@ public class Sandbox implements AutoCloseable {
             clearSubmissionDirectory();
             loadChecker(task);
             loadSubmission(task);
-            loadTest(task.testId(), task.code());
+            loadTest(task.taskId(), task.inputName(), task.outputName());
             log.debug("Test {} loaded for submission", task.testId());
             return executor.execute(dockerClient, containerId, task);
         } catch (Exception e) {
@@ -169,18 +178,24 @@ public class Sandbox implements AutoCloseable {
         }
     }
 
+    public String retrieveOutcome() throws InterruptedException {
+        String outputPath = "/sandbox/submission/output";
+        return executeCommandSync(dockerClient, containerId, "head -c 1000 " + outputPath)
+                .getStdout().toString(StandardCharsets.UTF_8);
+    }
+
     private void loadSubmission(Task task) throws IOException, InterruptedException {
-        String remotePath = "worker/shared/submission" + task.submissionId();
+        String remotePath = Config.get("sharedDirectory.url") + "/submission" + task.submissionId();
         fileService.downloadFile(remotePath, "/sandbox/submission", "submission", this, false);
         changePermissions(dockerClient, containerId,
                 "/sandbox/submission/submission",
                 CONTESTANT_USER, "700");
-        log.info("Submission loaded for task {}", task.code());
+        log.info("Submission loaded for task {}", task.taskId());
     }
 
     private void loadChecker(Task task) throws InterruptedException, IOException {
         if (task.checkerType().getExecutable() == null) {
-            copyFile("/sandbox/tasks/" + task.code() + "/checker", task.code(),
+            copyFile("/sandbox/tasks/" + task.taskId() + "/checker", task.taskId(),
                     "/sandbox/checker/checker");
         } else {
             copyFile("/sandbox/checkers/" + task.checkerType().getExecutable(), "/sandbox/checker/checker");
@@ -202,21 +217,21 @@ public class Sandbox implements AutoCloseable {
         log.debug("Cleared submission directory");
     }
 
-    private void loadTest(String testId, String taskCode) throws IOException, InterruptedException {
-        copyFile(String.format("/sandbox/tasks/%s/tests/%s.in", taskCode, testId), taskCode,
+    private void loadTest(String taskId, String inputName, String outputName) throws IOException, InterruptedException {
+        copyFile(String.format("/sandbox/tasks/%s/tests/%s", taskId, inputName), taskId,
                 "/sandbox/submission/input");
-        copyFile(String.format("/sandbox/tasks/%s/tests/%s.out", taskCode, testId), taskCode,
+        copyFile(String.format("/sandbox/tasks/%s/tests/%s", taskId, outputName), taskId,
                 "/sandbox/checker/output");
 
         executeCommandSync(dockerClient, containerId, "touch /sandbox/submission/output");
-        log.debug("Loaded test {} for task {}", testId, taskCode);
+        log.debug("Loaded test {}-{} for task {}", inputName, outputName, taskId);
     }
 
     private void copyFile(String src, String remoteName, String dest) throws InterruptedException, IOException {
         if (!fileExists(src)) {
             String secDir = src.substring(0, src.lastIndexOf("/"));
             String srcName = src.substring(src.lastIndexOf("/") + 1);
-            fileService.downloadFile(remoteName, secDir, srcName, this, true);
+            fileService.downloadFile(Config.get("fileStorageDirectory.url") + "/" + remoteName, secDir, srcName, this, true);
         }
         copyFile(src, dest);
     }
@@ -230,11 +245,18 @@ public class Sandbox implements AutoCloseable {
     }
 
 
-    private boolean fileExists(String path) throws InterruptedException {
+    public boolean fileExists(String path) throws InterruptedException {
         String out = executeCommandSync(dockerClient, containerId, "test -e " + path + " && echo exists")
                 .getStdout()
                 .toString(StandardCharsets.UTF_8);
         return out.trim().equals("exists");
+    }
+
+    public String readFile(String path) throws InterruptedException {
+        String out = executeCommandSync(dockerClient, containerId, "cat " + path)
+                .getStdout()
+                .toString(StandardCharsets.UTF_8);
+        return out.trim();
     }
 
     @Override

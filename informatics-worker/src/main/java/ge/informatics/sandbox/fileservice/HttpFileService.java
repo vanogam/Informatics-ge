@@ -3,8 +3,8 @@ package ge.informatics.sandbox.fileservice;
 
 import ge.informatics.sandbox.Config;
 import ge.informatics.sandbox.Sandbox;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -12,7 +12,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
 public class HttpFileService implements FileService {
-    private static final Logger log = LogManager.getLogger(HttpFileService.class);
+    private static final Logger log = LoggerFactory.getLogger(HttpFileService.class);
 
     public void downloadFile(String remoteName, String destinationPath, String destinationName, Sandbox sandbox, boolean shouldArchive) throws IOException {
         String domain = Config.get("fileServerDomain.url");

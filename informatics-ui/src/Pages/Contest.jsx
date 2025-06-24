@@ -26,7 +26,7 @@ function handleContestResponse(response, setProblems) {
     for (const task of tasks) {
 
         const taskId = task.task.id
-        const taskName = task.task.title.KA
+        const taskName = task.task.title
         const score = task.score
         const taskItem = {
             id: taskId,

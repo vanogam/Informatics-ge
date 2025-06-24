@@ -1,8 +1,18 @@
 package ge.informatics.sandbox.model;
 
-public record Task(String code, String contestId, Language language, long timeLimitMillis, int memoryLimitKB,
-                   Stage stage, String testId, ge.informatics.sandbox.model.Task.CheckerType checkerType,
-                   String submissionId) {
+public record Task(String taskId,
+                   String contestId,
+                   String submissionId,
+                   String submissionName,
+                   Language language,
+                   long timeLimitMillis,
+                   int memoryLimitKB,
+                   String testId,
+                   String inputName,
+                   String outputName,
+                   CheckerType checkerType,
+                   Stage stage
+) {
 
     public enum CheckerType {
         TOKEN("tokenChecker"),

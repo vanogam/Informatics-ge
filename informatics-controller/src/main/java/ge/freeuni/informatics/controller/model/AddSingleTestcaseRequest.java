@@ -10,8 +10,6 @@ public class AddSingleTestcaseRequest {
 
     Integer taskId;
 
-    Integer testcaseId;
-
     public MultipartFile getInputFile() {
         return inputFile;
     }
@@ -34,13 +32,5 @@ public class AddSingleTestcaseRequest {
 
     public void setTaskId(Integer taskId) {
         this.taskId = taskId;
-    }
-
-    public Integer getTestcaseId() {
-        return testcaseId;
-    }
-
-    public void setTestcaseId(Integer testcaseId) {
-        this.testcaseId = testcaseId;
     }
 }

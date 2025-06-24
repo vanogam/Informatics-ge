@@ -1,17 +1,15 @@
 package ge.informatics.sandbox;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ge.informatics.sandbox.fileservice.FileService;
-import ge.informatics.sandbox.model.Stage;
-import ge.informatics.sandbox.model.TestResult;
+import ge.informatics.sandbox.dao.SubmissionTestResultDao;
+import ge.informatics.sandbox.kafka.CallbackProducer;
+import ge.informatics.sandbox.model.*;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import ge.informatics.sandbox.model.Task;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,11 +19,13 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.Properties;
 
+import static ge.informatics.sandbox.Utils.compressFile;
+
 public class JobConsumer {
-    private static final Logger log = LogManager.getLogger(JobConsumer.class);
+    private static final Logger log = LoggerFactory.getLogger(JobConsumer.class);
     private final KafkaConsumer<String, String> consumer;
     private final Sandbox sandbox;
-    private final FileService fileService;
+    public boolean running = true;
 
     public JobConsumer(String bootstrapServers, String groupId, String id) {
         Properties props = new Properties();
@@ -35,59 +35,137 @@ public class JobConsumer {
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
-        this.consumer = new KafkaConsumer<>(props);
-        this.sandbox = new Sandbox(id);
-        this.fileService = FileService.getInstance(Config.get("fileservice.type"));
+        consumer = new KafkaConsumer<>(props);
+        sandbox = new Sandbox(id);
     }
 
     public void listenToSubmissionTopic() {
         String topic = "submission-topic";
         consumer.subscribe(Collections.singletonList(topic));
 
-        log.info("Listening to topic: " + topic);
+        log.info("Listening to topic: {}", topic);
 
         try {
-            while (true) {
+            while (running) {
                 ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(1000));
+                if (records.count() > 0) {
+                    log.info("Got records: {}", records.count());
+                } else {
+                    continue;
+                }
                 for (ConsumerRecord<String, String> record : records) {
+                    Task task;
                     try {
-                        processMessage(record.value());
-                        consumer.commitSync();
-                    } catch (IOException e) {
-                        log.error("Failed to process message {}", record.value(), e);
-                        throw new RuntimeException(e);
+                        ObjectMapper objectMapper = new ObjectMapper();
+                        task = objectMapper.readValue(record.value(), Task.class);
+                    } catch (Exception e) {
+                        log.error("Error reading task json from message {}", record.value(), e);
+                        sendCallback(new TestResult.Builder()
+                                .withMessageType(CallbackType.SYSTEM_ERROR)
+                                .withMessage("Invalid message format")
+                                .build());
+                        continue;
                     }
+                    try {
+                        processMessage(task);
+                    } catch (Exception e) {
+                        log.error("Failed to process message {}", record.value(), e);
+                        sendCallback(new TestResult.Builder()
+                                .withSubmissionId(Long.parseLong(task.submissionId()))
+                                .withMessageType(CallbackType.SYSTEM_ERROR)
+                                .withMessage("Error processing message: " + e.getMessage())
+                                .withTestcaseKey(task.testId())
+                                .build()
+                        );
+                    }
+                }
+                consumer.commitSync();
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ignored) {
+                    return;
                 }
             }
         } finally {
+            try {
+                sandbox.close();
+            } catch (Exception e) {
+                log.error("Error closing sandbox", e);
+            }
             consumer.close();
         }
     }
 
-    private void processMessage(String message) throws IOException {
-        log.info("Received message: " + message);
-
-        ObjectMapper objectMapper = new ObjectMapper();
-        Task task = objectMapper.readValue(message, Task.class);
+    private void processMessage(Task task) throws IOException, InterruptedException {
         if (task.stage() == Stage.COMPILATION) {
-            Files.createDirectories(Path.of("/sandbox/tmp/"));
-            fileService.downloadFile(Config.get("fileStorageDirectory.url") + "/" + task.contestId() + "/" + task.code(), task.submissionId(),
-                                     "/sandbox/tmp/" + task.submissionId(),
-                    sandbox,
-                    true
-                    );
-            sandbox.compile(task, new File("/sandbox/tmp/" + task.submissionId()));
+            sendCallback(new TestResult.Builder()
+                    .withSubmissionId(Long.parseLong(task.submissionId()))
+                    .withMessageType(CallbackType.COMPILATION_STARTED)
+                    .build());
+            CompilationResult result = sandbox.compile(task, new File(Config.get("fileStorageDirectory.url") + "/" + task.taskId() + "/submissions/" + task.submissionName()));
+            sendCallback(new TestResult.Builder()
+                    .withSubmissionId(Long.parseLong(task.submissionId()))
+                    .withMessageType(result.isSuccess() ? CallbackType.COMPILATION_COMPLETED : CallbackType.COMPILATION_FAILED)
+                    .withMessage(result.getErrorMessage())
+                    .build());
         } else if (task.stage() == Stage.TESTING) {
+            String testsPath = Config.get("fileStorageDirectory.url") + "/" + task.taskId();
+            if (!sandbox.fileExists("/sandbox/tasks/" + task.taskId())) {
+                sandbox.uploadTar(compressFile(new File(testsPath), task.taskId(), "^("+ task.taskId() +"|tests)$"), "/sandbox/tasks/");
+            } else {
+                String lastUpdateText = sandbox.readFile("/sandbox/tasks/" + task.taskId() + "/lastUpdate.txt");
+                long lastUpdate = 0;
+                if (lastUpdateText != null && !lastUpdateText.isEmpty()) {
+                    lastUpdate = Long.parseLong(lastUpdateText);
+                }
+                Path lastUpdatePath = new File(testsPath + "/lastUpdate").toPath();
+                long currentUpdate = 0;
+                if (Files.exists(lastUpdatePath)) {
+                    currentUpdate = Long.parseLong(Files.readString(lastUpdatePath));
+                }
+                if (currentUpdate > lastUpdate) {
+                    log.info("Task {} has been updated, re-uploading files", task.taskId());
+                    sandbox.uploadTar(compressFile(new File(testsPath), task.taskId(), "^("+ task.taskId() +"|tests)$"), "/sandbox/tasks/");
+                } else {
+                    log.info("Task {} has not been updated, skipping upload", task.taskId());
+                }
+            }
             TestResult result = sandbox.execute(task);
+            String outcome = sandbox.retrieveOutcome();
+            SubmissionTestResultDao.saveTestResult(task.submissionId(),
+                    task.testId(),
+                    result.getScore(),
+                    result.getStatus(),
+                    result.getMessage(),
+                    (int)result.getTimeMillis(),
+                    (int)result.getMemoryKB(),
+                    outcome);
+            sendCallback(result);
         }
+    }
+
+    private void sendCallback(TestResult result) {
+        CallbackProducer producer = new CallbackProducer(System.getenv("KAFKA_BOOTSTRAP_SERVERS"));
+        producer.sendTestResult(result);
+        producer.close();
     }
 
     public static void main(String[] args) {
         if (args.length > 0) {
             Config.loadCustomConfig(args[0]);
         }
+        JobConsumer consumer = new JobConsumer("kafka:9092", "worker", System.getenv("APP_ID"));
 
-        JobConsumer consumer = new JobConsumer("localhost:9092", "contest", "1");
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            log.info("Shutdown signal received. Terminating...");
+            consumer.running = false;
+            try {
+                consumer.sandbox.close();
+                consumer.consumer.close();
+
+            } catch (Exception ignored) {
+            }
+        }));
         consumer.listenToSubmissionTopic();
     }
 }

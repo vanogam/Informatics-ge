@@ -32,20 +32,20 @@ public class Submission {
 
     private Date submissionTime;
 
-    private Integer submissionMemory;
+    private Long time;
+
+    private Integer memory;
 
     @Column(nullable = false)
     private SubmissionStatus status;
 
     private Float score;
 
-    private String compilationResult;
-
     private String compilationMessage;
 
     private Integer currentTest;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.LAZY)
     private List<SubmissionTestResult> submissionTestResults;
 
     private Long roomId;
@@ -106,12 +106,20 @@ public class Submission {
         this.submissionTime = submissionTime;
     }
 
-    public Integer getSubmissionMemory() {
-        return submissionMemory;
+    public Long getTime() {
+        return time;
     }
 
-    public void setSubmissionMemory(Integer submissionMemory) {
-        this.submissionMemory = submissionMemory;
+    public void setTime(Long time) {
+        this.time = time;
+    }
+
+    public Integer getMemory() {
+        return memory;
+    }
+
+    public void setMemory(Integer submissionMemory) {
+        this.memory = submissionMemory;
     }
 
     public SubmissionStatus getStatus() {
@@ -128,14 +136,6 @@ public class Submission {
 
     public void setScore(Float score) {
         this.score = score;
-    }
-
-    public String getCompilationResult() {
-        return compilationResult;
-    }
-
-    public void setCompilationResult(String compilationResult) {
-        this.compilationResult = compilationResult;
     }
 
     public String getCompilationMessage() {

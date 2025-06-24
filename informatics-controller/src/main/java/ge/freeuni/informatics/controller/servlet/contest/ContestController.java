@@ -2,6 +2,7 @@ package ge.freeuni.informatics.controller.servlet.contest;
 
 import ge.freeuni.informatics.common.dto.ContestDTO;
 import ge.freeuni.informatics.common.dto.ContestantResultDTO;
+import ge.freeuni.informatics.common.dto.SubmissionDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.controller.model.*;
 import ge.freeuni.informatics.server.contest.ContestService;
@@ -206,6 +207,15 @@ public class ContestController {
             return new SubmissionListResponse("FAIL", ex.getCode());
         }
         return response;
+    }
+
+    @GetMapping("/submission/{id}")
+    public ResponseEntity<SubmissionDTO> getSubmission(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(submissionManager.loadFullSubmission(id));
+        } catch (InformaticsServerException e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     public Date convertToDate(LocalDateTime dateToConvert) {

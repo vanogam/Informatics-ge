@@ -32,8 +32,8 @@ public enum TaskScoreType {
         } else {
             float sum = 0;
             float multiplier = Float.parseFloat(s);
-            for (int i = 0; i < multiplier * testResults.size(); i++) {
-                sum += testResults.get(i).getScore() * multiplier;
+            for (SubmissionTestResult testResult : testResults) {
+                sum += testResult.getScore() * multiplier;
             }
             return sum;
         }

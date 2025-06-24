@@ -1,5 +1,6 @@
 package ge.freeuni.informatics.common.model.task;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
@@ -16,6 +17,12 @@ public class TestCase {
     private String inputFileAddress;
 
     private String OutputFileAddress;
+
+    @Column(length = 1100)
+    private String inputSnippet;
+
+    @Column(length = 1100)
+    private String outputSnippet;
 
     @Id
     @GeneratedValue
@@ -59,4 +66,19 @@ public class TestCase {
         OutputFileAddress = outputFileAddress;
     }
 
+    public String getInputSnippet() {
+        return inputSnippet;
+    }
+
+    public void setInputSnippet(String inputSnippet) {
+        this.inputSnippet = inputSnippet;
+    }
+
+    public  String getOutputSnippet() {
+        return outputSnippet;
+    }
+
+    public void setOutputSnippet(String outputSnippet) {
+        this.outputSnippet = outputSnippet;
+    }
 }

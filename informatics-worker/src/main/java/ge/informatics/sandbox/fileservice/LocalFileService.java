@@ -16,8 +16,7 @@ public class LocalFileService implements FileService {
 
     @Override
     public void downloadFile(String remoteName, String destinationPath, String destinationName, Sandbox sandbox, boolean shouldArchive) {
-        String directory = Config.get("fileStorageDirectory.url");
-        File file = new File(directory + "/" + remoteName);
+        File file = new File(remoteName);
         if (!file.exists()) {
             throw new RuntimeException("File not found: " + file.getAbsolutePath());
         }
@@ -34,10 +33,7 @@ public class LocalFileService implements FileService {
 
     @Override
     public void uploadFile(String containerPath, String remoteName, Sandbox sandbox) throws IOException {
-        String rootdir = Config.get("fileStorageDirectory.url");
-        String directory = rootdir + "worker/shared";
-        Files.createDirectories(Path.of(directory));
-        String remotePath = directory + "/" + remoteName;
+        String remotePath = Config.get("sharedDirectory.url") + "/" + remoteName;
         sandbox.downloadFile(containerPath, remotePath);
     }
 }

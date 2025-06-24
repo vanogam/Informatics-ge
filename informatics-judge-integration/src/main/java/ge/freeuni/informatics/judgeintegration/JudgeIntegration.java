@@ -1,5 +1,6 @@
 package ge.freeuni.informatics.judgeintegration;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.CodeLanguage;
@@ -18,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.util.*;
@@ -46,35 +48,44 @@ public class JudgeIntegration implements IJudgeIntegration{
                 String.valueOf(task.getId()),
                 String.valueOf(task.getContest().getId()),
                 String.valueOf(submission.getId()),
+                String.valueOf(submission.getFileName()),
                 CodeLanguage.valueOf(submission.getLanguage()),
                 task.getTimeLimitMillis(),
                 task.getMemoryLimitMB() * 1024,
                 null,
+                null,
+                null,
                 CheckerType.TOKEN,
                 Stage.COMPILATION
         );
-        submissionLocks.put(task.getId(), new Object());
+        submissionLocks.put(submission.getId(), new Object());
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             String message = objectMapper.writeValueAsString(kafkaTask);
             log.debug("Publishing compilation message: {}", message);
             kafkaProducerService.sendMessage("submission-topic", message);
         } catch (IOException e) {
-            log.error("Failed to serialize compilation kafka message: {}", e);
+            log.error("Failed to serialize compilation kafka message", e);
             throw new InformaticsServerException("serializationError", e);
         }
     }
 
     private void sendTestMessages(Task task, Submission submission) throws InformaticsServerException {
-        for (TestCase testCase : task.getTestCases()) {
+        List<TestCase> testCases = task.getTestCases().stream()
+                .sorted(Comparator.comparing(TestCase::getKey))
+                .toList();
+        for (TestCase testCase : testCases) {
             KafkaTask kafkaTask = new KafkaTask(
                     String.valueOf(task.getId()),
                     String.valueOf(task.getContest().getId()),
                     String.valueOf(submission.getId()),
+                    String.valueOf(submission.getFileName()),
                     CodeLanguage.valueOf(submission.getLanguage()),
                     task.getTimeLimitMillis(),
                     task.getMemoryLimitMB() * 1024,
                     testCase.getKey(),
+                    testCase.getInputFileAddress().substring(testCase.getInputFileAddress().lastIndexOf("/") + 1),
+                    testCase.getOutputFileAddress().substring(testCase.getOutputFileAddress().lastIndexOf("/") + 1),
                     CheckerType.TOKEN,
                     Stage.TESTING
             );
@@ -95,47 +106,65 @@ public class JudgeIntegration implements IJudgeIntegration{
         }
     }
 
-    @KafkaListener(topics = "submission-callbacks", groupId = "core")
-    private void listenToCompletionTopic(String message) throws InformaticsServerException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        KafkaCallback callback = objectMapper.convertValue(message, KafkaCallback.class);
-        log.info("Received callback for submission: {}, {}, {}", callback.submissionId(), callback.messageType(), callback.testcaseKey());
-        Submission submission = submissionRepository.getReferenceById(Long.parseLong(callback.submissionId()));
-        synchronized (submissionLocks.get(submission.getId())) {
-            switch (callback.messageType()) {
-                case COMPILATION_STARTED:
-                    submission.setStatus(SubmissionStatus.COMPILING);
-                    submissionRepository.save(submission);
-                    break;
-                case COMPILATION_COMPLETED:
-                    submission.setStatus(SubmissionStatus.RUNNING);
-                    submissionRepository.save(submission);
-                    sendTestMessages(submission.getTask(), submission);
-                    break;
-                case COMPILATION_FAILED:
-                    submission.setStatus(SubmissionStatus.COMPILATION_ERROR);
-                    finalizeSubmission(submission, callback);
-                    log.error("Compilation failed for submission: {}", submission.getId());
-                    break;
-                case TEST_COMPLETED:
-                    if (!testCompletionMap.get(submission.getId()).containsKey(callback.testcaseKey())) {
-                        return;
-                    }
-                    testCompletionMap.get(submission.getId()).remove(callback.testcaseKey());
-                    if (testCompletionMap.get(submission.getId()).isEmpty()) {
-                        finalizeSubmission(submission, callback);
-                        return;
-                    }
-                    submission.setCurrentTest(testCompletionMap.get(submission.getId()).firstEntry().getValue());
-                    submissionRepository.save(submission);
-                    log.info("Test completed for submission: {}, test case: {}", submission.getId(), callback.testcaseKey());
-                    break;
-                default:
+    @KafkaListener(topics = "submission-callback", groupId = "core")
+    @Transactional
+    protected void listenToCompletionTopic(String message) {
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            KafkaCallback callback = objectMapper.readValue(message, KafkaCallback.class);
+            log.info("`Received callback for submission`: {}, {}, {}", callback.submissionId(), callback.messageType(), callback.testcaseKey());
+            Submission submission = submissionRepository.getReferenceById(callback.submissionId());
+            if (!submissionLocks.containsKey(submission.getId())) {
+                log.warn("No lock found for submission: {}", submission.getId());
+                // TODO: Add restart handling
+                return;
             }
+            synchronized (submissionLocks.get(submission.getId())) {
+                switch (callback.messageType()) {
+                    case COMPILATION_STARTED:
+                        submission.setStatus(SubmissionStatus.COMPILING);
+                        submissionRepository.save(submission);
+                        break;
+                    case COMPILATION_COMPLETED:
+                        submission.setStatus(SubmissionStatus.RUNNING);
+                        submission.setCurrentTest(1);
+                        sendTestMessages(submission.getTask(), submission);
+                        submissionRepository.save(submission);
+                        break;
+                    case COMPILATION_FAILED:
+                        submission.setStatus(SubmissionStatus.COMPILATION_ERROR);
+                        finalizeSubmission(submission, callback);
+                        log.error("Compilation failed for submission: {}", submission.getId());
+                        break;
+                    case SYSTEM_ERROR:
+                        submission.setStatus(SubmissionStatus.SYSTEM_ERROR);
+                        submission.setCompilationMessage(callback.message());
+                        finalizeSubmission(submission, callback);
+                        log.error("System error for submission: {}, message: {}", submission.getId(), callback.message());
+                        break;
+                    case TEST_COMPLETED:
+                        if (!testCompletionMap.get(submission.getId()).containsKey(callback.testcaseKey())) {
+                            return;
+                        }
+                        testCompletionMap.get(submission.getId()).remove(callback.testcaseKey());
+                        if (testCompletionMap.get(submission.getId()).isEmpty()) {
+                            finalizeSubmission(submission, callback);
+                            return;
+                        }
+                        submission.setCurrentTest(testCompletionMap.get(submission.getId()).firstEntry().getValue());
+                        submissionRepository.save(submission);
+                        log.info("Test completed for submission: {}, test case: {}", submission.getId(), callback.testcaseKey());
+                        break;
+                    default:
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error while processing submission message", e);
+            throw new RuntimeException(e);
         }
     }
 
-    private void finalizeSubmission(Submission submission, KafkaCallback callback) throws InformaticsServerException {
+    private void finalizeSubmission(Submission submission, KafkaCallback callback) {
         if (submission.getStatus() == SubmissionStatus.COMPILATION_ERROR) {
             submission.setScore(0f);
             submission.setCompilationMessage(callback.message());
@@ -149,8 +178,14 @@ public class JudgeIntegration implements IJudgeIntegration{
                 submission.setStatus(SubmissionStatus.PARTIAL);
             }
         }
-        float finalScore = submission.getTask().getTaskScoreType().evaluate(submission.getSubmissionTestResults(),
-                submission.getTask().getTaskScoreParameter());
+        float finalScore = 0f;
+        try {
+            finalScore = submission.getTask().getTaskScoreType().evaluate(submission.getSubmissionTestResults(),
+                    submission.getTask().getTaskScoreParameter());
+        } catch (Exception e) {
+            log.error("Error evaluating task score for submission: {}", submission.getId(), e);
+            submission.setStatus(SubmissionStatus.SYSTEM_ERROR);
+        }
         submission.setScore(finalScore);
         submissionRepository.save(submission);
         testCompletionMap.remove(submission.getId());

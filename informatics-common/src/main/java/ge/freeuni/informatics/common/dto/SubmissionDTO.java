@@ -22,10 +22,12 @@ public record SubmissionDTO(
     String contestName,
     String language,
     String fileName,
+    String text,
     Date submissionTime,
-    String compilationResult,
+    Long time,
+    Integer memory,
     String compilationMessage,
-    List<SubmissionTestResult> results
+    List<SubmissionTestResultDTO> results
 ) {
     public SubmissionDTO(
             String language,
@@ -46,7 +48,9 @@ public record SubmissionDTO(
                 null,
                 language,
                 fileName,
+                null,
                 submissionTime,
+                null,
                 null,
                 null,
                 null
@@ -54,7 +58,7 @@ public record SubmissionDTO(
 
     }
 
-    public static SubmissionDTO toDTO(Submission submission) {
+    public static SubmissionDTO toDtoLight(Submission submission) {
         return new SubmissionDTO(
             submission.getId(),
             submission.getUser().getUsername(),
@@ -67,10 +71,34 @@ public record SubmissionDTO(
             submission.getContest().getName(),
             submission.getLanguage(),
             null,
+            null,
             submission.getSubmissionTime(),
-            submission.getCompilationResult(),
+            submission.getTime(),
+            submission.getMemory(),
             submission.getCompilationMessage(),
-            submission.getSubmissionTestResults()
+            null
+        );
+    }
+
+    public static SubmissionDTO toDTOFull(Submission submission, String code, List<SubmissionTestResultDTO> results) {
+        return new SubmissionDTO(
+            submission.getId(),
+            submission.getUser().getUsername(),
+            submission.getStatus(),
+            submission.getCurrentTest(),
+            submission.getScore(),
+            submission.getTask().getId(),
+            submission.getContest().getId(),
+            submission.getTask().getTitle(),
+            submission.getContest().getName(),
+            submission.getLanguage(),
+            null,
+            code,
+            submission.getSubmissionTime(),
+            submission.getTime(),
+            submission.getMemory(),
+            submission.getCompilationMessage(),
+            results
         );
     }
 
@@ -79,20 +107,11 @@ public record SubmissionDTO(
         // Submission can't be edited by user, so id should not be set here.
         submission.setLanguage(submissionDTO.language());
         submission.setSubmissionTime(submissionDTO.submissionTime());
-        submission.setCompilationResult(submissionDTO.compilationResult());
         submission.setCompilationMessage(submissionDTO.compilationMessage());
         submission.setScore(submissionDTO.score());
         submission.setStatus(submissionDTO.status());
         submission.setCurrentTest(submissionDTO.currentTest());
         submission.setFileName(submissionDTO.fileName());
         return submission;
-    }
-
-    public static List<SubmissionDTO> toDTOs(List<Submission> submissions) {
-        List<SubmissionDTO> submissionDTOs = new ArrayList<>();
-        for (Submission submission : submissions) {
-            submissionDTOs.add(toDTO(submission));
-        }
-        return submissionDTOs;
     }
 }

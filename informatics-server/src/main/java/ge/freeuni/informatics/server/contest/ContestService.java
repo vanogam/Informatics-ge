@@ -67,8 +67,8 @@ public class ContestService {
                         null,
                         null,
                         null,
-                        false,
-                        false,
+                        true,
+                        true,
                         true,
                         true)
                 .stream()
@@ -82,11 +82,12 @@ public class ContestService {
                         null,
                         null,
                         null,
-                        false,
-                        false,
+                        true,
+                        true,
                         true,
                         true)
                 .stream()
+                .filter(contest -> contest.getStartDate() != null)
                 .map(ContestDTO::toDTO)
                 .toList();
         scheduleFutureContests(futureContests);

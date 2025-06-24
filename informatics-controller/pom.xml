@@ -5,7 +5,7 @@
     <parent>
         <artifactId>Informatics</artifactId>
         <groupId>ge.freeuni</groupId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>0.1</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -19,13 +19,13 @@
         <dependency>
             <groupId>ge.freeuni</groupId>
             <artifactId>informatics-common</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>ge.freeuni</groupId>
             <artifactId>informatics-server</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>

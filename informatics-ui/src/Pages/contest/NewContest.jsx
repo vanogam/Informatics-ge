@@ -15,20 +15,21 @@ import {useContext, useRef, useState} from 'react'
 import {NavLink} from 'react-router-dom'
 import {AxiosContext, getAxiosInstance} from '../../utils/axiosInstance'
 import getMessage from '../../Components/lang'
+import {toast} from "react-toastify";
 
 export default function NewContest() {
     const [contestId, setContestId] = useState(null)
     const [contestName, setContestName] = useState(null)
     const axiosInstance = useContext(AxiosContext)
 
-    const [value, setValue] = useState(dayjs(new Date()))
+    const [startDate, setStartDate] = useState(dayjs(new Date()))
     const [showError, setShowError] = useState(false)
     const [durationType, setDurationType] = useState('Minutes')
     const [tasks, setTasks] = useState([])
     const nameRef = useRef(null)
     const durationRef = useRef(null)
     const [scoringType, setScoringType] = useState('BEST_SUBMISSION');
-    const [upsolvingAfterFinished, setUpsolvingAfterFinished] = useState(true);
+    const [upsolvingAfterFinish, setUpsolvingAfterFinish] = useState(true);
 
     const scoringTypes = ['BEST_SUBMISSION', 'LAST_SUBMISSION'];
 
@@ -39,11 +40,15 @@ export default function NewContest() {
     const handleAddContest = () => {
         setShowError(true);
         if (!isValid()) {
+            if (!(!!durationRef.current.value && !!startDate) &&
+                !(!startDate && !durationRef.current.value)) {
+                toast.error(getMessage('ka', 'startDateAndDurationError'));
+            }
             return;
         }
         const params = {
             name: nameRef?.current.value,
-            startDate: value?.format('DD/MM/YYYY HH:mm'),
+            startDate: startDate?.format('DD/MM/YYYY HH:mm'),
             durationInSeconds:
                 !durationRef?.current.value
                     ? null
@@ -52,23 +57,23 @@ export default function NewContest() {
                         : durationRef?.current.value * 3600,
             roomId: "1",
             scoringType,
-            upsolvingAfterFinished,
+            upsolvingAfterFinish,
         };
         params["durationInSeconds"] = params["durationInSeconds"]?.toString();
         setContestName(nameRef?.current.value);
         axiosInstance
             .post('/create-contest', params)
             .then((res) => {
-                setContestId(res.data.contest.id);
+                toast.success(getMessage('ka', 'contestAdded'));
+                window.location = `/contest/${res.data.contest.id}/edit`;
             });
     };
 
     const isValid = () => {
-        console.log("!!!")
         return !!nameRef.current.value
             && (!!durationRef.current.value
-                && !!value) || (
-                !value && !durationRef.current.value
+                && !!startDate) || (
+                !startDate && !durationRef.current.value
             )
     }
 
@@ -91,13 +96,14 @@ export default function NewContest() {
                                 label={getMessage('ka', 'name')}
                                 inputRef={nameRef}
                                 required={true}
-                                error={!nameRef.current?.value && showError}
+                                error={!contestName && showError}
+                                onChange={(e) => setContestName(e.target.value)}
                                 variant="outlined"
                             />
                             <DateTimePicker
                                 label={getMessage('ka', 'startDate')}
-                                value={value}
-                                onChange={setValue}
+                                value={startDate}
+                                onChange={setStartDate}
                                 inputFormat={'DD/MM/YYYY HH:mm'}
                                 renderInput={(params) => (
                                     <TextField variant="outlined" {...params} />
@@ -147,8 +153,8 @@ export default function NewContest() {
                                 <Typography>{getMessage('ka', 'upsolvingAfterFinished')}</Typography>
                                 <input
                                     type="checkbox"
-                                    checked={upsolvingAfterFinished}
-                                    onChange={(e) => setUpsolvingAfterFinished(e.target.checked)}
+                                    checked={upsolvingAfterFinish}
+                                    onChange={(e) => setUpsolvingAfterFinish(e.target.checked)}
                                 />
                             </Stack>
                             <Button

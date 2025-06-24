@@ -89,8 +89,8 @@ public class TestcaseModifyTest {
     @Test
     public void testAddTestcase() throws InformaticsServerException, IOException {
         when(taskRepository.getReferenceById(any())).thenAnswer(ignored -> task);
-        Task persistedTask = addTestcase("0", task, "input 1", "output 1");
-        TestCase testCase = persistedTask.getTestCases().get(0);
+        addTestcase("0", task, "input 1", "output 1");
+        TestCase testCase = task.getTestCases().getFirst();
         assertEquals("test0.in", getTestFileName(testCase.getInputFileAddress()));
         assertEquals("test0.out", getTestFileName(testCase.getOutputFileAddress()));
         File inputFile = new File(testCase.getInputFileAddress());
@@ -180,11 +180,11 @@ public class TestcaseModifyTest {
         return String.format("%0" + totalLength + "d", number);
     }
 
-    private Task addTestcase(String key, Task task, String input, String output) throws InformaticsServerException {
+    private void addTestcase(String key, Task task, String input, String output) throws InformaticsServerException {
         byte[] inputContent = input.getBytes(StandardCharsets.UTF_8);
         byte[] outputContent = output.getBytes(StandardCharsets.UTF_8);
 
-        return taskManager.addTestcase(task.getId(), inputContent, outputContent,
+        taskManager.addTestcase(task.getId(), inputContent, outputContent,
                 task.getInputTemplate().replace("*", key),
                 task.getOutputTemplate().replace("*", key));
     }

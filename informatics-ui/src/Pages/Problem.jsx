@@ -56,9 +56,10 @@ export default function Problem() {
         axiosInstance
             .post(`/submit`, body)
             .then((response) => {
-                console.log(response)
+                if (response.status == 200) {
+                    window.location = `/contest/${contest_id}/mySubmissions`
+                }
             })
-        navigate(`/contest/${contest_id}/mySubmissions`, {replace: true});
     }
 
     const {contest_id, problem_id} = useParams()

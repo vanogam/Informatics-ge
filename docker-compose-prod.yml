@@ -1,8 +1,6 @@
 services:
   core:
-    build:
-      context: "./"
-      dockerfile: docker/main/Dockerfile
+    image: informatics/core:${VERSION}
     container_name: core
     profiles:
       - prod
@@ -23,9 +21,7 @@ services:
   informatics-ui:
     profiles:
       - prod
-    build:
-      context: "./informatics-ui"
-      dockerfile: Dockerfile
+    image: informatics/ui:${VERSION}
     ports:
       - "80:80"
       - "443:443"
@@ -55,6 +51,55 @@ services:
       informatics:
         aliases:
           - db
+  kafka:
+    image: apache/kafka:latest
+    container_name: kafka
+    profiles:
+      - prod
+    environment:
+      # Configure listeners for both docker and host communication
+      KAFKA_LISTENERS: CONTROLLER://localhost:9091,HOST://0.0.0.0:9093,DOCKER://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: HOST://localhost:9093,DOCKER://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,DOCKER:PLAINTEXT,HOST:PLAINTEXT
+
+      # Settings required for KRaft mode
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9091
+
+      # Listener to use for broker-to-broker communication
+      KAFKA_INTER_BROKER_LISTENER_NAME: DOCKER
+
+      # Required for a single node cluster
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      informatics:
+        aliases:
+          - kafka
+  worker:
+    depends_on:
+      - kafka
+    image: informatics/worker:${VERSION}
+    profiles:
+      - prod
+    volumes:
+      - /home/informatics/prod/files/tasks:/files
+      - /home/informatics/prod/files/worker/shared:/shared
+      - /home/informatics/prod/logs/worker:/logs
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8999:8989"
+    environment:
+      JDBC_URL: jdbc:postgresql://db:5432/informatics
+      JDBC_USERNAME: ${DB_USER}
+      JDBC_PASSWORD: ${DB_PASSWORD}
+      APP_ID: 1
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    networks:
+      informatics:
+        aliases:
+          - worker
 networks:
   informatics:
     driver: bridge

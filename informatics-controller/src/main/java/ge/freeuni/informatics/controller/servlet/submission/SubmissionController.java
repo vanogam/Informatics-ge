@@ -54,10 +54,9 @@ public class SubmissionController {
                     request.getTaskId(),
                     new Date(),
                     fileManager.saveTextSubmission(
+                            request.getTaskId(),
                             new Date(),
                             CodeLanguage.valueOf(request.getLanguage().toString()),
-                            request.getContestId(),
-                            request.getTaskId(),
                             request.getSubmissionText())
                     );
         } catch (InformaticsServerException e) {

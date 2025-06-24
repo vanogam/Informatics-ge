@@ -18,7 +18,9 @@ public interface SubmissionJpaRepository extends JpaRepository<Submission, Long>
         WHERE (:userId IS NULL OR s.user.id = :userId)
           AND (:taskId IS NULL OR s.task.id = :taskId)
           AND (:contestId IS NULL OR s.contest.id = :contestId)
-          AND (:roomId IS NULL OR s..id = :roomId)
+          AND (:roomId IS NULL OR s.roomId = :roomId)
+              ORDER BY s.submissionTime DESC
+              LIMIT :limit OFFSET :offset
     """)
     public List<Submission> findSubmissions(Long userId, Long taskId, Long contestId, Long roomId, Integer offset, Integer limit);
 }

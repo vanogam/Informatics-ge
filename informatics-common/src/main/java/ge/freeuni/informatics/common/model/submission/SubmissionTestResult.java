@@ -10,6 +10,8 @@ public class SubmissionTestResult {
      */
     private Float score;
 
+    private String testKey;
+
     /**
      * First 1000 symbols of contestant output for the test case.
      */
@@ -29,6 +31,8 @@ public class SubmissionTestResult {
      * Memory in kilobytes used to run the test case.
      */
     private Integer memory;
+
+    private TestStatus testStatus;
 
     public Float getScore() {
         return score;
@@ -60,5 +64,29 @@ public class SubmissionTestResult {
 
     public void setMemory(Integer memory) {
         this.memory = memory;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public String getTestKey() {
+        return testKey;
+    }
+
+    public void setTestKey(String testKey) {
+        this.testKey = testKey;
+    }
+
+    public TestStatus getTestStatus() {
+        return testStatus;
+    }
+
+    public void setTestStatus(TestStatus testStatus) {
+        this.testStatus = testStatus;
     }
 }

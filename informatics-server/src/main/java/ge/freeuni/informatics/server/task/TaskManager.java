@@ -29,6 +29,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -201,11 +202,15 @@ public class TaskManager implements ITaskManager {
 
     @Override
     @TeacherTaskRestricted
-    public Task addTestcase(long taskId, byte[] inputContent, byte[] outputContent, String inputName, String outputName) throws InformaticsServerException {
+    public AddTestcasesResult addTestcase(long taskId, byte[] inputContent, byte[] outputContent, String inputName, String outputName) throws InformaticsServerException {
         Task task = taskRepository.getReferenceById(taskId);
         addTestcaseLocal(task, inputContent, outputContent, inputName, outputName);
         taskRepository.save(task);
-        return task;
+
+        String testKey = getTestKey(inputName, outputName, task.getInputTemplate(), task.getOutputTemplate());
+        AddTestcasesResult result = new AddTestcasesResult();
+        result.getSuccess().add(testKey);
+        return result;
     }
 
     @Override
@@ -362,8 +367,10 @@ public class TaskManager implements ITaskManager {
         newTestCase.setTaskId(task.getId());
         insertTestcaseSorted(task, newTestCase);
         try {
-            newTestCase.setInputFileAddress(createTestFile(inputName, task.getCode(), inputContent));
-            newTestCase.setOutputFileAddress(createTestFile(outputName, task.getCode(), outputContent));
+            newTestCase.setInputFileAddress(createTestFile(inputName, String.valueOf(task.getId()), inputContent));
+            newTestCase.setOutputFileAddress(createTestFile(outputName, String.valueOf(task.getId()), outputContent));
+            newTestCase.setInputSnippet(new String(inputContent, 0, Math.min(1000, inputContent.length - 1), StandardCharsets.UTF_8));
+            newTestCase.setOutputSnippet(new String(inputContent, 0, Math.min(1000, outputContent.length - 1), StandardCharsets.UTF_8));
         } catch (IOException e) {
             log.error("Error while creating test files for test {}", newTestCase.getKey(), e);
             throw new InformaticsServerException("unexpectedException", e);
@@ -431,7 +438,7 @@ public class TaskManager implements ITaskManager {
     }
 
     private String createTestFileAddress(String testName, String taskCode) throws IOException {
-        String folder = FileUtils.buildPath(testsDirectoryAddress, taskCode);
+        String folder = testsDirectoryAddress.replace(":taskId", taskCode);
         Files.createDirectories(Paths.get(folder));
         return FileUtils.buildPath(folder, testName);
     }

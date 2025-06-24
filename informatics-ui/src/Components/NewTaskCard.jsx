@@ -38,16 +38,43 @@ export default function NewTaskCard() {
 
     const [testCases, setTestCases] = useState([])
     const [showStatementEditor, setShowStatementEditor] = useState(false);
-    const handleAddSingleTestcase = () => {
 
+    const handleAddSingleTestcase = () => {
+        axiosInstance.post(
+            `/task/${taskId}/testcase`,
+            getSingleTestcasePostData(),
+        ).then((response) => {
+            if (response.status === 200) {
+                toast.success(getMessage('ka', 'addedTestcase')
+                    + ': '
+                    + response.data.result.success.reduce((acc, cur) => acc + (acc === '' ? '' : ', ') + cur, ''));
+                if (response.data.result.unmatched.length > 0) {
+                    toast.warn(getMessage('ka', 'failedToAddTestcase')
+                        + ': '
+                        + response.data.result.unmatched.reduce((acc, cur) => acc + (acc === '' ? '' : ', ') + cur, ''));
+                }
+                setMultipleTestcasesFile(null)
+                loadTask()
+            }
+        })
     }
+
+
     const getMultipleTestcasesPostData = () => {
         const formData = new FormData();
         formData.append('taskId', taskId);
         formData.append('file', multipleTestcasesFile);
         return formData;
     }
-    console.log(taskId)
+
+    const getSingleTestcasePostData = () => {
+        const formData = new FormData();
+        formData.append('taskId', taskId);
+        formData.append('inputFile', inputFile);
+        formData.append('outputFile', outputFile);
+        return formData;
+    }
+
     const handleAddMultipleTestcases = () => {
         axiosInstance.post(
             `/task/${taskId}/testcases`,
@@ -62,6 +89,8 @@ export default function NewTaskCard() {
                         + ': '
                         + response.data.result.unmatched.reduce((acc, cur) => acc + (acc === '' ? '' : ', ') + cur, ''));
                 }
+                setMultipleTestcasesFile(null)
+                loadTask()
             }
         })
     }
@@ -70,25 +99,28 @@ export default function NewTaskCard() {
     const taskTypes = ['BATCH']
     useEffect(() => {
         if (taskId) {
-            axiosInstance.get(`/task/${taskId}`).then((response) => {
-                const task = response.data
-                setTitle(task.title);
-                setInitialTitle(task.title);
-                setCode(task.code);
-                setContestId(task.contestId);
-                setTaskType(task.taskType);
-                setTaskScoreType(task.taskScoreType);
-                setTaskScoreParameter(task.taskScoreParameter);
-                setTimeLimitMillis(task.timeLimitMillis);
-                setMemoryLimitMB(task.memoryLimitMB);
-                setInputTemplate(task.inputTemplate);
-                setOutputTemplate(task.outputTemplate);
-                console.log(task.testCases)
-                setTestCases(task.testCases.map((testCase) => testCase.toString()));
-            })
+            loadTask()
         }
         loadStatement()
     }, [])
+
+    const loadTask = () => {
+        axiosInstance.get(`/task/${taskId}`).then((response) => {
+            const task = response.data
+            setTitle(task.title);
+            setInitialTitle(task.title);
+            setCode(task.code);
+            setContestId(task.contestId);
+            setTaskType(task.taskType);
+            setTaskScoreType(task.taskScoreType);
+            setTaskScoreParameter(task.taskScoreParameter);
+            setTimeLimitMillis(task.timeLimitMillis);
+            setMemoryLimitMB(task.memoryLimitMB);
+            setInputTemplate(task.inputTemplate);
+            setOutputTemplate(task.outputTemplate);
+            setTestCases(task.testCases.map((testCase) => testCase.toString()));
+        })
+    }
     const validateFields = () => {
         const requiredFields = {
             code,
@@ -347,7 +379,7 @@ export default function NewTaskCard() {
                         </Typography>
                         <Paper elevation={4} sx={{py: '1rem', marginBottom: '0.5rem'}} key={`testcases`}>
                             {testCases?.map((testCase, index) => (
-                                <Stack direction="row" justifyContent="space-between" alignItems="center"  sx={{ py: 1,
+                                <Stack key={testCase} direction="row" justifyContent="space-between" alignItems="center"  sx={{ py: 1,
                                     '&:hover': {
                                         backgroundColor: 'rgba(0, 0, 0, 0.1)', // Adjust the color as needed
                                         borderRadius: '4px',

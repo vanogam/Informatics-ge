@@ -27,9 +27,6 @@ public class ContestRoom {
     @OneToMany
     private Set<User> participants;
 
-    @OneToMany
-    private Set<Contest> contests;
-
     public long getId() {
         return id;
     }
@@ -68,14 +65,6 @@ public class ContestRoom {
 
     public void setParticipants(Set<User> participants) {
         this.participants = participants;
-    }
-
-    public Set<Contest> getContests() {
-        return contests;
-    }
-
-    public void setContests(Set<Contest> contests) {
-        this.contests = contests;
     }
 
     @Transient

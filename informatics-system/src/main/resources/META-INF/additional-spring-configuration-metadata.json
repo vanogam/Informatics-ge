@@ -1,11 +1,6 @@
 {
   "properties": [
     {
-      "name": "ge.freeuni.informatics.Task.taskDirectoryAddress",
-      "type": "java.lang.String",
-      "description": "Description for ge.freeuni.informatics.Task.taskDirectoryAddress."
-    },
-    {
       "name": "ge.freeuni.informatics.Task.tempDirectoryAddress",
       "type": "java.lang.String",
       "description": "Description for ge.freeuni.informatics.Task.tempDirectoryAddress."

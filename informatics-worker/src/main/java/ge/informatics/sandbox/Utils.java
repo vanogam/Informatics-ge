@@ -20,6 +20,7 @@ import java.util.concurrent.TimeoutException;
 public class Utils {
 
     private static final int DEFAULT_TIMEOUT = 10000;
+
     /**
      * Compresses a file into a tar archive.
      *
@@ -27,38 +28,48 @@ public class Utils {
      * @param fileName The name of the file in the archive.
      * @return An InputStream containing the compressed file.
      */
-public static InputStream compressFile(File file, String fileName) throws IOException {
-    try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-         TarArchiveOutputStream tarOutputStream = new TarArchiveOutputStream(byteArrayOutputStream)) {
-
-        addFileToTar(tarOutputStream, file, fileName);
-
-        tarOutputStream.finish();
-        return new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
+    public static InputStream compressFile(File file, String fileName) throws IOException {
+        return compressFile(file, fileName, null);
     }
-}
 
-private static void addFileToTar(TarArchiveOutputStream tarOutputStream, File file, String entryName) throws IOException {
-    if (file.isFile()) {
-        TarArchiveEntry entry = new TarArchiveEntry(file, entryName);
-        tarOutputStream.putArchiveEntry(entry);
-        try (FileInputStream fileInputStream = new FileInputStream(file)) {
-            byte[] buffer = new byte[1024];
-            int length;
-            while ((length = fileInputStream.read(buffer)) > 0) {
-                tarOutputStream.write(buffer, 0, length);
+    public static InputStream compressFile(File file, String fileName, String dirFilter) throws IOException {
+        try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+             TarArchiveOutputStream tarOutputStream = new TarArchiveOutputStream(byteArrayOutputStream)) {
+            if (dirFilter == null || dirFilter.isEmpty()) {
+                dirFilter = ".*";
             }
-        }
-        tarOutputStream.closeArchiveEntry();
-    } else if (file.isDirectory()) {
-        File[] children = file.listFiles();
-        if (children != null) {
-            for (File child : children) {
-                addFileToTar(tarOutputStream, child, entryName + "/" + child.getName());
-            }
+            addFileToTar(tarOutputStream, file, fileName, dirFilter);
+
+            tarOutputStream.finish();
+            return new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
         }
     }
-}
+
+    private static void addFileToTar(TarArchiveOutputStream tarOutputStream, File file, String entryName, String dirFilter) throws IOException {
+        if (file.isFile()) {
+            TarArchiveEntry entry = new TarArchiveEntry(file, entryName);
+            tarOutputStream.putArchiveEntry(entry);
+            try (FileInputStream fileInputStream = new FileInputStream(file)) {
+                byte[] buffer = new byte[1024];
+                int length;
+                while ((length = fileInputStream.read(buffer)) > 0) {
+                    tarOutputStream.write(buffer, 0, length);
+                }
+            }
+            tarOutputStream.closeArchiveEntry();
+        } else if (file.isDirectory()) {
+            if (!file.getName().matches(dirFilter)) {
+                return;
+            }
+            File[] children = file.listFiles();
+            if (children != null) {
+                for (File child : children) {
+                    addFileToTar(tarOutputStream, child, entryName + "/" + child.getName(), dirFilter);
+                }
+            }
+        }
+    }
+
     public static DockerClient createDockerClient() {
         DefaultDockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder().build();
         DockerHttpClient httpClient = new ApacheDockerHttpClient.Builder()

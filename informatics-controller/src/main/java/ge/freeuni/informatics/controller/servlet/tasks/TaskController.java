@@ -147,18 +147,18 @@ public class TaskController {
     }
 
     @PostMapping("/task/{taskId}/testcase")
-    InformaticsResponse addSingleTestcase(@PathVariable Long taskId, @ModelAttribute AddSingleTestcaseRequest request) {
+    ResponseEntity<AddTestcasesResponse> addSingleTestcase(@PathVariable Long taskId, @ModelAttribute AddSingleTestcaseRequest request) {
         try {
-            taskManager.addTestcase(taskId, request.getInputFile().getBytes(), request.getOutputFile().getBytes(),
-                    request.getInputFile().getName(), request.getOutputFile().getName()
-            );
+            return ResponseEntity.ok(new AddTestcasesResponse(taskManager.addTestcase(taskId, request.getInputFile().getBytes(), request.getOutputFile().getBytes(),
+                    request.getInputFile().getOriginalFilename(), request.getOutputFile().getOriginalFilename()
+            )));
         } catch (InformaticsServerException ex) {
-            return new InformaticsResponse(ex.getCode());
+            return ResponseEntity.badRequest().build();
         } catch (IOException ex) {
             log.error("Error during file upload", ex);
-            return new InformaticsResponse("fileUploadError");
+            return ResponseEntity.internalServerError().build();
         }
-        return new InformaticsResponse(null);
+
     }
 
     @DeleteMapping("/task/{taskId}/testcase/{testKey}")

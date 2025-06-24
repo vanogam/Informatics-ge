@@ -3,10 +3,9 @@ package ge.informatics.sandbox.executors;
 import com.github.dockerjava.api.DockerClient;
 import ge.informatics.sandbox.Sandbox;
 import ge.informatics.sandbox.Utils;
-import ge.informatics.sandbox.model.CompilationResult;
-import ge.informatics.sandbox.model.Task;
-import ge.informatics.sandbox.model.TestResult;
-import ge.informatics.sandbox.model.TestStatus;
+import ge.informatics.sandbox.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -22,6 +21,7 @@ public class CppExecutor implements Executor {
     private static final String WALL_CLOCK_KEY = "Elapsed (wall clock) time (h:mm:ss or m:ss)";
     private static final String TIME_KEY = "User time (seconds)";
     private static final String START_STRING = "Command being timed:";
+    private static final Logger log = LoggerFactory.getLogger(CppExecutor.class);
 
     @Override
     public String getCheckerName() {
@@ -39,12 +39,14 @@ public class CppExecutor implements Executor {
     }
 
     public static CompilationResult compile(DockerClient client, String containerId, String cppFile, String target) throws InterruptedException {
+        log.info("Compiling C++ file: {}", cppFile);
         Utils.CommandResult result = executeCommandSync(client, containerId, "g++ -o " + target + " " + cppFile);
         return new CompilationResult(result.getExitCode() == 0, result.getStderr().toString(StandardCharsets.UTF_8));
     }
 
     @Override
     public TestResult execute(DockerClient client, String containerId, Task task) throws InterruptedException {
+        log.info("Executing C++ submission: {}", task.submissionId());
         long executionStart = System.currentTimeMillis();
         Utils.CommandResult result = executeCommandSync(
                 client,
@@ -53,14 +55,19 @@ public class CppExecutor implements Executor {
                 task.timeLimitMillis() + 500,
                 task.memoryLimitKB() + 10 * 1024
         );
+        long runtime = System.currentTimeMillis() - executionStart;
+
         TestResult.Builder builder = new TestResult.Builder();
+        builder.withMessageType(CallbackType.TEST_COMPLETED);
+        builder.withTestcaseKey(task.testId());
 
         if (result.isTimeout()) {
             return builder.withStatus(TestStatus.TIME_LIMIT_EXCEEDED)
+                    .withSubmissionId(Long.valueOf(task.submissionId()))
                     .withTimeMillis(task.timeLimitMillis())
                     .withExitCode(0)
                     .withScore(0.0)
-                    .withErrorMessage("Execution timed out")
+                    .withMessage("Execution timed out")
                     .build();
         }
         String stderr = result.getStderr().toString(StandardCharsets.UTF_8);
@@ -68,27 +75,30 @@ public class CppExecutor implements Executor {
             stderr = "";
         }
         stderr = stderr.split(START_STRING)[0].trim();
-
-        builder.withErrorMessage(stderr);
+        builder.withSubmissionId(Long.valueOf(task.submissionId()));
+        builder.withMessage(stderr);
         builder.withExitCode(result.getExitCode());
         Map<String, String> metrics = parseResult(result.getStderr().toString(StandardCharsets.UTF_8));
         int memory = Integer.parseInt(metrics.get(MEMORY_KEY));
         builder.withMemoryKB(memory);
-        if (parseTime(metrics.get(TIME_KEY)) > task.timeLimitMillis()) {
-            return builder.withTimeMillis(task.timeLimitMillis())
+        if (runtime > task.timeLimitMillis()) {
+            return builder
+                    .withTimeMillis(task.timeLimitMillis())
                     .withStatus(TestStatus.TIME_LIMIT_EXCEEDED)
                     .withScore(0.0)
                     .build();
         }
-        builder.withTimeMillis(parseTime(metrics.get(TIME_KEY)));
+        builder.withTimeMillis(runtime);
         if (memory > task.memoryLimitKB()) {
-            return builder.withStatus(TestStatus.MEMORY_LIMIT_EXCEEDED)
+            return builder
+                    .withStatus(TestStatus.MEMORY_LIMIT_EXCEEDED)
                     .withScore(0.0)
                     .build();
         }
 
         if (result.getExitCode() != 0) {
-            return builder.withStatus(TestStatus.RUNTIME_ERROR)
+            return builder
+                    .withStatus(TestStatus.RUNTIME_ERROR)
                     .withScore(0.0)
                     .build();
         }
@@ -115,10 +125,6 @@ public class CppExecutor implements Executor {
         } else {
             builder.withStatus(TestStatus.PARTIAL);
         }
-    }
-
-    private int parseTime(String timeStr) {
-        return (int) Math.floor(Double.parseDouble(timeStr) * 1000);
     }
 
     private Map<String, String> parseResult(String result) {

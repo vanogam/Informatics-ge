@@ -1,16 +1,11 @@
 package ge.freeuni.informatics.server.files;
 
-import ge.freeuni.informatics.common.dto.SubmissionDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.CodeLanguage;
-import ge.freeuni.informatics.common.model.contestroom.ContestRoom;
-import ge.freeuni.informatics.common.model.task.Task;
 import ge.freeuni.informatics.repository.contestroom.ContestRoomJpaRepository;
 import ge.freeuni.informatics.repository.task.TaskRepository;
 import ge.freeuni.informatics.server.annotation.MemberTaskRestricted;
 import ge.freeuni.informatics.server.annotation.TeacherTaskRestricted;
-import ge.freeuni.informatics.server.contestroom.IContestRoomManager;
-import ge.freeuni.informatics.server.task.TaskManager;
 import ge.freeuni.informatics.server.user.UserManager;
 import ge.freeuni.informatics.utils.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +18,6 @@ import java.nio.file.LinkOption;
 import java.nio.file.OpenOption;
 import java.nio.file.Paths;
 import java.util.Date;
-import java.util.Objects;
 
 @Component
 public class FileManager {
@@ -43,19 +37,20 @@ public class FileManager {
     @Autowired
     private ContestRoomJpaRepository roomRepository;
 
-    public String saveTextSubmission(Date submissionTime,
+    @MemberTaskRestricted
+    public String saveTextSubmission(long taskId,
+                                     Date submissionTime,
                                      CodeLanguage language,
-                                     long contestId,
-                                     long taskId,
                                      String content) throws InformaticsServerException {
         String fileName = userManager.getAuthenticatedUser().username() +
-                submissionTime +
+                submissionTime.getTime() +
                 "." + language.getSuffix();
 
-        String fileDir = submissionDirectory + "/" + contestId + "/" + taskId;
+        String fileDir = submissionDirectory.replace(":taskId", String.valueOf(taskId));
         String filePath = fileDir + "/" + fileName;
         try {
-            Files.createDirectories(Paths.get(submissionDirectory));
+            Files.createDirectories(Paths.get(fileDir));
+            Files.createFile(Paths.get(filePath));
             Files.writeString(Paths.get(filePath), content);
             return fileName;
         } catch (java.io.IOException e) {
@@ -65,7 +60,7 @@ public class FileManager {
 
     @TeacherTaskRestricted
     public String saveFileForStatement(long taskId, byte[] fileContent) throws IOException, InformaticsServerException {
-        String statementDir = statementDirectory + "/" + taskId;
+        String statementDir = statementDirectory.replace(":taskId", String.valueOf(taskId));
 
         String filename;
         do {
@@ -81,7 +76,7 @@ public class FileManager {
 
     @MemberTaskRestricted
     public byte[] getFileForStatement(long taskId, String filename) throws IOException, InformaticsServerException {
-        String userDir = statementDirectory + "/" + taskId;
+        String userDir = statementDirectory.replace(":taskId", String.valueOf(taskId));
         String filePath = userDir + "/" + filename;
         if (!Files.exists(Paths.get(filePath))) {
             throw new InformaticsServerException("fileNotFound");

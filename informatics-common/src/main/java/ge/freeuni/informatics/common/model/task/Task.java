@@ -25,7 +25,7 @@ public class Task {
     @ElementCollection
     @CollectionTable(name = "task_statements", joinColumns = @JoinColumn(name = "task_id"))
     @MapKeyColumn(name = "language")
-    @Column(name = "statement")
+    @Column(name = "statement", length = 100000)
     Map<Language, String> statements;
 
     String configAddress;

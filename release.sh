@@ -6,7 +6,11 @@ fi
 VERSION=$1
 
 docker build -t informatics/core:$VERSION -f docker/main/Dockerfile .
-docker build -t informatics/ui:$VERSION -f informatics-ui/Dockerfile ./informatics-ui
+if [ "$2" == "--dev" ]; then
+  echo "Skipping UI build due to --dev flag"
+else
+  docker build -t informatics/ui:$VERSION -f informatics-ui/Dockerfile ./informatics-ui
+fi
 docker build -t informatics/worker:$VERSION -f informatics-worker/Dockerfile ./informatics-worker
 
 echo "Docker images built and pushed with version: $VERSION"

@@ -2,10 +2,11 @@ package ge.informatics.sandbox.model;
 
 import ge.informatics.sandbox.executors.CppExecutor;
 import ge.informatics.sandbox.executors.Executor;
+import ge.informatics.sandbox.executors.PythonExecutor;
 
 public enum Language {
     JAVA("java", "openjdk:21", null),
-    PYTHON("python", "python:3.9", null),
+    PYTHON("python", "python:3.9", new PythonExecutor()),
     C("c", "cpp-worker", null),
     CPP("cpp", "cpp-worker", new CppExecutor()),
     CSHARP("csharp", "mcr.microsoft.com/dotnet/sdk:6.0", null),

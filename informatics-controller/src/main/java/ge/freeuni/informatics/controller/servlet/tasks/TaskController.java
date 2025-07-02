@@ -82,22 +82,23 @@ public class TaskController {
     @PostMapping("/task")
     ResponseEntity<TaskDTO> saveTask(@RequestBody AddTaskRequest request) {
         TaskDTO taskDTO = new TaskDTO(
-                request.getTaskId(),
-                Long.valueOf(request.getContestId()),
-                request.getCode(),
-                request.getTitle(),
-                request.getTaskType(),
-                request.getTaskScoreType(),
-                request.getTaskScoreParameter(),
-                request.getTimeLimitMillis(),
-                request.getMemoryLimitMB(),
-                request.getInputTemplate(),
-                request.getOutputTemplate(),
+                request.taskId(),
+                Long.valueOf(request.contestId()),
+                request.code(),
+                request.title(),
+                request.taskType(),
+                request.taskScoreType(),
+                request.taskScoreParameter(),
+                request.timeLimitMillis(),
+                request.memoryLimitMB(),
+                request.checkerType(),
+                request.inputTemplate(),
+                request.outputTemplate(),
                 new HashMap<>(),
                 new ArrayList<>()
         );
         try {
-            return ResponseEntity.ok(taskManager.addTask(request.getContestId(), taskDTO));
+            return ResponseEntity.ok(taskManager.addTask(request.contestId(), taskDTO));
         } catch (InformaticsServerException ex) {
             log.error("Error while saving the task", ex);
             return ResponseEntity.badRequest().build();
@@ -178,7 +179,7 @@ public class TaskController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping(value = "/task/{taskId}/statement/{language}", produces = MediaType.APPLICATION_PDF_VALUE)
+    @GetMapping(value = "/task/{taskId}/statement/{language}")
     ResponseEntity<String> getStatement(@PathVariable(required = false) Language language,
                                         @PathVariable Integer taskId) {
         if (language == null) {

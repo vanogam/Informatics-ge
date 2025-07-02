@@ -1,7 +1,8 @@
 package ge.freeuni.informatics.common.model;
 
 public enum CodeLanguage {
-    CPP("cpp", "gnu C++17");
+    CPP("cpp", "gnu C++20"),
+    PYTHON("py", "Python 3.11");
 
     private final String suffix;
 

@@ -6,13 +6,18 @@ import getMessage from "./lang";
 import {AxiosContext} from '../utils/axiosInstance'
 import {Button} from "@mui/material";
 
-const MarkdownEditor = ({value, onChange, loadEndpoint, saveText, imageDownloadFunc, imageUploadAddress, submitFunc}) => {
+const MarkdownEditor = ({
+                            entries,
+                            loadEndpoint,
+                            value,
+                            onChange,
+                            saveText,
+                            imageDownloadFunc,
+                            imageUploadAddress,
+                            submitFunc
+                        }) => {
     const [activeTab, setActiveTab] = useState("editor");
     const axiosInstance = useContext(AxiosContext)
-
-    const handleInputChange = (e) => {
-        onChange(e.target.value);
-    };
 
     const loadData = () => {
         axiosInstance.get(loadEndpoint)
@@ -27,7 +32,7 @@ const MarkdownEditor = ({value, onChange, loadEndpoint, saveText, imageDownloadF
         loadEndpoint && loadData()
     }, [])
 
-    const handlePaste = async (e) => {
+    const handlePaste = async (e, onChange) => {
         const items = e.clipboardData.items;
         for (const item of items) {
             if (item.type.startsWith("image/")) {
@@ -54,7 +59,7 @@ const MarkdownEditor = ({value, onChange, loadEndpoint, saveText, imageDownloadF
 
     return (
         <div>
-            <div style={{ display: "flex", borderBottom: "1px solid #ccc" }}>
+            <div style={{display: "flex", borderBottom: "1px solid #ccc"}}>
                 <button
                     style={{
                         flex: 1,
@@ -82,33 +87,44 @@ const MarkdownEditor = ({value, onChange, loadEndpoint, saveText, imageDownloadF
                     {getMessage('ka', 'statement')}
                 </button>
             </div>
-            <div style={{ padding: "10px" }}>
-                {activeTab === "editor" && (
-                    <textarea
-                        style={{ width: "100%", height: "200px", fontSize: "16px" }}
-                        placeholder={getMessage('ka', 'markdownPlaceholder')}
-                        value={value}
-                        onChange={handleInputChange}
-                        onPaste={handlePaste}
-                    />
-                )}
-                {activeTab === "preview" && (
-                    <div style={{ border: "1px solid #ccc", padding: "10px" }}>
-                        <ReactMarkdown
-                            children={value}
-                            remarkPlugins={[remarkMath]}
-                            rehypePlugins={[rehypeMathjax]}
-                            urlTransform={imageDownloadFunc}
+            <div style={{padding: "10px"}}>
+                {activeTab === "editor" && entries.map((entry) => (
+                    <>
+                        <label key={entry.label} style={{display: "block", marginBottom: "10px"}}>{entry.label}</label>
+                        <textarea
+                            style={{width: "100%", height: entry.height, fontSize:"16px" }}
+                            placeholder={getMessage('ka', 'markdownPlaceholder')}
+                            value={entry.value}
+                            onChange={e => entry.onChange(e.target.value)}
+                            onPaste={e => handlePaste(e, entry.onChange)}
                         />
+                    </>))
+                }
+                {activeTab === "preview" &&
+                    <div style={{border: "1px solid #ccc", padding: "10px"}}>
+
+                        {entries.map((entry) => (
+                            <>
+                                {entry.labelVisible &&
+                                <p key={entry.label}
+                                   style={{display: "block", marginBottom: "10px", fontWeight: "bold"}}>{entry.label}</p>
+                                }
+                                <ReactMarkdown
+                                    children={entry.value}
+                                    remarkPlugins={[remarkMath]}
+                                    rehypePlugins={[rehypeMathjax]}
+                                    urlTransform={imageDownloadFunc}
+                                />
+                            </>
+                        ))}
                     </div>
-                )}
+                }
             </div>
             <div style={{marginLeft: 'auto'}}>
                 <Button
                     variant="contained"
                     color="secondary"
-                    sx={{ backgroundColor: '#2f2d47' }}
-                    disabled={!value || value.trim() === ""}
+                    sx={{backgroundColor: '#2f2d47'}}
                     onClick={
                         () => {
                             submitFunc(value)

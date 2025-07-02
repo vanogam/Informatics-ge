@@ -1,6 +1,5 @@
 package ge.freeuni.informatics.judgeintegration;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.CodeLanguage;
@@ -9,14 +8,13 @@ import ge.freeuni.informatics.common.model.submission.SubmissionStatus;
 import ge.freeuni.informatics.common.model.submission.SubmissionTestResult;
 import ge.freeuni.informatics.common.model.task.Task;
 import ge.freeuni.informatics.common.model.task.TestCase;
-import ge.freeuni.informatics.judgeintegration.model.CheckerType;
+import ge.freeuni.informatics.common.model.task.CheckerType;
 import ge.freeuni.informatics.judgeintegration.model.KafkaCallback;
 import ge.freeuni.informatics.judgeintegration.model.KafkaTask;
 import ge.freeuni.informatics.judgeintegration.model.Stage;
 import ge.freeuni.informatics.repository.submission.SubmissionJpaRepository;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 @Service
 public class JudgeIntegration implements IJudgeIntegration{
@@ -86,7 +83,7 @@ public class JudgeIntegration implements IJudgeIntegration{
                     testCase.getKey(),
                     testCase.getInputFileAddress().substring(testCase.getInputFileAddress().lastIndexOf("/") + 1),
                     testCase.getOutputFileAddress().substring(testCase.getOutputFileAddress().lastIndexOf("/") + 1),
-                    CheckerType.TOKEN,
+                    task.getCheckerType(),
                     Stage.TESTING
             );
             ObjectMapper objectMapper = new ObjectMapper();

@@ -19,5 +19,6 @@ RUN adduser --disabled-password --gecos '' contestant && \
     apt-get update && \
     apt-get install -y time && \
     apt-get install -y g++ make && \
+    apt-get install -y python3 && \
     chown contestant:contestant /usr/bin/time && \
     chmod 555 /usr/bin/time

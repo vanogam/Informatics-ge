@@ -162,6 +162,17 @@ public class TaskManager implements ITaskManager {
             throw new InformaticsServerException("permissionDenied");
         }
         Task task = TaskDTO.fromDTO(taskDTO);
+        if (task.getId() != null) {
+            Task existingTask = taskRepository.findById(task.getId())
+                    .orElseThrow(() -> new InformaticsServerException("taskNotFound"));
+            if (!existingTask.getContest().getId().equals(contest.getId())) {
+                throw new InformaticsServerException("taskNotInContest");
+            }
+            task.setTestCases(existingTask.getTestCases());
+            task.setStatements(existingTask.getStatements());
+        } else {
+            task.setCode(FileUtils.getRandomFileName(10));
+        }
         task.setContest(contest);
         task = taskRepository.save(task);
         if (!contest.getTasks().contains(task)) {
@@ -187,7 +198,7 @@ public class TaskManager implements ITaskManager {
             throw new InformaticsServerException("permissionDenied");
         }
         if (!task.getStatements().containsKey(language)) {
-            throw new InformaticsServerException("statementNotAvailable");
+            return null;
         }
         return task.getStatements().get(language);
     }

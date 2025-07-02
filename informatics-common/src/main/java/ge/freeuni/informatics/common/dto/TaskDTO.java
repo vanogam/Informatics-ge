@@ -1,9 +1,7 @@
 package ge.freeuni.informatics.common.dto;
 
 import ge.freeuni.informatics.common.Language;
-import ge.freeuni.informatics.common.model.task.Task;
-import ge.freeuni.informatics.common.model.task.TaskScoreType;
-import ge.freeuni.informatics.common.model.task.TaskType;
+import ge.freeuni.informatics.common.model.task.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +17,7 @@ public record TaskDTO(
         String taskScoreParameter,
         Integer timeLimitMillis,
         Integer memoryLimitMB,
+        CheckerType checkerType,
         String inputTemplate,
         String outputTemplate,
         Map<Language, String> statements,
@@ -33,12 +32,12 @@ public record TaskDTO(
         task.setTaskScoreType(taskDTO.taskScoreType());
         task.setId(taskDTO.id());
         task.setCode(taskDTO.code());
+        task.setCheckerType(taskDTO.checkerType());
         task.setInputTemplate(taskDTO.inputTemplate());
         task.setOutputTemplate(taskDTO.outputTemplate());
         task.setMemoryLimitMB(taskDTO.memoryLimitMB());
         task.setTimeLimitMillis(taskDTO.timeLimitMillis());
         task.setTitle(taskDTO.title());
-        task.setStatements(taskDTO.statements());
 
         return task;
     }
@@ -63,11 +62,12 @@ public record TaskDTO(
                 task.getTaskScoreParameter(),
                 task.getTimeLimitMillis(),
                 task.getMemoryLimitMB(),
+                task.getCheckerType(),
                 task.getInputTemplate(),
                 task.getOutputTemplate(),
                 task.getStatements(),
                 task.getTestCases() == null ? null : task.getTestCases().stream()
-                        .map(testCase -> testCase.getKey())
+                        .map(TestCase::getKey)
                         .toList()
         );
     }

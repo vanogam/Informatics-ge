@@ -26,16 +26,26 @@ int main(int argc, char* argv[]) {
 
     ans = ifstream(argv[2]);
     cont = ifstream(argv[3]);
-    string contestantToken, answerToken;
-    while (ans >> answerToken && cont >> contestantToken) {
 
-        if (contestantToken != answerToken) {
+    while (true) {
+        string contestantToken, answerToken;
+        ans >> answerToken;
+        cont >> contestantToken;
+
+        if (ans.eof()^cont.eof()) {
             wa();
         }
+        double contestantValue = stod(contestantToken);
+        double answerValue = stod(answerToken);
+        if (abs(contestantValue - answerValue) > 1e-9) {
+            wa();
+        }
+
+        if (ans.eof() && cont.eof()) {
+            ok();
+        }
+
     }
-    if (ans >> answerToken || cont >> contestantToken) {
-        wa();
-    }
-    ok();
+
     return 0;
 }

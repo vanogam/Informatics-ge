@@ -11,7 +11,7 @@ const SubmissionTestResult = ({testcase}) => {
         sx={{
             padding: '1rem',
             marginBottom: '1rem',
-            cursor: 'pointer',
+
             backgroundColor:
                 testcase.testStatus === 'CORRECT' ? '#CFE8D3' : '#E8CFD4',
         }}
@@ -20,7 +20,7 @@ const SubmissionTestResult = ({testcase}) => {
             #{testcase.testKey}
         </Typography>
         <Box
-            sx={{display: 'flex', justifyContent: 'space-between'}}
+            sx={{display: 'flex', cursor: 'pointer', justifyContent: 'space-between'}}
             onClick={() => setExpanded(!expanded)}
         >
             <Typography sx={{fontSize: '15px'}}>

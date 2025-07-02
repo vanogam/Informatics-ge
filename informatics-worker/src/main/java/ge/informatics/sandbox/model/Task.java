@@ -16,6 +16,10 @@ public record Task(String taskId,
 
     public enum CheckerType {
         TOKEN("tokenChecker"),
+        YES_NO("yesNoChecker"),
+        LINES("linesChecker"),
+        DOUBLE_E6("double6Checker"),
+        DOUBLE_E9("double9Checker"),
         CUSTOM(null);
 
         private final String executable;

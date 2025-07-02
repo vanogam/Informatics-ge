@@ -16,13 +16,15 @@ export default function NewTaskCard() {
     const [title, setTitle] = useState('');
     const [contestId, setContestId] = useState(contest_id);
     const [taskType, setTaskType] = useState('BATCH');
+    const [evaluatorType, setEvaluatorType] = useState('TOKEN');
     const [taskScoreType, setTaskScoreType] = useState('SUM');
     const [taskScoreParameter, setTaskScoreParameter] = useState('');
     const [timeLimitMillis, setTimeLimitMillis] = useState('');
     const [memoryLimitMB, setMemoryLimitMB] = useState('');
     const [inputTemplate, setInputTemplate] = useState('');
     const [outputTemplate, setOutputTemplate] = useState('');
-    const [kaStatement, setKaStatement] = useState(null);
+    const [kaStatement, setKaStatement] = useState({});
+    const [initStatement, setInitStatement] = useState({});
     const [fieldValidations, setFieldValidations] = useState({
         code: true,
         title: true,
@@ -96,6 +98,7 @@ export default function NewTaskCard() {
     }
     const axiosInstance = useContext(AxiosContext)
     const taskScoreTypes = ['SUM', 'GROUP_MIN']
+    const evaluatorTypes = ['TOKEN', 'DOUBLE_E6', 'DOUBLE_E9', 'LINES', 'YES_NO', 'CUSTOM']
     const taskTypes = ['BATCH']
     useEffect(() => {
         if (taskId) {
@@ -103,6 +106,23 @@ export default function NewTaskCard() {
         }
         loadStatement()
     }, [])
+
+    useEffect(() => {
+        const handleBeforeUnload = (event) => {
+            // Check if `kaStatement` has been modified
+            if (JSON.stringify(kaStatement) !== JSON.stringify(initStatement)) {
+                event.preventDefault();
+                event.returnValue = 'You have unsaved changes. Are you sure you want to leave?'; // Custom warning text
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [kaStatement]);
+
 
     const loadTask = () => {
         axiosInstance.get(`/task/${taskId}`).then((response) => {
@@ -115,6 +135,7 @@ export default function NewTaskCard() {
             setTaskScoreType(task.taskScoreType);
             setTaskScoreParameter(task.taskScoreParameter);
             setTimeLimitMillis(task.timeLimitMillis);
+            setEvaluatorType(task.checkerType);
             setMemoryLimitMB(task.memoryLimitMB);
             setInputTemplate(task.inputTemplate);
             setOutputTemplate(task.outputTemplate);
@@ -158,6 +179,7 @@ export default function NewTaskCard() {
             taskScoreType: taskScoreType.toString(),
             taskScoreParameter: parseFloat(taskScoreParameter),
             timeLimitMillis: parseInt(timeLimitMillis),
+            checkerType: evaluatorType.toString(),
             memoryLimitMB: parseInt(memoryLimitMB),
             inputTemplate: inputTemplate.toString(),
             outputTemplate: outputTemplate.toString(),
@@ -176,12 +198,13 @@ export default function NewTaskCard() {
             .then(response => {
                 if (response.status === 200) {
                     setKaStatement(response.data || "");
+                    setInitStatement(response.data || "");
                 }
             });
     }
     const submitStatement = (markdown) => {
         axiosInstance.post(`/task/${taskId}/statement`, {
-            statement: markdown,
+            statement: JSON.stringify(markdown),
             language: 'KA'
         }).then(response => {
             if (response.status === 200) {
@@ -252,8 +275,40 @@ export default function NewTaskCard() {
                     </Button>
                     {showStatementEditor && (
                         <div style={{marginTop: '1rem'}}>
-                            <MarkdownEditor value={kaStatement}
-                                            onChange={(value) => setKaStatement(value)}
+                            <MarkdownEditor
+                                value={kaStatement}
+                                onChange={setKaStatement}
+                                entries={[
+                                {
+                                    align: 'center',
+                                    labelVisible: false,
+                                    label: getMessage('ka', 'title'),
+                                    value: kaStatement.title,
+                                    onChange: (value) => setKaStatement({...kaStatement, title: value}),
+                                    height: "2rem",
+                                },
+                                {
+                                    labelVisible: false,
+                                    label: getMessage('ka', 'statement'),
+                                    value: kaStatement.statement,
+                                    onChange: (value) => setKaStatement({...kaStatement, statement: value}),
+                                    height: "20rem",
+                                },
+                                {
+                                    labelVisible: true,
+                                    label: getMessage('ka', 'inputContent'),
+                                    value: kaStatement.inputInfo,
+                                    onChange: (value) => setKaStatement({...kaStatement, inputInfo: value}),
+                                    height: "2rem",
+                                },
+                                {
+                                    labelVisible: true,
+                                    label: getMessage('ka', 'outputContent'),
+                                    value: kaStatement.outputInfo,
+                                    onChange: (value) => setKaStatement({...kaStatement, outputInfo: value}),
+                                    height: "2rem",
+                                },
+                            ]}
                                             imageUploadAddress={`/task/${taskId}/image`}
                                             imageDownloadFunc={url => `/api/task/${taskId}/image/${url}`}
                                             submitFunc={submitStatement}
@@ -322,6 +377,21 @@ export default function NewTaskCard() {
                         variant='outlined'
                         size='small'
                     />
+                    <TextField
+                        select
+                        label={getMessage('ka', 'evaluatorType')}
+                        value={evaluatorType}
+                        onChange={(e) => setEvaluatorType(e.target.value)}
+                        variant='outlined'
+                        size='small'
+                        sx={{minWidth: 'max-content'}}
+                    >
+                        {evaluatorTypes.map((option) => (
+                            <MenuItem key={option} value={option}>
+                                {getMessage('ka', 'EVALUATOR_TYPE_' + option)}
+                            </MenuItem>
+                        ))}
+                    </TextField>
                     <TextField
                         label={getMessage('ka', 'timeLimitMillis')}
                         value={timeLimitMillis}

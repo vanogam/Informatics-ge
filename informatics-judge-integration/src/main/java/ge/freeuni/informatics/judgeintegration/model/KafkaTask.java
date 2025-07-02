@@ -1,6 +1,7 @@
 package ge.freeuni.informatics.judgeintegration.model;
 
 import ge.freeuni.informatics.common.model.CodeLanguage;
+import ge.freeuni.informatics.common.model.task.CheckerType;
 
 public record KafkaTask(
         String taskId,

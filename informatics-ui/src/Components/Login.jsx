@@ -4,7 +4,7 @@ import { Box } from '@mui/system'
 import { NavLink } from 'react-router-dom'
 import { AuthContext } from '../store/authentication'
 import { toast } from 'react-toastify'
-import { AxiosContext, getAxiosInstance } from '../utils/axiosInstance'
+import { AxiosContext } from '../utils/axiosInstance'
 import getMessage from "./lang";
 
 export default function Login() {

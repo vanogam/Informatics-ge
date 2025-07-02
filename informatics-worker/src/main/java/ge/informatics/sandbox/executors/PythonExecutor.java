@@ -9,40 +9,39 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 
 import static ge.informatics.sandbox.Utils.executeCommandSync;
 
-public class CppExecutor implements Executor {
+public class PythonExecutor implements  Executor {
 
-    private static final Logger log = LoggerFactory.getLogger(CppExecutor.class);
+    private static final Logger log = LoggerFactory.getLogger(PythonExecutor.class);
 
     @Override
     public String getSuffix() {
-        return "cpp";
+        return "py";
     }
 
     @Override
     public CompilationResult compileSubmission(DockerClient client, String containerId) throws IOException, InterruptedException {
-        return compile(client, containerId, "/sandbox/submission/submission.cpp", "/sandbox/submission/submission");
-    }
+        log.info("Compiling python file");
+        Utils.CommandResult result = executeCommandSync(client, containerId, "/usr/bin/python3 -m compileall -b .");
+        if (result.getExitCode() != 0) {
+            return new CompilationResult(false, result.getStderr().toString(StandardCharsets.UTF_8));
+        }
+        result = executeCommandSync(client, containerId, "mv /sandbox/submission/submission.pyc /sandbox/submission/submission");
 
-    public static CompilationResult compile(DockerClient client, String containerId, String cppFile, String target) throws InterruptedException {
-        log.info("Compiling C++ file: {}", cppFile);
-        Utils.CommandResult result = executeCommandSync(client, containerId, "g++ -std=c++20 -O2 -o " + target + " " + cppFile);
         return new CompilationResult(result.getExitCode() == 0, result.getStderr().toString(StandardCharsets.UTF_8));
     }
 
     @Override
-    public TestResult execute(DockerClient client, String containerId, Task task) throws InterruptedException, IOException {
-        log.info("Executing C++ submission: {}", task.submissionId());
+    public TestResult execute(DockerClient client, String containerId, Task task) throws IOException, InterruptedException {
+        log.info("Executing python submission: {}", task.submissionId());
         long executionStart = System.currentTimeMillis();
         Utils.CommandResult result = executeCommandSync(
                 client,
                 containerId,
-                "/usr/bin/time -v su -c '/sandbox/submission/submission' " + Sandbox.CONTESTANT_USER + " < /sandbox/submission/input > /sandbox/submission/output",
+                "/usr/bin/time -v su -c '/usr/bin/python3 /sandbox/submission/submission' " + Sandbox.CONTESTANT_USER + " < /sandbox/submission/input > /sandbox/submission/output",
                 task.timeLimitMillis() + 500,
                 task.memoryLimitKB() + 10 * 1024
         );

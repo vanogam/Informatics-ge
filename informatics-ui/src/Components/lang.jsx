@@ -79,6 +79,13 @@ const langDictionary = {
 		'TASK_SCORE_TYPE_SUM': 'ტესტების ჯამი',
 		'TASK_SCORE_TYPE_GROUP_MIN': 'ტესტთა ჯგუფების ჯამი',
 
+		'EVALUATOR_TYPE_TOKEN': 'სიტყვები',
+		'EVALUATOR_TYPE_DOUBLE_E6': 'ათწილადი (e-6)',
+		'EVALUATOR_TYPE_DOUBLE_E9': 'ათწილადი (e-9)',
+		'EVALUATOR_TYPE_YES_NO': 'კი/არა',
+		'EVALUATOR_TYPE_LINES': 'სტრიქონები',
+		'EVALUATOR_TYPE_CUSTOM': 'სხვა(ატვირთეთ C++ ფაილი)',
+
 		'TASK_TYPE_BATCH': 'სტანდარტული',
 		'edit': 'რედაქტირება',
 
@@ -87,6 +94,12 @@ const langDictionary = {
 		'outputContent': 'გამომავალი მონაცემები',
 		'correctOutput': 'სწორი პასუხი',
 		'compilerMessage': 'ქომფაილერის შეტყობინება',
+
+		'submit': 'გაშვება',
+
+		'language': 'ენა',
+		'LANG_CPP': 'C++ (GNU G++20 12.2 -O2)',
+		'LANG_PYTHON': 'Python 3 (Python 3.11.2)',
 
 		'editor': 'რედაქტორი',
 		'statement': 'პირობა',

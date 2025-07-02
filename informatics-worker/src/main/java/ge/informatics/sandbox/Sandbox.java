@@ -90,25 +90,35 @@ public class Sandbox implements AutoCloseable {
     }
 
     private void loadCheckers() throws IOException, InterruptedException {
-        InputStream inputStream = Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("tokenChecker.cpp"));
+        for (Task.CheckerType checkerType : Task.CheckerType.values()) {
+            if (checkerType.getExecutable() != null) {
+                loadChecker(checkerType.getExecutable());
+                log.info("Checker {} loaded successfully", checkerType.getExecutable());
+            } else {
+                log.warn("No executable found for checker type {}", checkerType);
+            }
+        }
+    }
+    private void loadChecker(String name) throws IOException, InterruptedException {
+        InputStream inputStream = Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream(name + ".cpp"));
         File checker = File.createTempFile("checker", ".tmp");
         try (FileOutputStream fos = new FileOutputStream(checker)) {
             fos.write(inputStream.readAllBytes());
         } catch (IOException e) {
-            log.error("Error while writing tokenChecker.cpp to /tmp", e);
-            throw new RuntimeException("Error while writing tokenChecker.cpp to /tmp", e);
+            log.error("Error while writing "+ name + ".cpp to /tmp", e);
+            throw new RuntimeException("Error while writing "+ name + ".cpp to /tmp", e);
         }
         dockerClient.copyArchiveToContainerCmd(containerId)
-                .withTarInputStream(compressFile(checker, "tokenChecker.cpp"))
+                .withTarInputStream(compressFile(checker, name + ".cpp"))
                 .withRemotePath("/sandbox/checkers/")
                 .exec();
-        CompilationResult result = CppExecutor.compile(dockerClient, containerId, "/sandbox/checkers/tokenChecker.cpp", "/sandbox/checkers/tokenChecker");
+        CompilationResult result = CppExecutor.compile(dockerClient, containerId, "/sandbox/checkers/" + name + ".cpp", "/sandbox/checkers/" + name);
         if (!result.isSuccess()) {
-            log.error("Failed to compile token checker: {}", result.getErrorMessage());
-            throw new RuntimeException("Failed to compile token checker: " + result.getErrorMessage());
+            log.error("Failed to compile checker: {}", result.getErrorMessage());
+            throw new RuntimeException("Failed to compile checker: " + result.getErrorMessage());
         }
-        changePermissions(dockerClient, containerId, "/sandbox/checkers/tokenChecker", CHECKER_USER, "700");
-        executeCommandSync(dockerClient, containerId, "rm -rf /sandbox/checkers/tokenChecker.cpp");
+        changePermissions(dockerClient, containerId, "/sandbox/checkers/" + name, CHECKER_USER, "700");
+        executeCommandSync(dockerClient, containerId, "rm -rf /sandbox/checkers/" + name + ".cpp");
     }
 
     private void waitForStartup() throws InterruptedException {

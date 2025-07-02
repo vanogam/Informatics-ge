@@ -104,7 +104,7 @@ public class Utils {
      */
     public static CommandResult executeCommandSync(DockerClient client, String containerId, String command, long timeMillis, Integer memoryLimit) throws InterruptedException {
         if (memoryLimit != null) {
-            memoryLimit += 10 * 1024;
+            memoryLimit *= 2; // Increase memory limit to account for overhead
             float timeLimit = (500f + timeMillis) / 1000f;
             command = "ulimit -v " + memoryLimit + " && timeout " + timeLimit + "s " + command;
         }

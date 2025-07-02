@@ -73,7 +73,6 @@ public class JobConsumer {
                         sendCallback(new TestResult.Builder()
                                 .withSubmissionId(Long.parseLong(task.submissionId()))
                                 .withMessageType(CallbackType.SYSTEM_ERROR)
-                                .withMessage("Error processing message: " + e.getMessage())
                                 .withTestcaseKey(task.testId())
                                 .build()
                         );

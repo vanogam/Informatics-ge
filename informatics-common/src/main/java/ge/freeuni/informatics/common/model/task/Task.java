@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Entity
 public class Task {
@@ -43,6 +44,8 @@ public class Task {
     Integer timeLimitMillis;
 
     Integer memoryLimitMB;
+
+    CheckerType checkerType;
 
     /**
      * Used to parse and number test case file names.
@@ -88,7 +91,6 @@ public class Task {
         this.title = title;
     }
 
-    @ElementCollection
     public Map<Language, String> getStatements() {
         return statements;
     }
@@ -145,6 +147,14 @@ public class Task {
         this.memoryLimitMB = memoryLimitMB;
     }
 
+    public CheckerType getCheckerType() {
+        return checkerType;
+    }
+
+    public void setCheckerType(CheckerType checkerType) {
+        this.checkerType = checkerType;
+    }
+
     public String getInputTemplate() {
         return inputTemplate;
     }
@@ -174,7 +184,7 @@ public class Task {
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof Task) {
-            return id == ((Task) obj).id;
+            return Objects.equals(id, ((Task) obj).id);
         }
         return false;
     }

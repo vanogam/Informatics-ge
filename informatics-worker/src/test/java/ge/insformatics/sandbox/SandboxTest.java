@@ -125,4 +125,124 @@ public class SandboxTest {
 
         assertEquals(0.0, result.getScore(), result.getMessage());
     }
+
+    @Test
+    public void testYesNoChecker() throws Exception {
+        Task task = new Task("testTask",
+                "1",
+                "1",
+                "yesno.cpp",
+                Language.CPP,
+                1000,
+                256 * 1024,
+                "yesno",
+                "yesno.in",
+                "yesno.out",
+                Task.CheckerType.YES_NO,
+                Stage.TESTING);
+        CompilationResult compilationResult = sandbox.compile(task,
+                new File(getClass().getClassLoader().getResource("yesno.cpp").getPath()));
+        sandbox.uploadTar(compressFile(new File(contestFiles), "testTask"), "/sandbox/tasks/");
+        assertTrue(compilationResult.isSuccess());
+        TestResult result = sandbox.execute(task);
+
+        assertEquals(1.0, result.getScore());
+        assertEquals(TestStatus.CORRECT, result.getStatus());
+    }
+
+    @Test
+    public void testYesNoWaChecker() throws Exception {
+        Task task = new Task("testTask",
+                "1",
+                "1",
+                "yesno.cpp",
+                Language.CPP,
+                1000,
+                256 * 1024,
+                "yesno",
+                "yesno.in",
+                "yesno.out",
+                Task.CheckerType.YES_NO,
+                Stage.TESTING);
+        CompilationResult compilationResult = sandbox.compile(task,
+                new File(getClass().getClassLoader().getResource("yesno.cpp").getPath()));
+        sandbox.uploadTar(compressFile(new File(contestFiles), "testTask"), "/sandbox/tasks/");
+        assertTrue(compilationResult.isSuccess());
+        TestResult result = sandbox.execute(task);
+
+        assertEquals(1.0, result.getScore());
+        assertEquals(TestStatus.CORRECT, result.getStatus());
+    }
+
+    @Test
+    public void testDouble9Checker() throws Exception {
+        Task task = new Task("testTask",
+                "1",
+                "1",
+                "double9.cpp",
+                Language.CPP,
+                1000,
+                256 * 1024,
+                "double9",
+                "double9.in",
+                "double9.out",
+                Task.CheckerType.DOUBLE_E9,
+                Stage.TESTING);
+        CompilationResult compilationResult = sandbox.compile(task,
+                new File(getClass().getClassLoader().getResource("double9.cpp").getPath()));
+        sandbox.uploadTar(compressFile(new File(contestFiles), "testTask"), "/sandbox/tasks/");
+        assertTrue(compilationResult.isSuccess());
+        TestResult result = sandbox.execute(task);
+
+        assertEquals(1.0, result.getScore());
+        assertEquals(TestStatus.CORRECT, result.getStatus());
+    }
+
+    @Test
+    public void testDouble9CheckerWA() throws Exception {
+        Task task = new Task("testTask",
+                "1",
+                "1",
+                "double9_2.cpp",
+                Language.CPP,
+                1000,
+                256 * 1024,
+                "double9",
+                "double9.in",
+                "double9.out",
+                Task.CheckerType.DOUBLE_E9,
+                Stage.TESTING);
+        CompilationResult compilationResult = sandbox.compile(task,
+                new File(getClass().getClassLoader().getResource("double9_2.cpp").getPath()));
+        sandbox.uploadTar(compressFile(new File(contestFiles), "testTask"), "/sandbox/tasks/");
+        assertTrue(compilationResult.isSuccess());
+        TestResult result = sandbox.execute(task);
+
+        assertEquals(0.0, result.getScore());
+        assertEquals(TestStatus.WRONG_ANSWER, result.getStatus());
+    }
+
+    @Test
+    public void testCorrectPython() throws Exception {
+        Task task = new Task("testTask",
+                "1",
+                "1",
+                "correct.py",
+                Language.PYTHON,
+                1000,
+                256 * 1024,
+                "01",
+                "01.in",
+                "01.out",
+                Task.CheckerType.TOKEN,
+                Stage.TESTING);
+        CompilationResult compilationResult = sandbox.compile(task,
+                new File(getClass().getClassLoader().getResource("correct.py").getPath()));
+        sandbox.uploadTar(compressFile(new File(contestFiles), "testTask"), "/sandbox/tasks/");
+        assertTrue(compilationResult.isSuccess());
+        TestResult result = sandbox.execute(task);
+
+        assertEquals(1.0, result.getScore());
+        assertEquals(TestStatus.CORRECT, result.getStatus());
+    }
 }

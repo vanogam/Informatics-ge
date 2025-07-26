@@ -44,7 +44,6 @@ services:
       dockerfile: Dockerfile_dev
     volumes:
       - ./informatics-ui:/app
-      - /app/node_modules
     ports:
       - "3000:3000"
     environment:

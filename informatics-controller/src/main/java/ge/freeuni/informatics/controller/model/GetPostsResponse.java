@@ -8,7 +8,11 @@ public class GetPostsResponse extends InformaticsResponse {
 
     List<PostDTO> posts;
 
-    public GetPostsResponse(String status, String message, List<PostDTO> posts) {
+    public GetPostsResponse(List<PostDTO> posts) {
+        this.posts = posts;
+    }
+
+    public GetPostsResponse(String message, List<PostDTO> posts) {
         super(message);
         this.posts = posts;
     }

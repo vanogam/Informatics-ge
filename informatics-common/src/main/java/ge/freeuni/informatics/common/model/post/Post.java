@@ -13,18 +13,30 @@ public class Post {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
-    @Column(nullable = false)
+    @Column()
     String title;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     String content;
+
+    @Column(columnDefinition = "TEXT")
+    String draftContent;
 
     @ManyToOne
     User author;
 
-    Date postDate;
+    @Temporal(TemporalType.TIMESTAMP)
+    Date createDate;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    Date lastUpdateDate;
+
+    PostStatus status;
 
     Long roomId;
+
+    @Version
+    private Long version;
 
     public Long getId() {
         return id;
@@ -50,6 +62,14 @@ public class Post {
         this.content = content;
     }
 
+    public String getDraftContent() {
+        return draftContent;
+    }
+
+    public void setDraftContent(String draftContent) {
+        this.draftContent = draftContent;
+    }
+
     public User getAuthor() {
         return author;
     }
@@ -58,12 +78,28 @@ public class Post {
         this.author = author;
     }
 
-    public Date getPostDate() {
-        return postDate;
+    public Date getCreateDate() {
+        return createDate;
     }
 
-    public void setPostDate(Date postDate) {
-        this.postDate = postDate;
+    public void setCreateDate(Date createDate) {
+        this.createDate = createDate;
+    }
+
+    public Date getLastUpdateDate() {
+        return lastUpdateDate;
+    }
+
+    public void setLastUpdateDate(Date lastUpdateDate) {
+        this.lastUpdateDate = lastUpdateDate;
+    }
+
+    public PostStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(PostStatus status) {
+        this.status = status;
     }
 
     public Long getRoomId() {
@@ -72,5 +108,13 @@ public class Post {
 
     public void setRoomId(Long roomId) {
         this.roomId = roomId;
+    }
+
+    public Long getVersion() {
+        return version;
+    }
+
+    public void setVersion(Long version) {
+        this.version = version;
     }
 }

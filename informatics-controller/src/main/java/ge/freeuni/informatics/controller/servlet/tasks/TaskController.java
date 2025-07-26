@@ -5,6 +5,7 @@ import ge.freeuni.informatics.common.dto.TaskDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.task.TaskInfo;
 import ge.freeuni.informatics.controller.model.*;
+import ge.freeuni.informatics.controller.servlet.ServletUtils;
 import ge.freeuni.informatics.server.task.ITaskManager;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -120,6 +121,7 @@ public class TaskController {
     @GetMapping("/task/{taskId}/testcase/{testKey}")
     ResponseEntity<InputStreamResource> getSingleTestcase(@PathVariable Long taskId, @PathVariable String testKey) {
         try {
+            testKey = ServletUtils.sanitizeTestKey(testKey);
             File file = taskManager.getTestcaseZip(taskId, testKey);
             return ResponseEntity.ok()
                     .header("Content-Disposition", "attachment; filename=\"" + file.getName() + "\"")

@@ -14,13 +14,13 @@ import EditContest from './Pages/contest/EditContest'
 import Results from './Pages/Results'
 import MySubmissions from './Pages/MySubmissions'
 import ContestSubmissions from './Pages/ContestSubmissions'
-import NewNews from './Pages/NewNews'
 import NewTaskCard from './Components/NewTaskCard'
 import Error from './Pages/Error'
 import { useEffect } from 'react'
 import axios from 'axios'
 import Cookies from "js-cookie";
 import { renewCsrfToken } from './utils/csrfUtils'
+import AddPost from "./Pages/AddPost";
 
 function App() {
 	useEffect(() => {
@@ -72,7 +72,8 @@ function App() {
 					<Route path='/contest/:contest_id/edit' element={<EditContest />} />\
 					<Route path='/contest/:contest_id/task/add' element={<NewTaskCard />} />\
 					<Route path='/task/:taskId' element={<NewTaskCard />} />\
-					<Route path='/news/add' element={<NewNews />} />
+					<Route path='/room/:room_id/post' element={<AddPost />} />
+					<Route path='/room/:room_id/post/:post_id' element={<AddPost />} />
 					<Route element={<Error/>} />
 				</Routes>
 			</Box>

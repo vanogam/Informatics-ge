@@ -17,6 +17,7 @@ import org.springframework.security.web.csrf.XorCsrfTokenRequestAttributeHandler
 public class SecurityConfiguration {
     private static final String[] GLOBAL_ADDRESSES = {"/",
             "/api/login",
+            "/api/room/1/posts",
             "/api/logout",
             "/api/register",
             "/api/contests",

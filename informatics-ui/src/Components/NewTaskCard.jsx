@@ -315,8 +315,6 @@ export default function NewTaskCard() {
                             />
                         </div>
                     )}
-                    {/*</Stack>*/}
-                    {/*<Stack flexDirection='row' gap='1rem'>*/}
                     <TextField
                         label={getMessage('ka', 'title')}
                         value={title}

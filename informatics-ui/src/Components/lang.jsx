@@ -9,6 +9,17 @@ const langDictionary = {
 		'ERROR_CODE_incorrectCredentials': 'არასწორი სახელი ან პაროლი',
 		'ERROR_CODE_loggedInWithDifferentUser': 'სხვა მომხმარებელი უკვე ავტორიზებულია',
 
+		//
+		'preview': 'ტექსტი',
+
+		// პოსტები
+		'addPost': 'დაამატე სიახლე',
+		'publish': 'გამოქვეყნება',
+		'loading': 'დაელოდეთ...',
+		'addPostTitle': 'სიახლის დამატება',
+		'draftSaved': 'მონახაზი შენახულია',
+		'body': 'ტექსტი',
+
 		// კონტესტები
 		'name': 'სახელი',
 		'duration': 'ხანგრძლივობა',
@@ -22,6 +33,7 @@ const langDictionary = {
 		'upsolvingAfterFinished': 'ამოცანების აფსოლვინგში დამატება შეჯიბრების დასრულების შემდეგ',
 		'startDate': 'დაწყების დრო',
 
+		// შეცდომები
 		'unexpectedException': 'გაუთვალისწინებელი შეცდომა',
 		'insufficientPrivileges': 'ამ ქმედების განხორციელების უფლება არ გაქვთ!',
 		'pleaseLogin': 'გთხოვთ, გაიაროთ ავტორიზაცია',

@@ -4,8 +4,7 @@ import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.CodeLanguage;
 import ge.freeuni.informatics.repository.contestroom.ContestRoomJpaRepository;
 import ge.freeuni.informatics.repository.task.TaskRepository;
-import ge.freeuni.informatics.server.annotation.MemberTaskRestricted;
-import ge.freeuni.informatics.server.annotation.TeacherTaskRestricted;
+import ge.freeuni.informatics.server.annotation.*;
 import ge.freeuni.informatics.server.user.UserManager;
 import ge.freeuni.informatics.utils.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +26,9 @@ public class FileManager {
 
     @Value("${ge.freeuni.informatics.Task.statementDirectoryAddress}")
     private String statementDirectory;
+
+    @Value("${ge.freeuni.informatics.Task.postDirectoryAddress}")
+    private String postDirectory;
 
     @Autowired
     private UserManager userManager;
@@ -69,15 +71,36 @@ public class FileManager {
 
         Files.createDirectories(Paths.get(statementDir));
         String filePath = statementDir + "/" + filename;
-        Files.write(Paths.get(filePath), fileContent, new OpenOption[0]);
+        Files.write(Paths.get(filePath), fileContent);
         return filename;
+    }
 
+    @PostIdAuthorRestricted
+    public String saveFileForPost(long postId, byte[] fileContent) throws IOException, InformaticsServerException {
+        String filename;
+        do {
+            filename = FileUtils.getRandomFileName(8);
+        } while(Files.exists(Paths.get(postDirectory + "/" + postId + "/" + filename)));
+
+        Files.createDirectories(Paths.get(postDirectory + "/" + postId));
+        String filePath = postDirectory + "/" + postId + "/" + filename;
+        Files.write(Paths.get(filePath), fileContent);
+        return filename;
     }
 
     @MemberTaskRestricted
     public byte[] getFileForStatement(long taskId, String filename) throws IOException, InformaticsServerException {
-        String userDir = statementDirectory.replace(":taskId", String.valueOf(taskId));
-        String filePath = userDir + "/" + filename;
+        String statementDir = statementDirectory.replace(":taskId", String.valueOf(taskId));
+        String filePath = statementDir + "/" + filename;
+        if (!Files.exists(Paths.get(filePath))) {
+            throw new InformaticsServerException("fileNotFound");
+        }
+        return Files.readAllBytes(Paths.get(filePath));
+    }
+
+    @RoomMemberRestricted
+    public byte[] getFileForPost(long roomId, int postId, String filename) throws IOException, InformaticsServerException {
+        String filePath = postDirectory + "/" + postId + "/" + filename;
         if (!Files.exists(Paths.get(filePath))) {
             throw new InformaticsServerException("fileNotFound");
         }

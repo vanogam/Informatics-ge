@@ -2,15 +2,19 @@ import React, {useContext, useEffect, useState} from "react";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeMathjax from "rehype-mathjax";
+import rehypeRaw from "rehype-raw";
 import getMessage from "./lang";
 import {AxiosContext} from '../utils/axiosInstance'
 import {Button} from "@mui/material";
+import {youtubeRegex} from "../utils/constants";
 
 const MarkdownEditor = ({
                             entries,
                             loadEndpoint,
                             value,
                             onChange,
+                            loading = false,
+                            comment = null,
                             saveText,
                             imageDownloadFunc,
                             imageUploadAddress,
@@ -40,9 +44,7 @@ const MarkdownEditor = ({
                 const formData = new FormData();
                 formData.append("file", file);
 
-                axiosInstance.post(imageUploadAddress,
-                    formData,
-                ).then((response) => {
+                axiosInstance.post(imageUploadAddress, formData).then((response) => {
                     const imageUrl = response.data.imageUrl;
 
                     if (response.status === 200) {
@@ -53,6 +55,16 @@ const MarkdownEditor = ({
                     }
                 });
                 e.preventDefault();
+            } else if (item.type === "text/plain") {
+                const text = e.clipboardData.getData("text/plain");
+                const match = youtubeRegex.exec(text);
+
+                if (match) {
+                    const videoId = match[2] || match[3];
+                    const embeddedVideoMarkdown = `<iframe width="560" height="315" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>\n`;
+                    onChange((prev) => prev + embeddedVideoMarkdown);
+                    e.preventDefault();
+                }
             }
         }
     };
@@ -84,10 +96,10 @@ const MarkdownEditor = ({
                     }}
                     onClick={() => setActiveTab("preview")}
                 >
-                    {getMessage('ka', 'statement')}
+                    {getMessage('ka', 'preview')}
                 </button>
             </div>
-            <div style={{padding: "10px"}}>
+            <div style={{paddingTop: "10px"}}>
                 {activeTab === "editor" && entries.map((entry) => (
                     <>
                         <label key={entry.label} style={{display: "block", marginBottom: "10px"}}>{entry.label}</label>
@@ -112,7 +124,7 @@ const MarkdownEditor = ({
                                 <ReactMarkdown
                                     children={entry.value}
                                     remarkPlugins={[remarkMath]}
-                                    rehypePlugins={[rehypeMathjax]}
+                                    rehypePlugins={[rehypeMathjax, rehypeRaw]}
                                     urlTransform={imageDownloadFunc}
                                 />
                             </>
@@ -120,11 +132,12 @@ const MarkdownEditor = ({
                     </div>
                 }
             </div>
-            <div style={{marginLeft: 'auto'}}>
+            <div style={{marginBottom: "10px", fontStyle: "italic", color: 'gray', fontSize: '15px', minHeight: '20px'}}>{comment}</div>            <div style={{marginLeft: 'auto'}}>
                 <Button
                     variant="contained"
                     color="secondary"
                     sx={{backgroundColor: '#2f2d47'}}
+                    disabled={loading}
                     onClick={
                         () => {
                             submitFunc(value)

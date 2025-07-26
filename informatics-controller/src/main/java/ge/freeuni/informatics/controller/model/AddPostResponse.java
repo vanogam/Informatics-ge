@@ -1,19 +1,17 @@
 package ge.freeuni.informatics.controller.model;
 
+import ge.freeuni.informatics.common.dto.PostDTO;
+
 public class AddPostResponse extends InformaticsResponse{
 
-    private Long postId;
+    private PostDTO post;
 
-    public AddPostResponse(String status, String message, Long postId) {
+    public AddPostResponse(String message, PostDTO post) {
         super(message);
-        this.postId = postId;
+        this.post = post;
     }
 
-    public Long getPostId() {
-        return postId;
-    }
-
-    public void setPostId(Long postId) {
-        this.postId = postId;
+    public PostDTO getPost() {
+        return post;
     }
 }

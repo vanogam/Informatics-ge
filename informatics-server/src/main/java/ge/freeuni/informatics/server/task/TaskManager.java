@@ -250,7 +250,13 @@ public class TaskManager implements ITaskManager {
     @Override
     @TeacherTaskRestricted
     public File getTestcasesZip(long taskId) throws InformaticsServerException {
-        Task task = taskRepository.getReferenceById(taskId);
+        Task task;
+        try {
+            task = taskRepository.getReferenceById(taskId);
+        } catch (EntityNotFoundException e) {
+            log.error("Task with id {} not found", taskId, e);
+            throw InformaticsServerException.TASK_NOT_FOUND;
+        }
         File zipFile = new File(FileUtils.buildPath(tempDirectoryAddress, task.getCode() + "_testcases.zip"));
         try (FileOutputStream fos = new FileOutputStream(zipFile);
             ZipOutputStream zos = new ZipOutputStream(fos)) {
@@ -259,7 +265,7 @@ public class TaskManager implements ITaskManager {
             }
         } catch (IOException e) {
             log.error("Error while creating zip for test cases of task {}", taskId, e);
-            throw new InformaticsServerException("unexpectedException", e);
+            throw InformaticsServerException.UNEXPECTED_ERROR;
         }
         return zipFile;
     }

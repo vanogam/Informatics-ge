@@ -1,16 +1,20 @@
 package ge.freeuni.informatics.server.task;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import ge.freeuni.informatics.common.Language;
 import ge.freeuni.informatics.common.dto.AddTestcasesResult;
 import ge.freeuni.informatics.common.dto.TaskDTO;
+import ge.freeuni.informatics.common.dto.TestcaseDTO;
 import ge.freeuni.informatics.common.dto.UserDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.contest.Contest;
 import ge.freeuni.informatics.common.model.contest.ContestantResult;
 import ge.freeuni.informatics.common.model.contestroom.ContestRoom;
+import ge.freeuni.informatics.common.model.task.Statement;
 import ge.freeuni.informatics.common.model.task.Task;
 import ge.freeuni.informatics.common.model.task.TaskInfo;
-import ge.freeuni.informatics.common.model.task.TestCase;
+import ge.freeuni.informatics.common.model.task.Testcase;
 import ge.freeuni.informatics.repository.contest.ContestJpaRepository;
 import ge.freeuni.informatics.repository.task.TaskRepository;
 import ge.freeuni.informatics.repository.task.TestcaseRepository;
@@ -22,6 +26,7 @@ import ge.freeuni.informatics.server.contestroom.IContestRoomManager;
 import ge.freeuni.informatics.server.user.IUserManager;
 import ge.freeuni.informatics.utils.FileUtils;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -74,7 +79,7 @@ public class TaskManager implements ITaskManager {
     @MemberTaskRestricted
     public Task getTask(long taskId) {
         Task task = taskRepository.getReferenceById(taskId);
-        Hibernate.initialize(task.getTestCases());
+        Hibernate.initialize(task.getTestcases());
         return task;
     }
 
@@ -149,6 +154,7 @@ public class TaskManager implements ITaskManager {
     }
 
     @Override
+    @Transactional
     @TeacherContestRestricted
     public TaskDTO addTask(long contestId, TaskDTO taskDTO) throws InformaticsServerException {
         Contest contest;
@@ -168,7 +174,7 @@ public class TaskManager implements ITaskManager {
             if (!existingTask.getContest().getId().equals(contest.getId())) {
                 throw new InformaticsServerException("taskNotInContest");
             }
-            task.setTestCases(existingTask.getTestCases());
+            task.setTestCases(existingTask.getTestcases());
             task.setStatements(existingTask.getStatements());
         } else {
             task.setCode(FileUtils.getRandomFileName(10));
@@ -189,18 +195,24 @@ public class TaskManager implements ITaskManager {
 
     @Override
     @MemberTaskRestricted
-    public String getStatement(long taskId, Language language) throws InformaticsServerException {
+    public Statement getStatement(long taskId, Language language) throws InformaticsServerException {
         Task task = taskRepository.getReferenceById(taskId);
-        Contest contest = task.getContest();
-        ContestRoom room = roomManager.getRoom(contest.getRoomId());
-        Long currentUser = userManager.getAuthenticatedUser().id();
-        if (!room.isOpen() && !room.isMember(currentUser)) {
-            throw new InformaticsServerException("permissionDenied");
-        }
         if (!task.getStatements().containsKey(language)) {
             return null;
         }
-        return task.getStatements().get(language);
+        String statementJson = task.getStatements().get(language);
+        try {
+            return new ObjectMapper().readValue(statementJson, Statement.class);
+        } catch (JsonProcessingException e) {
+            throw InformaticsServerException.INVALID_STATEMENT;
+        }
+    }
+
+    @Override
+    @MemberTaskRestricted
+    public List<TestcaseDTO> getPublicTestcases(long taskId) {
+        return testcaseRepository.findByTaskIdAndPublicTestcaseOrderByKey(taskId, true)
+                .stream().map(tc -> new TestcaseDTO(tc.getKey(), tc.isPublicTestcase(), tc.getInputSnippet(), tc.getOutputSnippet())).toList();
     }
 
     @Override
@@ -212,6 +224,7 @@ public class TaskManager implements ITaskManager {
     }
 
     @Override
+    @Transactional
     @TeacherTaskRestricted
     public AddTestcasesResult addTestcase(long taskId, byte[] inputContent, byte[] outputContent, String inputName, String outputName) throws InformaticsServerException {
         Task task = taskRepository.getReferenceById(taskId);
@@ -228,10 +241,10 @@ public class TaskManager implements ITaskManager {
     @TeacherTaskRestricted
     public File getTestcaseZip(long taskId, String testcaseKey) throws InformaticsServerException {
         Task task = taskRepository.getReferenceById(taskId);
-        TestCase testCase = testcaseRepository.findFirstByTaskIdAndKey(taskId, testcaseKey);
-        if (testCase == null) {
+        Testcase testcase = testcaseRepository.findFirstByTaskIdAndKey(taskId, testcaseKey);
+        if (testcase == null) {
             log.error("Test case with id {} not found in task {}", testcaseKey, taskId);
-            throw new InformaticsServerException("testCaseNotFound");
+            throw new InformaticsServerException("testcaseNotFound");
         }
         File zipFile = new File(FileUtils.buildPath(tempDirectoryAddress, task.getCode() + "_testcase_" + testcaseKey + ".zip"));
         if (zipFile.exists()) {
@@ -239,7 +252,7 @@ public class TaskManager implements ITaskManager {
         }
         try (FileOutputStream fos = new FileOutputStream(zipFile);
          ZipOutputStream zos = new ZipOutputStream(fos)) {
-            addTestcaseToZip(zos, testCase);
+            addTestcaseToZip(zos, testcase);
         } catch (IOException e) {
             log.error("Error while creating zip for test case {}", testcaseKey, e);
             throw new InformaticsServerException("unexpectedException", e);
@@ -260,8 +273,8 @@ public class TaskManager implements ITaskManager {
         File zipFile = new File(FileUtils.buildPath(tempDirectoryAddress, task.getCode() + "_testcases.zip"));
         try (FileOutputStream fos = new FileOutputStream(zipFile);
             ZipOutputStream zos = new ZipOutputStream(fos)) {
-            for (TestCase testCase : task.getTestCases()) {
-                addTestcaseToZip(zos, testCase);
+            for (Testcase testcase : task.getTestcases()) {
+                addTestcaseToZip(zos, testcase);
             }
         } catch (IOException e) {
             log.error("Error while creating zip for test cases of task {}", taskId, e);
@@ -270,17 +283,18 @@ public class TaskManager implements ITaskManager {
         return zipFile;
     }
 
-    private void addTestcaseToZip(ZipOutputStream zos, TestCase testCase) throws IOException {
-            zos.putNextEntry(new ZipEntry(List.of(testCase.getInputFileAddress().split("/")).getLast()));
-            Files.copy(Paths.get(testCase.getInputFileAddress()), zos);
+    private void addTestcaseToZip(ZipOutputStream zos, Testcase testcase) throws IOException {
+            zos.putNextEntry(new ZipEntry(List.of(testcase.getInputFileAddress().split("/")).getLast()));
+            Files.copy(Paths.get(testcase.getInputFileAddress()), zos);
             zos.closeEntry();
-            zos.putNextEntry(new ZipEntry(List.of(testCase.getOutputFileAddress().split("/")).getLast()));
-            Files.copy(Paths.get(testCase.getOutputFileAddress()), zos);
-            Files.copy(Paths.get(testCase.getOutputFileAddress()), zos);
+            zos.putNextEntry(new ZipEntry(List.of(testcase.getOutputFileAddress().split("/")).getLast()));
+            Files.copy(Paths.get(testcase.getOutputFileAddress()), zos);
+            Files.copy(Paths.get(testcase.getOutputFileAddress()), zos);
             zos.closeEntry();
     }
 
     @Override
+    @Transactional
     @TeacherTaskRestricted
     public AddTestcasesResult addTestcases(long taskId, byte[] testsZip) throws InformaticsServerException {
         File testsFolder;
@@ -333,6 +347,16 @@ public class TaskManager implements ITaskManager {
     }
 
     @Override
+    @Transactional
+    @TeacherTaskRestricted
+    public void setPublicTestcase(long taskId, String testcaseKey, boolean publicTestcase) throws InformaticsServerException {
+        testcaseRepository.findFirstByKey(testcaseKey).ifPresent(tc -> {
+            tc.setPublicTestcase(publicTestcase);
+            testcaseRepository.save(tc);
+        });
+    }
+
+    @Override
     @TeacherTaskRestricted
     public void addManager(long taskId, byte[] manager) {
 
@@ -345,28 +369,29 @@ public class TaskManager implements ITaskManager {
     }
 
     @Override
+    @Transactional
     @TeacherTaskRestricted
     public void removeTestCase(long taskId, String testKey) throws InformaticsServerException {
         Task task = taskRepository.getReferenceById(taskId);
-        TestCase testCase = testcaseRepository.findFirstByTaskIdAndKey(taskId, testKey);
-        if (testCase == null) {
+        Testcase testcase = testcaseRepository.findFirstByTaskIdAndKey(taskId, testKey);
+        if (testcase == null) {
             log.error("Test case with key {} not found in task {}", testKey, taskId);
-            throw new InformaticsServerException("testCaseAlreadyRemoved");
+            throw new InformaticsServerException("testcaseAlreadyRemoved");
         }
-        int index = task.getTestCases().indexOf(testCase);
+        int index = task.getTestcases().indexOf(testcase);
         try {
             if (index == -1) {
                 log.error("Test case with key {} not found in task {}", testKey, taskId);
-                Files.delete(Path.of(testCase.getInputFileAddress()));
-                Files.delete(Path.of(testCase.getOutputFileAddress()));
-                testcaseRepository.delete(testCase);
+                Files.delete(Path.of(testcase.getInputFileAddress()));
+                Files.delete(Path.of(testcase.getOutputFileAddress()));
+                testcaseRepository.delete(testcase);
                 return;
             }
 
-            Files.delete(Path.of(testCase.getInputFileAddress()));
-            Files.delete(Path.of(testCase.getOutputFileAddress()));
-            task.getTestCases().remove(index);
-            testcaseRepository.delete(testCase);
+            Files.delete(Path.of(testcase.getInputFileAddress()));
+            Files.delete(Path.of(testcase.getOutputFileAddress()));
+            task.getTestcases().remove(index);
+            testcaseRepository.delete(testcase);
             taskRepository.save(task);
         } catch (IOException e) {
             throw new InformaticsServerException("unexpectedError", e);
@@ -374,30 +399,30 @@ public class TaskManager implements ITaskManager {
     }
 
     private void addTestcaseLocal(Task task, byte[] inputContent, byte[] outputContent, String inputName, String outputName) throws InformaticsServerException {
-        if (task.getTestCases() == null) {
+        if (task.getTestcases() == null) {
             task.setTestCases(new ArrayList<>());
         }
         String testKey = getTestKey(inputName, outputName, task.getInputTemplate(), task.getOutputTemplate());
         deleteTestcaseIfExists(task, testKey);
-        TestCase newTestCase = new TestCase();
-        newTestCase.setKey(testKey);
-        newTestCase.setTaskId(task.getId());
-        insertTestcaseSorted(task, newTestCase);
+        Testcase newTestcase = new Testcase();
+        newTestcase.setKey(testKey);
+        newTestcase.setTaskId(task.getId());
+        insertTestcaseSorted(task, newTestcase);
         try {
-            newTestCase.setInputFileAddress(createTestFile(inputName, String.valueOf(task.getId()), inputContent));
-            newTestCase.setOutputFileAddress(createTestFile(outputName, String.valueOf(task.getId()), outputContent));
-            newTestCase.setInputSnippet(new String(inputContent, 0, Math.min(1000, inputContent.length - 1), StandardCharsets.UTF_8));
-            newTestCase.setOutputSnippet(new String(inputContent, 0, Math.min(1000, outputContent.length - 1), StandardCharsets.UTF_8));
+            newTestcase.setInputFileAddress(createTestFile(inputName, String.valueOf(task.getId()), inputContent));
+            newTestcase.setOutputFileAddress(createTestFile(outputName, String.valueOf(task.getId()), outputContent));
+            newTestcase.setInputSnippet(new String(inputContent, 0, Math.min(1000, inputContent.length - 1), StandardCharsets.UTF_8));
+            newTestcase.setOutputSnippet(new String(inputContent, 0, Math.min(1000, outputContent.length - 1), StandardCharsets.UTF_8));
         } catch (IOException e) {
-            log.error("Error while creating test files for test {}", newTestCase.getKey(), e);
+            log.error("Error while creating test files for test {}", newTestcase.getKey(), e);
             throw new InformaticsServerException("unexpectedException", e);
         }
-        testcaseRepository.save(newTestCase);
+        testcaseRepository.save(newTestcase);
     }
 
     private void deleteTestcaseIfExists(Task task, String testKey) throws InformaticsServerException {
-        for (int i = task.getTestCases().size() - 1; i >= 0; i --) {
-            TestCase tc = task.getTestCases().get(i);
+        for (int i = task.getTestcases().size() - 1; i >= 0; i --) {
+            Testcase tc = task.getTestcases().get(i);
             if (testKey.equals(tc.getKey())) {
                 try {
                     Files.delete(Path.of(tc.getInputFileAddress()));
@@ -406,22 +431,22 @@ public class TaskManager implements ITaskManager {
                     log.error("Error while removing test case {}", tc.getKey(), e);
                     throw new InformaticsServerException("unexpectedException", e);
                 }
-                task.getTestCases().remove(i);
+                task.getTestcases().remove(i);
                 testcaseRepository.delete(tc);
             }
         }
     }
 
-    private void insertTestcaseSorted(Task task, TestCase newTestCase) {
-        String testKey = newTestCase.getKey();
+    private void insertTestcaseSorted(Task task, Testcase newTestcase) {
+        String testKey = newTestcase.getKey();
         int index = 0;
-        for (TestCase tc : task.getTestCases()) {
+        for (Testcase tc : task.getTestcases()) {
             if (testKey.compareTo(tc.getKey()) < 0) {
                 break;
             }
             index++;
         }
-        task.getTestCases().add(index, newTestCase);
+        task.getTestcases().add(index, newTestcase);
     }
 
     private String getTestKey(String inputName, String outputName, String inputTemplate, String outputTemplate) {

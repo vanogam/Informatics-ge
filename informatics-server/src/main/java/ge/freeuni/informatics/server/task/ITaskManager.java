@@ -3,12 +3,13 @@ package ge.freeuni.informatics.server.task;
 import ge.freeuni.informatics.common.Language;
 import ge.freeuni.informatics.common.dto.AddTestcasesResult;
 import ge.freeuni.informatics.common.dto.TaskDTO;
+import ge.freeuni.informatics.common.dto.TestcaseDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
+import ge.freeuni.informatics.common.model.task.Statement;
 import ge.freeuni.informatics.common.model.task.Task;
 import ge.freeuni.informatics.common.model.task.TaskInfo;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.*;
 
 public interface ITaskManager {
@@ -27,7 +28,9 @@ public interface ITaskManager {
 
     void removeTask(long taskId, long testId);
 
-    String getStatement(long taskId, Language language) throws InformaticsServerException;
+    Statement getStatement(long taskId, Language language) throws InformaticsServerException;
+
+    List<TestcaseDTO> getPublicTestcases(long taskId) throws InformaticsServerException;
 
     void addStatement(long taskId, String statement, Language language);
 
@@ -40,6 +43,8 @@ public interface ITaskManager {
     AddTestcasesResult addTestcases(long taskId, byte[] testsZip) throws InformaticsServerException;
 
     void addManager(long taskId, byte[] manager);
+
+    void setPublicTestcase(long taskId, String testcaseKey, boolean publicTestcase) throws InformaticsServerException;
 
     void removeManager(long taskId, String managerName);
 

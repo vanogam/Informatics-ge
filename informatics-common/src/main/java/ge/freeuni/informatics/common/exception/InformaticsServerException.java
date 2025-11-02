@@ -21,6 +21,7 @@ public class InformaticsServerException extends Exception {
     public static final InformaticsServerException TASK_NOT_FOUND = new InformaticsServerException("taskNotFound", ExceptionType.VALIDATION_ERROR);
     public static final InformaticsServerException TEST_NOT_FOUND = new InformaticsServerException("testNotFound", ExceptionType.VALIDATION_ERROR);
     public static final InformaticsServerException INVALID_TEST_KEY = new InformaticsServerException("invalidTestKey", ExceptionType.VALIDATION_ERROR);
+    public static final InformaticsServerException INVALID_STATEMENT = new InformaticsServerException("invalidStatement", ExceptionType.UNEXPECTED_ERROR);
 
     public InformaticsServerException(String code, ExceptionType exceptionType) {
         super();
@@ -44,7 +45,7 @@ public class InformaticsServerException extends Exception {
         return code;
     }
 
-    public ExceptionType getExceptionType(ExceptionType exceptionType) {
+    public ExceptionType getExceptionType() {
         return exceptionType;
     }
 }

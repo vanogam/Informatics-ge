@@ -9,7 +9,7 @@ import ge.freeuni.informatics.common.model.contestroom.ContestRoom;
 import ge.freeuni.informatics.common.model.submission.Submission;
 import ge.freeuni.informatics.common.model.submission.SubmissionStatus;
 import ge.freeuni.informatics.common.model.task.Task;
-import ge.freeuni.informatics.common.model.task.TestCase;
+import ge.freeuni.informatics.common.model.task.Testcase;
 import ge.freeuni.informatics.judgeintegration.JudgeIntegration;
 import ge.freeuni.informatics.repository.contest.ContestJpaRepository;
 import ge.freeuni.informatics.repository.submission.SubmissionJpaRepository;
@@ -23,8 +23,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
@@ -87,7 +85,7 @@ public class SubmissionManager implements ISubmissionManager {
             List<SubmissionTestResultDTO> testResults = submission.getSubmissionTestResults()
                     .stream()
                     .map(result -> {
-                        TestCase tc = testcaseRepository.findFirstByTaskIdAndKey(submission.getTask().getId(), result.getTestKey());
+                        Testcase tc = testcaseRepository.findFirstByTaskIdAndKey(submission.getTask().getId(), result.getTestKey());
                         return SubmissionTestResultDTO.toDto(result, tc.getInputSnippet(), tc.getOutputSnippet());
                     })
                     .sorted(Comparator.comparing(SubmissionTestResultDTO::testKey))

@@ -10,16 +10,16 @@ import { useState, useRef } from 'react'
 
 export default function NewTestCaseCard({ handleTestCaseSubmit }) {
 	const [fileName, setFileName] = useState()
-	const testCaseRef = useRef(null)
+	const testcaseRef = useRef(null)
 
 	const handleNewTestCase = () => {
 		handleTestCaseSubmit({
-			testCaseFile: testCaseRef.current.files[0],
+			testcaseFile: testcaseRef.current.files[0],
 		})
 	}
 
 	const handleFileUpload = () => {
-		setFileName(testCaseRef.current.files[0].name)
+		setFileName(testcaseRef.current.files[0].name)
 		handleNewTestCase()
 	}
 	return (
@@ -31,7 +31,7 @@ export default function NewTestCaseCard({ handleTestCaseSubmit }) {
 				<Button fullWidth  variant="contained" component="label">
 					{fileName ? fileName : 'ქეისების ატვირთვა'}
 					<input
-						ref={testCaseRef}
+						ref={testcaseRef}
 						onChange={handleFileUpload}
 						type="file"
 						hidden

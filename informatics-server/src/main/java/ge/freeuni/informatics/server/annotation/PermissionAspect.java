@@ -89,11 +89,13 @@ public class PermissionAspect {
 
     @Before("@annotation(roomMemberRestricted) && args(roomId,..)")
     public void roomMemberRestricted(RoomMemberRestricted roomMemberRestricted, Long roomId) throws InformaticsServerException {
-        Long userId = userManager.getAuthenticatedUser().id();
         ContestRoom room = roomJpaRepository.getReferenceById(roomId);
+        if (!room.isOpen()) {
+            Long userId = userManager.getAuthenticatedUser().id();
+            if (!room.isMember(userId)) {
+                throw new InformaticsServerException("permissionDenied");
+            }
 
-        if (!room.isOpen() && !room.isMember(userId)) {
-            throw new InformaticsServerException("permissionDenied");
         }
     }
 

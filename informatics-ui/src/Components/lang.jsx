@@ -46,7 +46,6 @@ const langDictionary = {
 		'contestAdded': 'შეჯიბრება წარმატებით დაემატა',
 
 		'title': 'სათაური',
-		'kaStatement': 'პირობა',
 		'taskCode': 'ამოცანის უნიკალური კოდი',
 		'taskType': 'ამოცანის ტიპი',
 		'taskScoreType': 'ქულების დაწერის წესის ტიპი',
@@ -106,6 +105,7 @@ const langDictionary = {
 		'outputContent': 'გამომავალი მონაცემები',
 		'correctOutput': 'სწორი პასუხი',
 		'compilerMessage': 'ქომფაილერის შეტყობინება',
+        'public': 'საჯარო',
 
 		'submit': 'გაშვება',
 
@@ -115,6 +115,8 @@ const langDictionary = {
 
 		'editor': 'რედაქტორი',
 		'statement': 'პირობა',
+        'saved': 'ცვლილება შენახულია',
+		'statementSaved': 'პირობა შენახულია',
 		'markdownPlaceholder': 'აკრიფეთ ტექსტი...',
 	}
 }

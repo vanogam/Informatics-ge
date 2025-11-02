@@ -6,7 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 
 @Entity
-public class TestCase {
+public class Testcase {
 
     private Long id;
 
@@ -23,6 +23,8 @@ public class TestCase {
 
     @Column(length = 1100)
     private String outputSnippet;
+
+    private boolean publicTestcase;
 
     @Id
     @GeneratedValue
@@ -80,5 +82,13 @@ public class TestCase {
 
     public void setOutputSnippet(String outputSnippet) {
         this.outputSnippet = outputSnippet;
+    }
+
+    public boolean isPublicTestcase() {
+        return publicTestcase;
+    }
+
+    public void setPublicTestcase(boolean publicTestcase) {
+        this.publicTestcase = publicTestcase;
     }
 }

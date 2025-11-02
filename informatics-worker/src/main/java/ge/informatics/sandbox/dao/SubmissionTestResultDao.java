@@ -29,12 +29,12 @@ public class SubmissionTestResultDao {
         return dataSource.getConnection();
     }
 
-    public static void saveTestResult(String submissionId, String testCaseKey, double score, TestStatus status, String errorMessage, int time, int memory, String outcome) {
+    public static void saveTestResult(String submissionId, String testcaseKey, double score, TestStatus status, String errorMessage, int time, int memory, String outcome) {
         String sql = "INSERT INTO submission_submissiontestresults (submission_id, testkey, score, teststatus, time, memory, outcome, message) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection connection = getConnection();
              var preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setLong(1, Long.parseLong(submissionId));
-            preparedStatement.setString(2, testCaseKey);
+            preparedStatement.setString(2, testcaseKey);
             preparedStatement.setDouble(3, score);
             preparedStatement.setInt(4, status.ordinal());
             preparedStatement.setInt(5, time);

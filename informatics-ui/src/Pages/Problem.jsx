@@ -1,8 +1,7 @@
 import {useParams} from 'react-router-dom'
-import {Document, Page, pdfjs} from 'react-pdf';
+import {Page, pdfjs} from 'react-pdf';
 import {
-    Typography,
-    Box, Select, TextField, MenuItem
+    Box, TextField, MenuItem
 } from '@mui/material'
 import React, {useContext, useState} from 'react'
 import Editor from 'react-simple-code-editor'
@@ -15,13 +14,19 @@ import 'prismjs/components/prism-javascript'
 import 'prismjs/themes/prism.css'
 import '../styles/numbers.css'
 import {Button} from '@mui/material'
-import {useNavigate} from "react-router-dom";
 import {useEffect} from 'react';
 import {AxiosContext} from '../utils/axiosInstance'
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeMathjax from "rehype-mathjax";
 import getMessage from "../Components/lang";
+import TableContainer from "@mui/material/TableContainer";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import TableCell from "@mui/material/TableCell";
+import {Paper} from "@mui/material";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
@@ -86,12 +91,13 @@ export default function Problem() {
             .then((response) => {
                 setStatement(response.data)
             })
+            .catch(_ => {})
 
     }, [])
-    const statementText = `**${statement.title}**` + '\n\n'
-        + statement.statement + '\n\n' +
-        `**${getMessage('ka', 'inputContent')}:**\n\n${statement.inputInfo}\n\n` +
-        `**${getMessage('ka', 'outputContent')}:**\n\n${statement.outputInfo}\n\n`;
+    const statementText = !!statement.statement ? `**${statement.statement.title}**` + '\n\n'
+        + statement.statement.statement + '\n\n' +
+        `**${getMessage('ka', 'inputContent')}:**\n\n${statement.statement.inputInfo}\n\n` +
+        `**${getMessage('ka', 'outputContent')}:**\n\n${statement.statement.outputInfo}\n\n` : '';
     return (
         <Box sx={{
             display: 'flex',
@@ -105,8 +111,31 @@ export default function Problem() {
                     rehypePlugins={[rehypeMathjax]}
                     urlTransform={url => `/api/task/${problem_id}/image/${url}`}
                 />
+                {statement.publicTestcases && statement.publicTestcases.length > 0 && (
+                    <TableContainer component={Paper} sx={{ marginTop: 2, maxWidth: 600 }}>
+                        <Table>
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>{getMessage('ka', 'input')}</TableCell>
+                                    <TableCell>{getMessage('ka', 'output')}</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {statement.publicTestcases.map((tc, idx) => (
+                                    <TableRow key={idx}>
+                                        <TableCell>
+                                            <pre style={{ margin: 0 }}>{tc.inputSnippet}</pre>
+                                        </TableCell>
+                                        <TableCell>
+                                            <pre style={{ margin: 0 }}>{tc.outputSnippet}</pre>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                )}
             </Box>
-
             <Box
                 sx={{
                     paddingTop: '50px',

@@ -2,7 +2,9 @@ package ge.freeuni.informatics.controller.servlet.tasks;
 
 import ge.freeuni.informatics.common.Language;
 import ge.freeuni.informatics.common.dto.TaskDTO;
+import ge.freeuni.informatics.common.dto.TestcaseDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
+import ge.freeuni.informatics.common.model.task.Statement;
 import ge.freeuni.informatics.common.model.task.TaskInfo;
 import ge.freeuni.informatics.controller.model.*;
 import ge.freeuni.informatics.controller.servlet.ServletUtils;
@@ -164,6 +166,17 @@ public class TaskController {
 
     }
 
+    @PutMapping("/task/{taskId}/testcases/{testKey}/public")
+    ResponseEntity<InformaticsResponse> setPublicTestcases(@PathVariable Long taskId, @PathVariable String testKey, @RequestBody SetPublicTestcasesRequest request) {
+        try {
+            taskManager.setPublicTestcase(taskId, testKey, request.status());
+        } catch (InformaticsServerException ex) {
+            log.error("Error during setting public testcases", ex);
+            return ResponseEntity.badRequest().body(new InformaticsResponse(ex.getMessage()));
+        }
+        return ResponseEntity.ok().build();
+    }
+
     @DeleteMapping("/task/{taskId}/testcase/{testKey}")
     ResponseEntity<InformaticsResponse> deleteSingleTestcase(@PathVariable Long taskId, @PathVariable String testKey) {
         try {
@@ -182,15 +195,18 @@ public class TaskController {
     }
 
     @GetMapping(value = "/task/{taskId}/statement/{language}")
-    ResponseEntity<String> getStatement(@PathVariable(required = false) Language language,
+    ResponseEntity<StatementResponse> getStatement(@PathVariable(required = false) Language language,
                                         @PathVariable Integer taskId) {
         if (language == null) {
             language = Language.valueOf(defaultLanguage);
         }
         try {
-            return ResponseEntity.ok(taskManager.getStatement(taskId, Language.valueOf(language.name())));
+            Statement statement = taskManager.getStatement(taskId, language);
+            List<TestcaseDTO> publicTestcases = taskManager.getPublicTestcases(taskId);
+            StatementResponse response = new StatementResponse(statement, publicTestcases);
+            return ResponseEntity.ok(response);
         } catch (InformaticsServerException ex) {
-            return ResponseEntity.badRequest().body(ex.getMessage());
+            return ResponseEntity.status(ServletUtils.getResponseCode(ex)).body(new StatementResponse(ex.getMessage()));
         }
     }
 }

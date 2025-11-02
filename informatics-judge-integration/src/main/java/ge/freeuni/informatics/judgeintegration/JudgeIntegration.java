@@ -7,7 +7,7 @@ import ge.freeuni.informatics.common.model.submission.Submission;
 import ge.freeuni.informatics.common.model.submission.SubmissionStatus;
 import ge.freeuni.informatics.common.model.submission.SubmissionTestResult;
 import ge.freeuni.informatics.common.model.task.Task;
-import ge.freeuni.informatics.common.model.task.TestCase;
+import ge.freeuni.informatics.common.model.task.Testcase;
 import ge.freeuni.informatics.common.model.task.CheckerType;
 import ge.freeuni.informatics.judgeintegration.model.KafkaCallback;
 import ge.freeuni.informatics.judgeintegration.model.KafkaTask;
@@ -68,10 +68,10 @@ public class JudgeIntegration implements IJudgeIntegration{
     }
 
     private void sendTestMessages(Task task, Submission submission) throws InformaticsServerException {
-        List<TestCase> testCases = task.getTestCases().stream()
-                .sorted(Comparator.comparing(TestCase::getKey))
+        List<Testcase> testcases = task.getTestcases().stream()
+                .sorted(Comparator.comparing(Testcase::getKey))
                 .toList();
-        for (TestCase testCase : testCases) {
+        for (Testcase testcase : testcases) {
             KafkaTask kafkaTask = new KafkaTask(
                     String.valueOf(task.getId()),
                     String.valueOf(task.getContest().getId()),
@@ -80,9 +80,9 @@ public class JudgeIntegration implements IJudgeIntegration{
                     CodeLanguage.valueOf(submission.getLanguage()),
                     task.getTimeLimitMillis(),
                     task.getMemoryLimitMB() * 1024,
-                    testCase.getKey(),
-                    testCase.getInputFileAddress().substring(testCase.getInputFileAddress().lastIndexOf("/") + 1),
-                    testCase.getOutputFileAddress().substring(testCase.getOutputFileAddress().lastIndexOf("/") + 1),
+                    testcase.getKey(),
+                    testcase.getInputFileAddress().substring(testcase.getInputFileAddress().lastIndexOf("/") + 1),
+                    testcase.getOutputFileAddress().substring(testcase.getOutputFileAddress().lastIndexOf("/") + 1),
                     task.getCheckerType(),
                     Stage.TESTING
             );
@@ -98,8 +98,8 @@ public class JudgeIntegration implements IJudgeIntegration{
             }
         }
         testCompletionMap.put(submission.getId(), new TreeMap<>());
-        for (int i = 0; i < task.getTestCases().size(); i++) {
-            testCompletionMap.get(submission.getId()).put(task.getTestCases().get(i).getKey(), i);
+        for (int i = 0; i < task.getTestcases().size(); i++) {
+            testCompletionMap.get(submission.getId()).put(task.getTestcases().get(i).getKey(), i);
         }
     }
 

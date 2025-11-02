@@ -60,9 +60,9 @@ public enum TaskScoreType {
                     throw new IllegalStateException("invalidFormat");
                 }
                 float multiplier = Float.parseFloat(group.get(0));
-                int testCaseCount = Integer.parseInt(group.get(1));
+                int testcaseCount = Integer.parseInt(group.get(1));
                 float minScore = 1.0f;
-                for (int j = 0; j < testCaseCount; j++, testIndex++) {
+                for (int j = 0; j < testcaseCount; j++, testIndex++) {
                     minScore = Math.min(minScore, testResults.get(testIndex).getScore());
                 }
                 for (int j = 2; j < group.size(); j++) {

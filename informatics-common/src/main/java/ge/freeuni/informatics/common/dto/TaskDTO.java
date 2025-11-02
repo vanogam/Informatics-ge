@@ -21,7 +21,7 @@ public record TaskDTO(
         String inputTemplate,
         String outputTemplate,
         Map<Language, String> statements,
-        List<String> testCases
+        List<TestcaseDTO> testcases
 ) {
 
     public static Task fromDTO(TaskDTO taskDTO) {
@@ -66,8 +66,8 @@ public record TaskDTO(
                 task.getInputTemplate(),
                 task.getOutputTemplate(),
                 task.getStatements(),
-                task.getTestCases() == null ? null : task.getTestCases().stream()
-                        .map(TestCase::getKey)
+                task.getTestcases() == null ? null : task.getTestcases().stream()
+                        .map(tc -> new TestcaseDTO(tc.getKey(), tc.isPublicTestcase(), tc.getInputSnippet(), tc.getOutputSnippet()))
                         .toList()
         );
     }

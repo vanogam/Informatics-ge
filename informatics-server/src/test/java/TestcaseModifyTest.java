@@ -1,7 +1,7 @@
 import ge.freeuni.informatics.common.dto.AddTestcasesResult;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.task.Task;
-import ge.freeuni.informatics.common.model.task.TestCase;
+import ge.freeuni.informatics.common.model.task.Testcase;
 import ge.freeuni.informatics.repository.contest.ContestJpaRepository;
 import ge.freeuni.informatics.repository.task.TaskRepository;
 import ge.freeuni.informatics.repository.task.TestcaseRepository;
@@ -46,7 +46,7 @@ public class TestcaseModifyTest {
 
     private long index = 1;
 
-    private final HashMap<Long, TestCase> testCases = new HashMap<>();
+    private final HashMap<Long, Testcase> testcases = new HashMap<>();
 
     @BeforeEach
     public void setUp() throws IOException, NoSuchFieldException, IllegalAccessException {
@@ -62,8 +62,8 @@ public class TestcaseModifyTest {
 
         when(taskRepository.save(any())).thenAnswer((ob) -> ob.getArgument(0));
         when(testcaseRepository.save(any())).thenAnswer((ob) -> {
-            ((TestCase)ob.getArgument(0)).setId(index++);
-            testCases.put(index, ob.getArgument(0));
+            ((Testcase)ob.getArgument(0)).setId(index++);
+            testcases.put(index, ob.getArgument(0));
             return ob.getArgument(0);
         });
     }
@@ -90,11 +90,11 @@ public class TestcaseModifyTest {
     public void testAddTestcase() throws InformaticsServerException, IOException {
         when(taskRepository.getReferenceById(any())).thenAnswer(ignored -> task);
         addTestcase("0", task, "input 1", "output 1");
-        TestCase testCase = task.getTestCases().getFirst();
-        assertEquals("test0.in", getTestFileName(testCase.getInputFileAddress()));
-        assertEquals("test0.out", getTestFileName(testCase.getOutputFileAddress()));
-        File inputFile = new File(testCase.getInputFileAddress());
-        File outputFile = new File(testCase.getOutputFileAddress());
+        Testcase testcase = task.getTestcases().getFirst();
+        assertEquals("test0.in", getTestFileName(testcase.getInputFileAddress()));
+        assertEquals("test0.out", getTestFileName(testcase.getOutputFileAddress()));
+        File inputFile = new File(testcase.getInputFileAddress());
+        File outputFile = new File(testcase.getOutputFileAddress());
         assertTrue(inputFile.exists());
         assertTrue(outputFile.exists());
         assertEquals("input 1", Files.readString(inputFile.toPath()));
@@ -119,11 +119,11 @@ public class TestcaseModifyTest {
         addTestcase("05", task, "input 5", "output 5");
 
         for (int i = 0; i <= 10; i++) {
-            TestCase testCase = task.getTestCases().get(i);
-            assertEquals("test" + addLeadingZeros(i + 1, 2) + ".in", getTestFileName(testCase.getInputFileAddress()));
-            assertEquals("test" + addLeadingZeros(i + 1, 2) + ".out", getTestFileName(testCase.getOutputFileAddress()));
-            assertEquals("input " + (i + 1), Files.readString(new File(testCase.getInputFileAddress()).toPath()));
-            assertEquals("output " + (i + 1), Files.readString(new File(testCase.getOutputFileAddress()).toPath()));
+            Testcase testcase = task.getTestcases().get(i);
+            assertEquals("test" + addLeadingZeros(i + 1, 2) + ".in", getTestFileName(testcase.getInputFileAddress()));
+            assertEquals("test" + addLeadingZeros(i + 1, 2) + ".out", getTestFileName(testcase.getOutputFileAddress()));
+            assertEquals("input " + (i + 1), Files.readString(new File(testcase.getInputFileAddress()).toPath()));
+            assertEquals("output " + (i + 1), Files.readString(new File(testcase.getOutputFileAddress()).toPath()));
         }
 
     }
@@ -136,7 +136,7 @@ public class TestcaseModifyTest {
         when(taskRepository.getReferenceById(any())).thenAnswer(ignored -> task);
         AddTestcasesResult result = taskManager.addTestcases(task.getId(), Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("test.zip")).readAllBytes());
 
-        assertEquals(10, task.getTestCases().size());
+        assertEquals(10, task.getTestcases().size());
         String[] inputPrefix = new String[]{
                 "12 20 47\r\n18 7 42\r\n\r\n",
                 "12 20 47\r\n40 18 42\r\n\r\n",
@@ -162,11 +162,11 @@ public class TestcaseModifyTest {
                 "YES"
         };
         for (int i = 1; i <=10; i++) {
-            TestCase testCase = task.getTestCases().get(i - 1);
-            assertEquals("box.I" + addLeadingZeros(i, 2), getTestFileName(testCase.getInputFileAddress()));
-            assertEquals("box.O" + addLeadingZeros(i, 2), getTestFileName(testCase.getOutputFileAddress()));
-            assertEquals(inputPrefix[i - 1], Files.readString(new File(testCase.getInputFileAddress()).toPath()));
-            assertEquals(outputPrefix[i - 1], Files.readString(new File(testCase.getOutputFileAddress()).toPath()));
+            Testcase testcase = task.getTestcases().get(i - 1);
+            assertEquals("box.I" + addLeadingZeros(i, 2), getTestFileName(testcase.getInputFileAddress()));
+            assertEquals("box.O" + addLeadingZeros(i, 2), getTestFileName(testcase.getOutputFileAddress()));
+            assertEquals(inputPrefix[i - 1], Files.readString(new File(testcase.getInputFileAddress()).toPath()));
+            assertEquals(outputPrefix[i - 1], Files.readString(new File(testcase.getOutputFileAddress()).toPath()));
         }
     }
 

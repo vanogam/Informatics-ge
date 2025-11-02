@@ -29,7 +29,9 @@ export default function Main() {
 				} else {
 					console.error('Failed to load news:', response.statusText)
 				}
-			})
+			}).catch((error) => {
+                console.error('Error loading news:', error)
+            });
 	}
 
 	return (

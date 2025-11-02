@@ -55,7 +55,7 @@ public class Task {
     String outputTemplate;
 
     @OneToMany(cascade = CascadeType.ALL)
-    List<TestCase> testCases;
+    List<Testcase> testcases;
 
     public Long getId() {
         return id;
@@ -171,12 +171,12 @@ public class Task {
         this.outputTemplate = outputTemplate;
     }
 
-    public List<TestCase> getTestCases() {
-        return testCases;
+    public List<Testcase> getTestcases() {
+        return testcases;
     }
 
-    public void setTestCases(List<TestCase> testCases) {
-        this.testCases = testCases;
+    public void setTestCases(List<Testcase> testcases) {
+        this.testcases = testcases;
     }
 
     @Transient

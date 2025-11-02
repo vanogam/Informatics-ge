@@ -9,7 +9,7 @@
         <class>ge.freeuni.informatics.common.model.contestroom.ContestRoom</class>
         <class>ge.freeuni.informatics.common.model.contest.Contest</class>
         <class>ge.freeuni.informatics.common.model.contest.ContestantResult</class>
-        <class>ge.freeuni.informatics.common.model.task.TestCase</class>
+        <class>ge.freeuni.informatics.common.model.task.Testcase</class>
         <class>ge.freeuni.informatics.common.model.task.Task</class>
         <class>ge.freeuni.informatics.common.model.post.Post</class>
         <class>ge.freeuni.informatics.common.model.post.PostComment</class>

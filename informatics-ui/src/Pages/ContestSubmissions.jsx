@@ -165,31 +165,31 @@ export default function ContestSubmissions() {
 											</TableRow>
 										</TableHead>
 										<TableBody>
-											{selectedSubmission?.results?.map((testCase) => (
+											{selectedSubmission?.results?.map((testcase) => (
 												<TableRow
-													key={testCase.idx}
+													key={testcase.idx}
 													sx={{
 														'&:last-child td, &:last-child th': { border: 0 },
 														cursor: 'pointer',
 														'&:hover': { backgroundColor: '#eee' },
 													}}
 												>
-													<TableCell>{testCase.idx}</TableCell>
+													<TableCell>{testcase.idx}</TableCell>
 													<TableCell>
 														<Chip
 															sx={{
 																backgroundColor:
-																	testCase.outcome === 'Correct'
+																	testcase.outcome === 'Correct'
 																		? '#CFE8D3'
 																		: '#E8CFD4',
 															}}
-															label={testCase.outcome}
+															label={testcase.outcome}
 														/>
 													</TableCell>
-													<TableCell>{testCase.text}</TableCell>
-													<TableCell>{testCase.time}</TableCell>
+													<TableCell>{testcase.text}</TableCell>
+													<TableCell>{testcase.time}</TableCell>
 													<TableCell>
-														{parseInt(testCase.memory / 1000) + 'KB'}
+														{parseInt(testcase.memory / 1000) + 'KB'}
 													</TableCell>
 												</TableRow>
 											))}

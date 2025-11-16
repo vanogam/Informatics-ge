@@ -13,14 +13,15 @@ public class ServletUtils {
     }
 
     public static int getResponseCode(InformaticsServerException ex) {
-        switch (ex.getExceptionType()) {
-            case VALIDATION_ERROR:
-                return 400;
-            case PERMISSION_DENIED:
-                return 403;
-            case UNEXPECTED_ERROR:
-            default:
-                return 500;
+        if (ex.getExceptionType() == null) {
+            return 500;
         }
+        return switch (ex.getExceptionType()) {
+            case VALIDATION_ERROR -> 400;
+            case PERMISSION_DENIED -> 403;
+            case NOT_FOUND -> 404;
+            case CONFLICT -> 409;
+            default -> 500;
+        };
     }
 }

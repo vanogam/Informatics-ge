@@ -1,6 +1,7 @@
 package ge.freeuni.informatics.repository.contest;
 
 import com.sun.mail.imap.protocol.ID;
+import ge.freeuni.informatics.common.dto.ContestDTO;
 import ge.freeuni.informatics.common.events.ContestChangeEvent;
 import ge.freeuni.informatics.common.model.contest.Contest;
 import ge.freeuni.informatics.common.model.user.User;
@@ -87,7 +88,7 @@ public interface ContestJpaRepository extends JpaRepository<Contest, Long> {
 
     default Contest saveAndPublish(Contest contest, ApplicationEventPublisher eventPublisher) {
         contest = save(contest);
-        eventPublisher.publishEvent(new ContestChangeEvent(contest));
+        eventPublisher.publishEvent(new ContestChangeEvent(ContestDTO.toDTO(contest)));
         return contest;
     }
 

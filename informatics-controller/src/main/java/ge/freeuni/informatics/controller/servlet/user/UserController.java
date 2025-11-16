@@ -97,7 +97,7 @@ public class UserController {
         try {
             userManager.verifyRecoveryQuery(link);
         } catch (InformaticsServerException ex) {
-            return new InformaticsResponse(ex.getMessage());
+            return new InformaticsResponse(ex.getCode());
         }
         return new InformaticsResponse(null);
     }
@@ -107,7 +107,7 @@ public class UserController {
         try {
             userManager.addPasswordRecoveryQuery(request.getUsername());
         } catch (InformaticsServerException ex) {
-            return new InformaticsResponse(ex.getMessage());
+            return new InformaticsResponse(ex.getCode());
         }
         return new InformaticsResponse(null);
     }
@@ -117,7 +117,7 @@ public class UserController {
         try {
             userManager.recoverPassword(link, request.getNewPassword());
         } catch (InformaticsServerException ex) {
-            return new InformaticsResponse(ex.getMessage());
+            return new InformaticsResponse(ex.getCode());
         }
         return new InformaticsResponse(null);
     }

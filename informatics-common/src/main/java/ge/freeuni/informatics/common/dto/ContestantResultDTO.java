@@ -1,113 +1,164 @@
 package ge.freeuni.informatics.common.dto;
 
 import ge.freeuni.informatics.common.model.contest.ContestantResult;
-import ge.freeuni.informatics.common.model.contest.ScoringType;
 import ge.freeuni.informatics.common.model.contest.TaskResult;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class ContestantResultDTO implements Comparable<ContestantResultDTO> {
+public record ContestantResultDTO(
+        Float totalScore,
+        Long contestantId,
+        String username,
+        Map<String, TaskResultDTO> taskResults,
+        Map<String, String> taskNames
+) implements Comparable<ContestantResultDTO> {
 
-    private Float totalScore;
-
-    private Long contestantId;
-
-    private String username;
-
-    private Map<String, TaskResultDTO> taskResults;
-
-    private Map<String, String> taskNames;
-
-    public Float getTotalScore() {
-        return totalScore;
-    }
-
-    public void setTotalScore(Float totalScore) {
-        this.totalScore = totalScore;
-    }
-
-    public Long getContestantId() {
-        return contestantId;
-    }
-
-    public void setContestantId(Long contestantId) {
-        this.contestantId = contestantId;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public Map<String, TaskResultDTO> getTaskResults() {
-        return taskResults;
-    }
-
-    public void setTaskResults(Map<String, TaskResultDTO> taskResults) {
-        this.taskResults = taskResults;
-    }
-
-    public Map<String, String> getTaskNames() {
-        return taskNames;
-    }
-
-    public void setTaskNames(Map<String, String> taskNames) {
-        this.taskNames = taskNames;
-    }
-
-    public static ContestantResultDTO toDTO(ContestantResult contestantResult) {
-        ContestantResultDTO contestantResultDTO = new ContestantResultDTO();
-        contestantResultDTO.setContestantId(contestantResult.getContestantId());
-        contestantResultDTO.setTaskResults(contestantResult
-                .getTaskResults()
-                .values()
-                .stream()
-                .map(TaskResultDTO::toDTO)
-                .collect(Collectors.toMap(TaskResultDTO::taskCode, taskResultDTO -> taskResultDTO)));
-        contestantResultDTO.setTotalScore(contestantResult.getTotalScore());
-        return contestantResultDTO;
-    }
-    public static ContestantResult fromDTO(ContestantResultDTO contestantResultDTO) {
-        ContestantResult contestantResult = new ContestantResult();
-        contestantResult.setTaskResults(contestantResultDTO
-                .getTaskResults()
-                .values()
-                .stream()
-                .map(TaskResultDTO::fromDTO)
-                .collect(Collectors.toMap(TaskResult::getTaskCode, taskResult -> taskResult)));
-        contestantResultDTO.setTotalScore(contestantResult.getTotalScore());
-        return contestantResult;
-    }
-
-    public void setTaskResult(TaskResultDTO taskResult, ScoringType type) {
-        float initialScore = 0;
-        if (!this.taskResults.containsKey(taskResult.taskCode())) {
-            this.taskResults.put(taskResult.taskCode(), taskResult);
-        } else {
-            initialScore = this.taskResults.get(taskResult.taskCode()).score();
-        }
-        if (type == ScoringType.BEST_SUBMISSION) {
-            totalScore = totalScore + Math.max(taskResult.score(), initialScore) - initialScore;
-        } else {
-            totalScore = totalScore + taskResult.score() - initialScore;
-        }
-
-        this.taskResults.put(taskResult.taskCode(), taskResult);
+    public ContestantResultDTO {
+        taskResults = taskResults != null ? Map.copyOf(taskResults) : Map.of();
+        taskNames = taskNames != null ? Map.copyOf(taskNames) : Map.of();
     }
 
     public TaskResultDTO getTaskResult(String taskCode) {
-        if (!this.taskResults.containsKey(taskCode)) {
-            return null;
-        }
         return taskResults.get(taskCode);
     }
 
     @Override
     public int compareTo(ContestantResultDTO o) {
-        return this.totalScore.compareTo(o.totalScore) * -1; // Sort in descending order
+        int scoreDiff = this.totalScore.compareTo(o.totalScore) * -1;
+        if (scoreDiff == 0) {
+            return this.contestantId.compareTo(o.contestantId);
+        }
+        return scoreDiff;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof ContestantResultDTO other)) {
+            return false;
+        }
+        return this.contestantId.equals(other.contestantId);
+    }
+
+    @Override
+    public int hashCode() {
+        return contestantId.hashCode();
+    }
+
+    public static ContestantResultDTO toDTO(ContestantResult contestantResult) {
+        Map<String, TaskResultDTO> taskResultsMap = contestantResult
+                .getTaskResults()
+                .values()
+                .stream()
+                .map(TaskResultDTO::toDTO)
+                .collect(Collectors.toMap(TaskResultDTO::getTaskCode, taskResultDTO -> taskResultDTO));
+        
+        return new ContestantResultDTO(
+                contestantResult.getTotalScore(),
+                contestantResult.getContestantId(),
+                null,
+                taskResultsMap,
+                null
+        );
+    }
+
+    public static ContestantResult fromDTO(ContestantResultDTO contestantResultDTO) {
+        ContestantResult contestantResult = new ContestantResult();
+        contestantResult.setTaskResults(contestantResultDTO
+                .taskResults()
+                .values()
+                .stream()
+                .map(TaskResultDTO::fromDTO)
+                .collect(Collectors.toMap(TaskResult::getTaskCode, taskResult -> taskResult)));
+        contestantResult.setTotalScore(contestantResultDTO.totalScore());
+        return contestantResult;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static Builder builder(ContestantResultDTO source) {
+        return new Builder(source);
+    }
+
+    public static class Builder {
+        private Float totalScore;
+        private Long contestantId;
+        private String username;
+        private Map<String, TaskResultDTO> taskResults;
+        private Map<String, String> taskNames;
+
+        public Builder() {
+            this.taskResults = new HashMap<>();
+            this.taskNames = new HashMap<>();
+        }
+
+        public Builder(ContestantResultDTO source) {
+            this.totalScore = source.totalScore();
+            this.contestantId = source.contestantId();
+            this.username = source.username();
+            this.taskResults = source.taskResults() != null ? new HashMap<>(source.taskResults()) : new HashMap<>();
+            this.taskNames = source.taskNames() != null ? new HashMap<>(source.taskNames()) : new HashMap<>();
+        }
+
+        public Builder totalScore(Float totalScore) {
+            this.totalScore = totalScore;
+            return this;
+        }
+
+        public Builder contestantId(Long contestantId) {
+            this.contestantId = contestantId;
+            return this;
+        }
+
+        public Builder username(String username) {
+            this.username = username;
+            return this;
+        }
+
+        public Builder taskResults(Map<String, TaskResultDTO> taskResults) {
+            this.taskResults = taskResults != null ? new HashMap<>(taskResults) : new HashMap<>();
+            return this;
+        }
+
+        public Builder taskNames(Map<String, String> taskNames) {
+            this.taskNames = taskNames != null ? new HashMap<>(taskNames) : new HashMap<>();
+            return this;
+        }
+
+        public Builder putTaskResult(String taskCode, TaskResultDTO taskResult) {
+            if (this.taskResults == null) {
+                this.taskResults = new HashMap<>();
+            }
+            this.taskResults.put(taskCode, taskResult);
+            return this;
+        }
+
+        public Builder putTaskName(String taskCode, String taskName) {
+            if (this.taskNames == null) {
+                this.taskNames = new HashMap<>();
+            }
+            this.taskNames.put(taskCode, taskName);
+            return this;
+        }
+
+        public Builder removeTaskResult(String taskCode) {
+            if (this.taskResults != null) {
+                this.taskResults.remove(taskCode);
+            }
+            return this;
+        }
+
+        public ContestantResultDTO build() {
+            return new ContestantResultDTO(
+                    totalScore,
+                    contestantId,
+                    username,
+                    taskResults,
+                    taskNames
+            );
+        }
     }
 }

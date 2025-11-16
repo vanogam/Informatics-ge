@@ -41,7 +41,7 @@ export default function TestcasesEditor({taskId, loadTask, testcases, setTestcas
             .then((response) => {
                 if (response.status === 200) {
                     toast.success(getMessage('ka', 'testcaseDeleted'));
-                    setTestcases(testcases.filter((testcase) => testcase !== key));
+                    setTestcases(testcases.filter((testcase) => testcase.key !== key));
                 }
             })
     }
@@ -101,7 +101,17 @@ export default function TestcasesEditor({taskId, loadTask, testcases, setTestcas
         return formData;
     }
 
-    console.log(testcases)
+    const [expandedIndex, setExpandedIndex] = useState(null);
+
+    const handleRowClick = (e, idx) => {
+        if (
+            e.target.tagName === "BUTTON" ||
+            e.target.tagName === "INPUT" ||
+            e.target.closest("button") ||
+            e.target.closest("input")
+        ) return;
+        setExpandedIndex(expandedIndex === idx ? null : idx);
+    };
 
     if (!!taskId) {
         return (<Stack gap="1rem">
@@ -137,44 +147,72 @@ export default function TestcasesEditor({taskId, loadTask, testcases, setTestcas
             </Stack>
             <Paper elevation={4} sx={{py: '1rem', marginBottom: '0.5rem'}} key={`testcases`}>
                 {testcases?.map((testcase, index) => (
-                    <Stack key={testcase} direction="row" justifyContent="space-between" alignItems="center" sx={{
-                        py: 1,
-                        '&:hover': {
-                            backgroundColor: 'rgba(0, 0, 0, 0.1)', // Adjust the color as needed
-                            borderRadius: '4px',
-                        }
-                    }}>
-                        <Typography sx={{display: 'flex', alignItems: 'center', width: '80%', ml: '1rem'}}>
-                    <span style={{
-                        width: '20%',
-                        fontWeight: 700,
-                        display: 'inline-block',
-                        whiteSpace: 'nowrap'
-                    }}>#{index + 1} test:</span>
-                            <span
-                                style={{width: '80%', display: 'inline-block', whiteSpace: 'nowrap'}}>{testcase.key}</span>
-                        </Typography>
-                        <Stack direction="row" gap="0.5rem" sx={{width: '60%', justifyContent: 'flex-end'}}>
-                            <Stack sx={{display: 'flex', alignItems: 'center', width: '40%', ml: '1rem'}}>
-                                <input type="checkbox" checked={testcase.isPublic} onChange={() => changePublic(testcase.key, !testcase.isPublic)}/>
-                            </Stack>
+                    <Stack direction={"column"}>
+                        <Stack key={testcase.key}
+                               onClick={(e) => handleRowClick(e, index)}
+                               direction="row"
+                               justifyContent="space-between"
+                               alignItems="center"
+                               sx={{
+                                   py: 1,
+                                   '&:hover': {
+                                       backgroundColor: 'rgba(0, 0, 0, 0.1)', // Adjust the color as needed
+                                       borderRadius: '4px',
+                                   }
+                               }}>
+                            <Typography sx={{display: 'flex', alignItems: 'center', width: '80%', ml: '1rem'}}>
+                        <span style={{
+                            width: '20%',
+                            fontWeight: 700,
+                            display: 'inline-block',
+                            whiteSpace: 'nowrap'
+                        }}>#{index + 1} test:</span>
+                                <span
+                                    style={{
+                                        width: '80%',
+                                        display: 'inline-block',
+                                        whiteSpace: 'nowrap'
+                                    }}>{testcase.key}</span>
+                            </Typography>
+                            <Stack direction="row" gap="0.5rem" sx={{width: '60%', justifyContent: 'flex-end'}}>
+                                <Stack sx={{display: 'flex', alignItems: 'center', width: '40%', ml: '1rem'}}>
+                                    <input type="checkbox" checked={testcase.isPublic}
+                                           onChange={() => changePublic(testcase.key, !testcase.isPublic)}/>
+                                </Stack>
 
-                            <Button
-                                variant="contained"
-                                color="info"
-                                onClick={() => downloadTestcase(testcase)}
-                            >
-                                <Download/>
-                            </Button>
-                            <Button
-                                variant="contained"
-                                color="error"
-                                onClick={() => handleDeleteTestcase(testcase)}
-                                sx={{mr: '1rem'}}
-                            >
-                                <Delete/>
-                            </Button>
+                                <Button
+                                    variant="contained"
+                                    color="info"
+                                    onClick={() => downloadTestcase(testcase.key)}
+                                >
+                                    <Download/>
+                                </Button>
+                                <Button
+                                    variant="contained"
+                                    color="error"
+                                    onClick={() => handleDeleteTestcase(testcase.key)}
+                                    sx={{mr: '1rem'}}
+                                >
+                                    <Delete/>
+                                </Button>
+                            </Stack>
                         </Stack>
+                        {expandedIndex === index && (
+                            <Stack sx={{px: '2rem', py: '0.5rem', background: '#f9f9f9'}}>
+                                <Typography variant="body2" sx={{mb: 1}}>{getMessage('ka', 'input')}</Typography>
+                                <textarea
+                                    value={testcase.inputSnippet || ""}
+                                    readOnly
+                                    style={{width: '100%', minHeight: '60px', marginBottom: '1rem'}}
+                                />
+                                <Typography variant="body2" sx={{mb: 1}}>{getMessage('ka', 'output')}</Typography>
+                                <textarea
+                                    value={testcase.outputSnippet || ""}
+                                    readOnly
+                                    style={{width: '100%', minHeight: '60px'}}
+                                />
+                            </Stack>
+                        )}
                     </Stack>
                 ))}
                 <Button

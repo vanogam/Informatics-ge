@@ -18,10 +18,10 @@ public class Testcase {
 
     private String OutputFileAddress;
 
-    @Column(length = 1100)
+    @Column(length = 3000)
     private String inputSnippet;
 
-    @Column(length = 1100)
+    @Column(length = 3000)
     private String outputSnippet;
 
     private boolean publicTestcase;

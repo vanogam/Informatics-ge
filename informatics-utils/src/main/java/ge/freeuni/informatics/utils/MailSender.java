@@ -1,18 +1,21 @@
 package ge.freeuni.informatics.utils;
 
 import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import java.util.Properties;
 
+@Service
 public class MailSender {
 
+    @Autowired
+    Logger log;
 
-    public static void sendMail(String from, String to, String password, String host, String text, String subject) {
-
-        Logger log = BeanUtils.getBean(Logger.class);
+    public void sendMail(String from, String to, String password, String host, String text, String subject) {
 
         Properties properties = System.getProperties();
 

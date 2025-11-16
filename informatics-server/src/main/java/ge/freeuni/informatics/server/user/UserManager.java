@@ -45,11 +45,15 @@ public class UserManager implements IUserManager {
 
     final PasswordRecoveryJpaRepository recoveryJpaRepository;
 
+    final MailSender mailSender;
+
     @Autowired
     public UserManager(UserJpaRepository userRepository,
-                       PasswordRecoveryJpaRepository passwordRecoveryJpaRepository) {
+                       PasswordRecoveryJpaRepository passwordRecoveryJpaRepository,
+                       MailSender mailSender) {
         this.userRepository = userRepository;
         this.recoveryJpaRepository = passwordRecoveryJpaRepository;
+        this.mailSender = mailSender;
     }
 
     @Override
@@ -109,8 +113,9 @@ public class UserManager implements IUserManager {
     @Override
     public void addPasswordRecoveryQuery(String username) throws InformaticsServerException {
         RecoverPassword recoverPassword = new RecoverPassword();
-        User user = userRepository.getFirstByUsername(username);
+        User user;
         try {
+            user = userRepository.getFirstByUsername(username);
             recoverPassword.setUserId(user.getId());
         } catch (NoResultException ex) {
             throw new InformaticsServerException("invalidUsername");
@@ -118,7 +123,7 @@ public class UserManager implements IUserManager {
         recoverPassword.setCreateTime(new Date());
         recoverPassword.setLink(FileUtils.getRandomFileName(30));
         recoverPassword.setUsed(false);
-        MailSender.sendMail(emailAddress,
+        mailSender.sendMail(emailAddress,
                 user.getEmail(),
                 emailPassword,
                 emailHost,

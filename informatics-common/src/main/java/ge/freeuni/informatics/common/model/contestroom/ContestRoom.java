@@ -70,7 +70,7 @@ public class ContestRoom {
     @Transient
     public boolean isMember(Long userId) {
         return participants.stream().map(User::getId).anyMatch(userId::equals) ||
-               teachers.stream().map(User::getId).anyMatch(userId::equals) || id == GLOBAL_ROOM_ID;
+               teachers.stream().map(User::getId).anyMatch(userId::equals) || isOpen();
     }
 
     @Transient

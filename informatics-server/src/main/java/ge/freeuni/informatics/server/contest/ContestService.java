@@ -1,22 +1,19 @@
 package ge.freeuni.informatics.server.contest;
 
+import ge.freeuni.informatics.common.dto.ContestDTO;
 import ge.freeuni.informatics.common.dto.ContestantResultDTO;
 import ge.freeuni.informatics.common.dto.TaskResultDTO;
-import ge.freeuni.informatics.common.events.ContestChangeEvent;
-import ge.freeuni.informatics.common.events.SubmissionEvent;
-import ge.freeuni.informatics.common.dto.ContestDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.contest.Contest;
 import ge.freeuni.informatics.common.model.contest.ContestStatus;
-import ge.freeuni.informatics.common.model.contest.ContestantResult;
-import ge.freeuni.informatics.common.model.contest.TaskResult;
+import ge.freeuni.informatics.common.model.contest.ScoringType;
 import ge.freeuni.informatics.common.model.contestroom.ContestRoom;
 import ge.freeuni.informatics.common.model.submission.Submission;
+import ge.freeuni.informatics.common.events.ContestChangeEvent;
+import ge.freeuni.informatics.common.events.SubmissionEvent;
 import ge.freeuni.informatics.repository.contest.ContestJpaRepository;
 import ge.freeuni.informatics.repository.contest.ContestantResultJpaRepository;
 import ge.freeuni.informatics.repository.contestroom.ContestRoomJpaRepository;
-import ge.freeuni.informatics.repository.user.UserJpaRepository;
-import ge.freeuni.informatics.server.task.ITaskManager;
 import ge.freeuni.informatics.utils.ArrayUtils;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
@@ -29,6 +26,9 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.stream.Collectors;
 
 @Service
 @Scope("singleton")
@@ -44,9 +44,6 @@ public class ContestService {
     private TaskScheduler taskScheduler;
 
     @Autowired
-    private ITaskManager taskManager;
-
-    @Autowired
     private ContestJpaRepository contestRepository;
 
     @Autowired
@@ -55,7 +52,9 @@ public class ContestService {
     @Autowired
     private ContestantResultJpaRepository contestantResultJpaRepository;
 
-    private final ConcurrentHashMap<Long, ContestDTO> liveContests = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, LiveContestState> liveContests = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, ScheduledFuture<?>> startSchedules = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, ScheduledFuture<?>> endSchedules = new ConcurrentHashMap<>();
 
     @PostConstruct
     public void startup() {
@@ -95,8 +94,9 @@ public class ContestService {
     }
 
     public List<ContestantResultDTO> getStandings(long contestId, Integer offset, Integer size) throws InformaticsServerException {
-        if (liveContests.containsKey(contestId)) {
-            return ArrayUtils.getPage(liveContests.get(contestId).getStandings().stream().toList(), offset, size);
+        LiveContestState state = liveContests.get(contestId);
+        if (state != null) {
+            return ArrayUtils.getPage(state.getStandingsSnapshot(), offset, size);
         } else {
             return contestManager.getStandings(contestId, offset, size)
                     .stream()
@@ -110,191 +110,415 @@ public class ContestService {
     }
 
     private void scheduleFutureContests(List<ContestDTO> futureContests) {
-        for (ContestDTO contest : futureContests) {
-            scheduleContestStart(contest);
-        }
+        futureContests.forEach(this::scheduleContestStart);
     }
 
-    private void manageLiveContests(List<ContestDTO> futureContests) {
-        for (ContestDTO contest : futureContests) {
-            liveContests.put(contest.getId(), contest);
-            scheduleContestEnd(contest);
-        }
+    private void manageLiveContests(List<ContestDTO> contests) {
+        contests.forEach(this::activateContest);
     }
 
     private void scheduleContestStart(ContestDTO contest) {
-        if (new Date().after(contest.getStartDate())) {
-            new ContestStartThread(contest).run();
-        } else {
-            taskScheduler.schedule(new ContestStartThread(contest), contest.getStartDate());
+        cancelStartSchedule(contest.getId());
+        Date startDate = contest.getStartDate();
+        if (startDate == null) {
+            return;
         }
-
+        Instant startInstant = startDate.toInstant();
+        Runnable launch = () -> safeContestStart(contest.getId());
+        if (Instant.now().isAfter(startInstant)) {
+            launch.run();
+            return;
+        }
+        ScheduledFuture<?> future = taskScheduler.schedule(launch, startInstant);
+        if (future != null) {
+            startSchedules.put(contest.getId(), future);
+        }
     }
 
     private void scheduleContestEnd(ContestDTO contest) {
-        if (contest.getEndDate() == null || new Date().after(contest.getEndDate())) {
-            new ContestEndThread(contest).run();
-        } else {
-            taskScheduler.schedule(new ContestEndThread(contest), Instant.ofEpochMilli(contest.getEndDate().getTime()));
+        cancelEndSchedule(contest.getId());
+        Date endDate = contest.getEndDate();
+        if (endDate == null) {
+            return;
+        }
+        Runnable finish = () -> safeContestEnd(contest.getId());
+        Instant endInstant = endDate.toInstant();
+        if (Instant.now().isAfter(endInstant)) {
+            finish.run();
+            return;
+        }
+        ScheduledFuture<?> future = taskScheduler.schedule(finish, endInstant);
+        if (future != null) {
+            endSchedules.put(contest.getId(), future);
         }
     }
 
     @EventListener
     public void addSubmission(SubmissionEvent event) throws InformaticsServerException {
         Submission submission = (Submission) event.getSource();
-        ContestDTO contest = liveContests.get(submission.getContest().getId());
-        ContestRoom room = contestRoomJpaRepository.getReferenceById(contest.getId());
-        if (!room.isMember(submission.getUser().getId())) {
-            log.info("User {} is not a member of contest room {}", submission.getUser().getId(), room.getId());
-            throw new InformaticsServerException("permissionDenied");
-        }
-        if (contest == null) {
+        long contestId = submission.getContest().getId();
+        LiveContestState state = liveContests.get(contestId);
+        if (state == null) {
             addUpsolvingSubmission(submission);
             return;
         }
-        for (ContestantResultDTO contestantResult : contest.getStandings()) {
-            if (contestantResult.getContestantId() == submission.getUser().getId()) {
-                TaskResultDTO taskResult = contestantResult.getTaskResults().get(submission.getTask().getCode());
-                TaskResultDTO newTaskResult = new TaskResultDTO(submission.getTask().getCode(),
-                        submission.getScore(),
-                        taskResult == null ? 1 : taskResult.attempts() + 1,
-                        getSuccessTime(submission, taskResult, contest));
-                contestantResult.setTaskResult(newTaskResult, contest.getScoringType());
-            }
+
+        Long roomId = state.getContestRoomId();
+        if (roomId == null) {
+            log.warn("Contest [{}] has no associated roomId; rejecting submission {}", contestId, submission.getId());
+            throw InformaticsServerException.PERMISSION_DENIED;
         }
-        contestManager.updateContest(contest);
+
+        ContestRoom room = contestRoomJpaRepository.getReferenceById(roomId);
+        if (!room.isMember(submission.getUser().getId())) {
+            log.info("User {} is not a member of contest room {}", submission.getUser().getId(), room.getId());
+            throw InformaticsServerException.PERMISSION_DENIED;
+        }
+
+        ContestDTO snapshotForPersistence = state.updateStandings(submission);
+        ContestDTO persisted = contestManager.updateContest(snapshotForPersistence);
+        if (persisted != null) {
+            state.refresh(persisted);
+        }
     }
 
-    private Long getSuccessTime(Submission submission, TaskResultDTO taskResult, ContestDTO contestDTO) {
+    private static Long getSuccessTime(Submission submission, TaskResultDTO taskResult, ContestDTO contestDTO) {
         Long newTime = submission.getSubmissionTime().getTime() - contestDTO.getStartDate().getTime();
         if (taskResult == null) {
             return newTime;
         }
-        if (taskResult.score() < submission.getScore()) {
+        if (taskResult.getScore() < submission.getScore()) {
             return newTime;
         }
-        if (taskResult.score().equals(submission.getScore())) {
-            return Math.min(newTime, taskResult.successTime());
+        if (taskResult.getScore().equals(submission.getScore())) {
+            return Math.min(newTime, taskResult.getSuccessTime());
         }
-        return taskResult.successTime();
+        return taskResult.getSuccessTime();
+    }
+
+    private static ContestantResultDTO updateTaskResult(
+            ContestantResultDTO currentResult,
+            TaskResultDTO newTaskResult,
+            ScoringType scoringType,
+            Long successTime) {
+        
+        Map<String, TaskResultDTO> taskResults = currentResult.taskResults() != null 
+                ? new HashMap<>(currentResult.taskResults()) 
+                : new HashMap<>();
+        
+        Float currentTotalScore = currentResult.totalScore() != null ? currentResult.totalScore() : 0f;
+        
+        TaskResultDTO existingTaskResult = taskResults.get(newTaskResult.getTaskCode());
+        float initialScore = existingTaskResult != null ? existingTaskResult.getScore() : 0f;
+        
+        // Always increment attempts
+        int attempts = existingTaskResult != null ? existingTaskResult.getAttempts() + 1 : 1;
+        
+        // Determine if we should update the score based on ScoringType
+        boolean shouldUpdate = scoringType == ScoringType.LAST_SUBMISSION 
+                || newTaskResult.getScore() > initialScore 
+                || initialScore == 0;
+        
+        TaskResultDTO taskResultToUse;
+        Float newTotalScore;
+        
+        if (shouldUpdate) {
+            // Use new score
+            taskResultToUse = new TaskResultDTO(
+                    newTaskResult.getTaskCode(),
+                    newTaskResult.getScore(),
+                    attempts,
+                    successTime
+            );
+            newTotalScore = currentTotalScore + newTaskResult.getScore() - initialScore;
+        } else {
+            // Keep existing score but increment attempts
+            taskResultToUse = new TaskResultDTO(
+                    newTaskResult.getTaskCode(),
+                    existingTaskResult.getScore(),
+                    attempts,
+                    existingTaskResult.getSuccessTime()
+            );
+            newTotalScore = currentTotalScore;
+        }
+        
+        taskResults.put(newTaskResult.getTaskCode(), taskResultToUse);
+        
+        return ContestantResultDTO.builder(currentResult)
+                .totalScore(newTotalScore)
+                .taskResults(taskResults)
+                .build();
     }
 
     private void addUpsolvingSubmission(Submission submission) throws InformaticsServerException {
         Contest contest = contestRepository.getReferenceById(submission.getContest().getId());
-
-        long numChanged = 0;
-        contest.getUpsolvingStandings().stream()
-                .filter(result -> result.getContestantId() == submission.getUser().getId())
-                .forEach(result -> {
-
-                    if (!result.getTaskResults().containsKey(submission.getTask().getCode())) {
-                        TaskResult newResult = createTaskResult(submission);
-                        result.getTaskResults().put(submission.getTask().getCode(), newResult);
-                        result.setTotalScore(result.getTotalScore() + submission.getScore());
-                    }
-                    TaskResult taskResult = result.getTaskResults().get(submission.getTask().getCode());
-                    if (taskResult.getScore() > submission.getScore()) {
-                        result.setTotalScore(result.getTotalScore() + (submission.getScore() - taskResult.getScore()));
-                        taskResult.setScore(submission.getScore());
-                        taskResult.setSuccessTime(submission.getSubmissionTime().getTime());
-
-                    }
-                    contestantResultJpaRepository.save(result);
-                });
-        if (contest.getUpsolvingStandings().stream().anyMatch(res -> res.getContestantId() == submission.getUser().getId())) {
-            return;
+        ContestDTO contestDTO = ContestDTO.toDTO(contest);
+        
+        if (contestDTO.getUpsolvingStandings() == null) {
+            contestDTO.setUpsolvingStandings(new ArrayList<>());
         }
-        ContestantResult newContestantResult = new ContestantResult();
-        newContestantResult.setContestant(submission.getUser().getId());
-        newContestantResult.setTotalScore(submission.getScore());
-        newContestantResult.setTaskResults(new HashMap<>());
-        TaskResult newTaskResult = createTaskResult(submission);
-
-        newContestantResult.getTaskResults().put(submission.getTask().getCode(), newTaskResult);
-        contest.getUpsolvingStandings().add(newContestantResult);
-        contestantResultJpaRepository.save(newContestantResult);
-        contestRepository.save(contest);
+        
+        updateStandings(contestDTO.getUpsolvingStandings(), submission, contestDTO, false, contestantResultJpaRepository);
+        
+        contestManager.updateContest(contestDTO);
     }
 
-    private TaskResult createTaskResult(Submission submission) {
-        TaskResult taskResult = new TaskResult();
-        taskResult.setAttempts(1);
-        taskResult.setScore(submission.getScore());
-        taskResult.setTaskCode(submission.getTask().getCode());
-        taskResult.setSuccessTime(submission.getSubmissionTime().getTime());
-        return taskResult;
+    private static ContestantResultDTO findContestantResult(Collection<ContestantResultDTO> standings, long userId) {
+        return standings
+                .stream()
+                .filter(result -> Objects.equals(result.contestantId(), userId))
+                .findFirst()
+                .orElseGet(() -> ContestantResultDTO.builder()
+                        .contestantId(userId)
+                        .totalScore(0f)
+                        .taskResults(new HashMap<>())
+                        .build());
+    }
+
+    private static void updateStandings(Collection<ContestantResultDTO> standings, Submission submission, ContestDTO contestDTO, boolean isLiveContest, ContestantResultJpaRepository contestantResultJpaRepository) {
+        ContestantResultDTO contestantResult = findContestantResult(standings, submission.getUser().getId());
+        standings.remove(contestantResult);
+
+        TaskResultDTO existingTaskResult = contestantResult.getTaskResult(submission.getTask().getCode());
+        
+        // Calculate success time (relative for live contests, absolute for upsolving)
+        Long successTime;
+        if (isLiveContest) {
+            successTime = getSuccessTime(submission, existingTaskResult, contestDTO);
+        } else {
+            successTime = submission.getSubmissionTime().getTime();
+        }
+        
+        // Create new TaskResultDTO for the submission
+        TaskResultDTO newTaskResult = new TaskResultDTO(
+                submission.getTask().getCode(),
+                submission.getScore(),
+                existingTaskResult != null ? existingTaskResult.getAttempts() + 1 : 1,
+                successTime
+        );
+        
+        // Use the static method to update task result based on ScoringType
+        ContestantResultDTO updatedContestantResult = updateTaskResult(
+                contestantResult,
+                newTaskResult,
+                contestDTO.getScoringType(),
+                successTime
+        );
+        
+        contestantResultJpaRepository.save(ContestantResultDTO.fromDTO(updatedContestantResult));
+        standings.add(updatedContestantResult);
     }
 
     @EventListener
     public void changeContest(ContestChangeEvent event) {
-        ContestDTO contest = ContestDTO.toDTO((Contest) event.getSource());
+        ContestDTO contest = (ContestDTO) event.getSource();
         if (contest.getStatus() == ContestStatus.FUTURE) {
+            deactivateContest(contest.getId());
             scheduleContestStart(contest);
-        } else if (contest.getStatus() == ContestStatus.LIVE) {
-            ContestDTO liveContest = liveContests.get(contest.getId());
-            if (liveContest == null) {
-                liveContests.put(contest.getId(), contest);
-                liveContest = contest;
-            }
-
-            contest.setStandings(liveContest.getStandings());
-            contest.setUpsolvingStandings(liveContest.getUpsolvingStandings());
-            liveContests.put(contest.getId(), contest);
-            if (!liveContest.getEndDate().equals(contest.getEndDate())) {
-                scheduleContestEnd(contest);
-            }
+            return;
+        }
+        if (contest.getStatus() == ContestStatus.LIVE) {
+            LiveContestState state = liveContests.computeIfAbsent(contest.getId(),
+                    id -> new LiveContestState(contest));
+            state.merge(contest);
+            scheduleContestEnd(contest);
+            cancelStartSchedule(contest.getId());
+            return;
+        }
+        if (contest.getStatus() == ContestStatus.PAST) {
+            deactivateContest(contest.getId());
         }
     }
 
-    private class ContestStartThread implements Runnable {
+    private void safeContestStart(long contestId) {
+        cancelStartSchedule(contestId);
+        try {
+            Contest contest = contestRepository.getReferenceById(contestId);
+            ContestDTO contestDTO = ContestDTO.toDTO(contest);
+            contestDTO.setStatus(ContestStatus.LIVE);
+            ContestDTO activated = contestManager.updateContest(contestDTO);
+            activateContest(activated);
+            log.info("Contest [{}] has been started.", contestId);
+        } catch (Exception ex) {
+            log.error("Failed to start contest [{}]: {}", contestId, ex.getMessage(), ex);
+        }
+    }
 
+    private void safeContestEnd(long contestId) {
+        LiveContestState state = liveContests.remove(contestId);
+        cancelEndSchedule(contestId);
+        if (state == null) {
+            return;
+        }
+        try {
+            ContestDTO snapshot = state.snapshot();
+            snapshot.setStatus(ContestStatus.PAST);
+            if (snapshot.isUpsolvingAfterFinish()) {
+                snapshot.setUpsolving(true);
+            }
+            contestManager.updateContest(snapshot);
+            log.info("Contest [{}] has been finished.", contestId);
+        } catch (Exception ex) {
+            log.error("Failed to finish contest [{}]: {}", contestId, ex.getMessage(), ex);
+        }
+    }
+
+    private void deactivateContest(long contestId) {
+        liveContests.remove(contestId);
+        cancelStartSchedule(contestId);
+        cancelEndSchedule(contestId);
+    }
+
+    private void activateContest(ContestDTO contest) {
+        contest.setStatus(ContestStatus.LIVE);
+        LiveContestState state = new LiveContestState(contest);
+        liveContests.put(contest.getId(), state);
+        scheduleContestEnd(contest);
+    }
+
+    private void cancelStartSchedule(long contestId) {
+        ScheduledFuture<?> future = startSchedules.remove(contestId);
+        if (future != null) {
+            future.cancel(false);
+        }
+    }
+
+    private void cancelEndSchedule(long contestId) {
+        ScheduledFuture<?> future = endSchedules.remove(contestId);
+        if (future != null) {
+            future.cancel(false);
+        }
+    }
+
+    private static ContestDTO copyContest(ContestDTO source) {
+        ContestDTO copy = new ContestDTO();
+        copy.setId(source.getId());
+        copy.setName(source.getName());
+        copy.setRoomId(source.getRoomId());
+        copy.setStartDate(source.getStartDate() == null ? null : new Date(source.getStartDate().getTime()));
+        copy.setEndDate(source.getEndDate() == null ? null : new Date(source.getEndDate().getTime()));
+        copy.setStatus(source.getStatus());
+        copy.setTasks(source.getTasks() == null ? null : new ArrayList<>(source.getTasks()));
+        copy.setParticipants(source.getParticipants() == null ? null : new ArrayList<>(source.getParticipants()));
+        copy.setScoringType(source.getScoringType());
+        copy.setUpsolving(source.isUpsolving());
+        copy.setUpsolvingAfterFinish(source.isUpsolvingAfterFinish());
+        copy.setVersion(source.getVersion());
+
+        if (source.getStandings() != null) {
+            TreeSet<ContestantResultDTO> standings = source.getStandings()
+                    .stream()
+                    .map(ContestantResultDTO::builder)
+                    .map(ContestantResultDTO.Builder::build)
+                    .collect(Collectors.toCollection(TreeSet::new));
+            copy.setStandings(standings);
+        } else {
+            copy.setStandings(new TreeSet<>());
+        }
+
+        if (source.getUpsolvingStandings() != null) {
+            copy.setUpsolvingStandings(source.getUpsolvingStandings()
+                    .stream()
+                    .map(ContestantResultDTO::builder)
+                    .map(ContestantResultDTO.Builder::build)
+                    .collect(Collectors.toList()));
+        } else {
+            copy.setUpsolvingStandings(new ArrayList<>());
+        }
+        return copy;
+    }
+
+
+    private class LiveContestState {
+        private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
         private ContestDTO contest;
 
-        public ContestStartThread(ContestDTO contest) {
-            super();
-            this.contest = contest;
+        LiveContestState(ContestDTO contest) {
+            this.contest = copyContest(contest);
         }
 
-        @Override
-        public void run() {
-            ContestDTO upToDateContest = ContestDTO.toDTO(contestRepository.getReferenceById(contest.getId()));
-            if (!contest.getVersion().equals(upToDateContest.getVersion())) {
-                return;
+        ContestDTO snapshot() {
+            lock.readLock().lock();
+            try {
+                return copyContest(contest);
+            } finally {
+                lock.readLock().unlock();
             }
-
-            contest.setStatus(ContestStatus.LIVE);
-            contest = contestManager.updateContest(contest);
-            log.info("Contest [{}] has been started.", contest.getId());
-            scheduleContestEnd(contest);
-        }
-    }
-
-    private class ContestEndThread implements Runnable {
-
-        private final ContestDTO contest;
-
-        public ContestEndThread(ContestDTO contest) {
-            super();
-            this.contest = contest;
         }
 
-        @Override
-        public void run() {
-            if (!liveContests.containsKey(contest.getId())) {
-                return;
+        List<ContestantResultDTO> getStandingsSnapshot() {
+            lock.readLock().lock();
+            try {
+                return contest.getStandings()
+                        .stream()
+                        .map(ContestantResultDTO::builder)
+                        .map(ContestantResultDTO.Builder::build)
+                        .toList();
+            } finally {
+                lock.readLock().unlock();
             }
-            if (!liveContests.get(contest.getId()).getVersion().equals(contest.getVersion())) {
-                return;
-            }
+        }
 
-            contest.setStatus(ContestStatus.PAST);
-            if (contest.isUpsolvingAfterFinish()) {
-                contest.setUpsolving(true);
+        ContestDTO updateStandings(Submission submission) {
+            lock.writeLock().lock();
+            try {
+                ensureStandingsInitialized();
+                ContestService.updateStandings(contest.getStandings(), submission, contest, true, contestantResultJpaRepository);
+                return copyContest(contest);
+            } finally {
+                lock.writeLock().unlock();
             }
-            liveContests.remove(contest.getId());
-            contestManager.updateContest(contest);
-            log.info("Contest [{}] has been finished.", contest.getId());
+        }
 
+        void refresh(ContestDTO snapshot) {
+            lock.writeLock().lock();
+            try {
+                this.contest = copyContest(snapshot);
+            } finally {
+                lock.writeLock().unlock();
+            }
+        }
+
+
+        private void merge(ContestDTO snapshot) {
+            lock.writeLock().lock();
+            try {
+                ContestDTO merged = copyContest(snapshot);
+                if ((merged.getStandings() == null || merged.getStandings().isEmpty())
+                        && contest.getStandings() != null) {
+                    merged.setStandings(contest.getStandings()
+                            .stream()
+                            .map(ContestantResultDTO::builder)
+                            .map(ContestantResultDTO.Builder::build)
+                            .collect(Collectors.toCollection(TreeSet::new)));
+                }
+                if ((merged.getUpsolvingStandings() == null || merged.getUpsolvingStandings().isEmpty())
+                        && contest.getUpsolvingStandings() != null) {
+                    merged.setUpsolvingStandings(contest.getUpsolvingStandings()
+                            .stream()
+                            .map(ContestantResultDTO::builder)
+                            .map(ContestantResultDTO.Builder::build)
+                            .collect(Collectors.toList()));
+                }
+                this.contest = merged;
+            } finally {
+                lock.writeLock().unlock();
+            }
+        }
+
+        Long getContestRoomId() {
+            lock.readLock().lock();
+            try {
+                return contest.getRoomId();
+            } finally {
+                lock.readLock().unlock();
+            }
+        }
+
+        private void ensureStandingsInitialized() {
+            if (contest.getStandings() == null) {
+                contest.setStandings(new TreeSet<>());
+            }
         }
     }
 }

@@ -26,7 +26,7 @@ import ge.freeuni.informatics.server.contestroom.IContestRoomManager;
 import ge.freeuni.informatics.server.user.IUserManager;
 import ge.freeuni.informatics.utils.FileUtils;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -244,7 +244,7 @@ public class TaskManager implements ITaskManager {
         Testcase testcase = testcaseRepository.findFirstByTaskIdAndKey(taskId, testcaseKey);
         if (testcase == null) {
             log.error("Test case with id {} not found in task {}", testcaseKey, taskId);
-            throw new InformaticsServerException("testcaseNotFound");
+            throw InformaticsServerException.TEST_NOT_FOUND;
         }
         File zipFile = new File(FileUtils.buildPath(tempDirectoryAddress, task.getCode() + "_testcase_" + testcaseKey + ".zip"));
         if (zipFile.exists()) {
@@ -255,7 +255,7 @@ public class TaskManager implements ITaskManager {
             addTestcaseToZip(zos, testcase);
         } catch (IOException e) {
             log.error("Error while creating zip for test case {}", testcaseKey, e);
-            throw new InformaticsServerException("unexpectedException", e);
+            throw InformaticsServerException.UNEXPECTED_ERROR;
         }
         return zipFile;
     }
@@ -303,7 +303,7 @@ public class TaskManager implements ITaskManager {
             testsFolder = new File(FileUtils.unzip(createTempZip(testsZip)));
         } catch (IOException ex) {
             log.error("Error occurred while creating tests zip.", ex);
-            throw new InformaticsServerException("Error occurred while creating tests zip.");
+            throw InformaticsServerException.TEST_SAVE_EXCEPTION;
         }
         HashMap<String, String> inputs = new HashMap<>();
         HashMap<String, String> outputs = new HashMap<>();
@@ -339,7 +339,7 @@ public class TaskManager implements ITaskManager {
                     result.getUnmatched().remove(outputFileName);
                 } catch (IOException e) {
                     log.error("Error while reading test files for {}", key, e);
-                    throw new InformaticsServerException("unexpectedException", e);
+                    throw InformaticsServerException.UNEXPECTED_ERROR;
                 }
             }
         }
@@ -412,7 +412,7 @@ public class TaskManager implements ITaskManager {
             newTestcase.setInputFileAddress(createTestFile(inputName, String.valueOf(task.getId()), inputContent));
             newTestcase.setOutputFileAddress(createTestFile(outputName, String.valueOf(task.getId()), outputContent));
             newTestcase.setInputSnippet(new String(inputContent, 0, Math.min(1000, inputContent.length - 1), StandardCharsets.UTF_8));
-            newTestcase.setOutputSnippet(new String(inputContent, 0, Math.min(1000, outputContent.length - 1), StandardCharsets.UTF_8));
+            newTestcase.setOutputSnippet(new String(outputContent, 0, Math.min(1000, outputContent.length - 1), StandardCharsets.UTF_8));
         } catch (IOException e) {
             log.error("Error while creating test files for test {}", newTestcase.getKey(), e);
             throw new InformaticsServerException("unexpectedException", e);
@@ -429,7 +429,7 @@ public class TaskManager implements ITaskManager {
                     Files.delete(Path.of(tc.getOutputFileAddress()));
                 } catch (IOException e) {
                     log.error("Error while removing test case {}", tc.getKey(), e);
-                    throw new InformaticsServerException("unexpectedException", e);
+                    throw InformaticsServerException.UNEXPECTED_ERROR;
                 }
                 task.getTestcases().remove(i);
                 testcaseRepository.delete(tc);
@@ -470,8 +470,12 @@ public class TaskManager implements ITaskManager {
     private String createTestFile(String testName, String taskCode, byte[] fileContent) throws IOException, InformaticsServerException {
         String fileAddress = createTestFileAddress(testName, taskCode);
         File test = new File(fileAddress);
+        if (Files.exists(test.toPath())) {
+            boolean ignored = test.delete();
+        }
         if (!test.createNewFile()) {
-            throw new InformaticsServerException("Could not create test file");
+            log.error("Error while creating test file {} for test {}", fileAddress, testName);
+            throw InformaticsServerException.TEST_SAVE_EXCEPTION;
         }
         try (OutputStream outputStream = Files.newOutputStream(test.toPath())) {
             outputStream.write(fileContent);

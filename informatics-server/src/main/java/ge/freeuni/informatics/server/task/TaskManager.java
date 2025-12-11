@@ -39,6 +39,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -100,7 +102,7 @@ public class TaskManager implements ITaskManager {
         ContestRoom room = roomManager.getRoom(roomId);
         UserDTO currentUser = userManager.getAuthenticatedUser();
         if (!room.isMember(currentUser.id())) {
-            throw new InformaticsServerException("permissionDenied");
+            throw InformaticsServerException.PERMISSION_DENIED;
         }
         List<Contest> contests = contestRepository.findUpsolvingContests(roomId, new Date());
         List<TaskInfo> result = new ArrayList<>();
@@ -124,7 +126,14 @@ public class TaskManager implements ITaskManager {
     @MemberContestRestricted
     public Map<String, String> fillTaskNames(Long contestId) {
         Contest contest = contestRepository.getReferenceById(contestId);
-        return contest.getTasks().stream().collect(Collectors.toMap(Task::getCode, Task::getTitle));
+        return contest.getTasks().stream()
+                .sorted(Comparator.comparing(task -> task.getOrder() != null ? task.getOrder() : 0))
+                .collect(Collectors.toMap(
+                        Task::getCode,
+                        Task::getTitle,
+                        (v1, v2) -> v1,
+                        LinkedHashMap::new
+                ));
     }
 
     @Override
@@ -134,10 +143,13 @@ public class TaskManager implements ITaskManager {
         ContestRoom room = roomManager.getRoom(contest.getRoomId());
         UserDTO currentUser = userManager.getAuthenticatedUser();
         if (!room.isMember(currentUser.id())) {
-            throw new InformaticsServerException("permissionDenied");
+            throw InformaticsServerException.PERMISSION_DENIED;
         }
         List<TaskInfo> result = new ArrayList<>();
-        for (Task task : contest.getTasks()) {
+        List<Task> sortedTasks = contest.getTasks().stream()
+                .sorted(Comparator.comparing(task -> task.getOrder() != null ? task.getOrder() : 0))
+                .toList();
+        for (Task task : sortedTasks) {
             TaskDTO taskDTO = TaskDTO.toDTO(task);
             ContestantResult contestantResult = contest.getStandings()
                     .stream()
@@ -164,9 +176,6 @@ public class TaskManager implements ITaskManager {
             log.error("Contest with id {} not found", contestId, ex);
             throw new InformaticsServerException("contestNotFound");
         }
-        if (!checkAddTaskPermission(contest)) {
-            throw new InformaticsServerException("permissionDenied");
-        }
         Task task = TaskDTO.fromDTO(taskDTO);
         if (task.getId() != null) {
             Task existingTask = taskRepository.findById(task.getId())
@@ -178,6 +187,8 @@ public class TaskManager implements ITaskManager {
             task.setStatements(existingTask.getStatements());
         } else {
             task.setCode(FileUtils.getRandomFileName(10));
+            int taskCount = contest.getTasks() != null ? contest.getTasks().size() : 0;
+            task.setOrder(taskCount + 1);
         }
         task.setContest(contest);
         task = taskRepository.save(task);
@@ -394,7 +405,8 @@ public class TaskManager implements ITaskManager {
             testcaseRepository.delete(testcase);
             taskRepository.save(task);
         } catch (IOException e) {
-            throw new InformaticsServerException("unexpectedError", e);
+            log.error("Unexpected exception: ", e);
+            throw InformaticsServerException.UNEXPECTED_ERROR;
         }
     }
 
@@ -411,11 +423,11 @@ public class TaskManager implements ITaskManager {
         try {
             newTestcase.setInputFileAddress(createTestFile(inputName, String.valueOf(task.getId()), inputContent));
             newTestcase.setOutputFileAddress(createTestFile(outputName, String.valueOf(task.getId()), outputContent));
-            newTestcase.setInputSnippet(new String(inputContent, 0, Math.min(1000, inputContent.length - 1), StandardCharsets.UTF_8));
-            newTestcase.setOutputSnippet(new String(outputContent, 0, Math.min(1000, outputContent.length - 1), StandardCharsets.UTF_8));
+            newTestcase.setInputSnippet(new String(inputContent, 0, Math.min(1000, inputContent.length), StandardCharsets.UTF_8));
+            newTestcase.setOutputSnippet(new String(outputContent, 0, Math.min(1000, outputContent.length), StandardCharsets.UTF_8));
         } catch (IOException e) {
             log.error("Error while creating test files for test {}", newTestcase.getKey(), e);
-            throw new InformaticsServerException("unexpectedException", e);
+            throw InformaticsServerException.UNEXPECTED_ERROR;
         }
         testcaseRepository.save(newTestcase);
     }
@@ -458,15 +470,6 @@ public class TaskManager implements ITaskManager {
         return inputKey;
     }
 
-    private boolean checkAddTaskPermission(Contest contest) throws InformaticsServerException {
-        UserDTO user = userManager.getAuthenticatedUser();
-        ContestRoom room = roomManager.getRoom(contest.getRoomId());
-        if ("ADMIN".equals(user.role())) {
-            return true;
-        }
-        return room.getTeachers().stream().anyMatch(u -> u.getId() == user.id());
-    }
-
     private String createTestFile(String testName, String taskCode, byte[] fileContent) throws IOException, InformaticsServerException {
         String fileAddress = createTestFileAddress(testName, taskCode);
         File test = new File(fileAddress);
@@ -496,7 +499,7 @@ public class TaskManager implements ITaskManager {
         String fileAddress = FileUtils.buildPath(folder, fileName);
         File testsZip = new File(fileAddress);
         if (!testsZip.createNewFile()) {
-            throw new InformaticsServerException("Could not create tests zip");
+            throw new InformaticsServerException("CouldNotCreateTestsZip");
         }
         try (OutputStream outputStream = Files.newOutputStream(testsZip.toPath())) {
             outputStream.write(fileContent);
@@ -513,7 +516,7 @@ public class TaskManager implements ITaskManager {
             boolean ignored = statementFile.delete();
         }
         if (!statementFile.createNewFile()) {
-            throw new InformaticsServerException("Could not create statement");
+            throw new InformaticsServerException("CouldNotCreateStatement");
         }
         try (OutputStream outputStream = Files.newOutputStream(statementFile.toPath())) {
             outputStream.write(statement);
@@ -523,6 +526,25 @@ public class TaskManager implements ITaskManager {
 
     private String getStatementName(Language language) {
         return "statement_" + language.name() + ".pdf";
+    }
+
+    @Override
+    @Transactional
+    @TeacherContestRestricted
+    public void updateTaskOrder(long contestId, List<Long> taskIds) throws InformaticsServerException {
+        Contest contest;
+        contest = contestRepository.getReferenceById(contestId);
+        
+        for (int i = 0; i < taskIds.size(); i++) {
+            Long taskId = taskIds.get(i);
+            Task task = taskRepository.findById(taskId)
+                    .orElseThrow(() -> InformaticsServerException.TASK_NOT_FOUND);
+            if (!task.getContest().getId().equals(contest.getId())) {
+                throw InformaticsServerException.TASK_NOT_IN_CONTEST;
+            }
+            task.setOrder(i + 1);
+            taskRepository.save(task);
+        }
     }
 
     private String getKeyFromTemplate(String fileName, String template) {

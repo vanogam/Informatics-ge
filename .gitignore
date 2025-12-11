@@ -26,6 +26,9 @@ hs_err_pid*
 *.iml
 /.idea/
 
+# Allow sharing IntelliJ run configs, but nothing else in .idea
+!/.idea/runConfigurations/
+!/.idea/runConfigurations/**
 
 /informatics-ui/node_modules
 /informatics-ui/pnp

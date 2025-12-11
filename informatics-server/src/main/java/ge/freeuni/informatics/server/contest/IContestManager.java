@@ -12,7 +12,7 @@ import java.util.List;
 
 public interface IContestManager {
 
-    ContestDTO createContest(ContestDTO contest) throws InformaticsServerException;
+    ContestDTO createContest(Long roomId, ContestDTO contest) throws InformaticsServerException;
 
     ContestDTO getContest(Long contestId,
                           boolean loadParticipants,
@@ -24,6 +24,8 @@ public interface IContestManager {
     List<ContestDTO> getContests(Long roomId, String name, Boolean upsolving, Date minStartDate, Date maxStartDate, Integer page, Integer size) throws InformaticsServerException;
 
     ContestDTO updateContest(ContestDTO contest);
+
+    ContestDTO modifyContest(Long contestId, ContestDTO contest) throws InformaticsServerException;
 
     void deleteContest(long contestId) throws InformaticsServerException;
 

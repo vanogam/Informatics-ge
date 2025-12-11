@@ -18,23 +18,30 @@ import {useState, useEffect, useContext} from 'react';
 import {AuthContext} from '../store/authentication'
 import ContestRegisterPopUp from '../Components/ContestRegisterPopUp'
 import {AxiosContext} from '../utils/axiosInstance'
+import ContestNavigationBar from '../Components/ContestNavigationBar'
 
 function handleContestResponse(response, setProblems) {
     var curTasks = []
     const tasks = response.data.tasks
-    var curCategory = 1
-    for (const task of tasks) {
-
+    // Sort tasks by order
+    const sortedTasks = [...tasks].sort((a, b) => {
+        const orderA = a.task?.order || 0
+        const orderB = b.task?.order || 0
+        return orderA - orderB
+    })
+    
+    for (const task of sortedTasks) {
         const taskId = task.task.id
         const taskName = task.task.title
+        const taskOrder = task.task.order || 0
         const score = task.score
         const taskItem = {
             id: taskId,
             name: taskName,
-            category: curCategory,
+            order: taskOrder,
+            category: taskOrder || 0,
             score: score
         }
-        curCategory += 1
         curTasks.push(taskItem)
     }
     setProblems(curTasks)
@@ -74,6 +81,7 @@ export default function Contest() {
 
     return (
         <main>
+            <ContestNavigationBar />
             <Modal open={popUp} onClose={() => setPopUp(false)}>
                 <Box
                     sx={{
@@ -155,8 +163,7 @@ export default function Contest() {
                                 >
 
                                     <TableCell component="th" scope="row">
-                                        {problem.category}
-
+                                        {problem.order || problem.category}
                                     </TableCell>
 
                                     <TableCell><NavLink style={{color: 'black', textDecorationLine: 'none'}}

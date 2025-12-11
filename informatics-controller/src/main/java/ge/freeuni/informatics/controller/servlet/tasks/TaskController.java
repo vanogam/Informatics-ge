@@ -94,7 +94,8 @@ public class TaskController {
                 request.inputTemplate(),
                 request.outputTemplate(),
                 new HashMap<>(),
-                new ArrayList<>()
+                new ArrayList<>(),
+                null
         );
         try {
             return ResponseEntity.ok(taskManager.addTask(request.contestId(), taskDTO));
@@ -123,6 +124,17 @@ public class TaskController {
             return ResponseEntity.ok(response);
         } catch (InformaticsServerException ex) {
             return ResponseEntity.status(ServletUtils.getResponseCode(ex)).body(new StatementResponse(ex.getCode()));
+        }
+    }
+
+    @PutMapping("/contest/{contestId}/tasks/order")
+    ResponseEntity<Void> updateTaskOrder(@PathVariable Long contestId, @RequestBody UpdateTaskOrderRequest request) {
+        try {
+            taskManager.updateTaskOrder(contestId, request.taskIds());
+            return ResponseEntity.ok().build();
+        } catch (InformaticsServerException ex) {
+            log.error("Error while updating task order", ex);
+            return ResponseEntity.badRequest().build();
         }
     }
 }

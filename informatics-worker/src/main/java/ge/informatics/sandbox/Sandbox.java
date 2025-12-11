@@ -2,6 +2,8 @@ package ge.informatics.sandbox;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.command.InspectContainerResponse;
+import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.HostConfig;
 import ge.informatics.sandbox.executors.CppExecutor;
 import ge.informatics.sandbox.executors.Executor;
@@ -42,6 +44,8 @@ public class Sandbox implements AutoCloseable {
 
     private void init() {
         try {
+            String containerName = "Worker-" + id;
+            handleExistingContainer(containerName);
             HostConfig hostConfig = HostConfig.newHostConfig()
                     .withCpuCount(1L)
                     .withMemory(1024L * 1024 * 1024)
@@ -49,7 +53,7 @@ public class Sandbox implements AutoCloseable {
 
             CreateContainerResponse container = dockerClient.createContainerCmd("sandbox")
                     .withHostConfig(hostConfig)
-                    .withName("Worker-" + id)
+                    .withName(containerName)
                     .withCmd("sh", "/launch/launch.sh")
                     .exec();
 
@@ -66,6 +70,19 @@ public class Sandbox implements AutoCloseable {
                 throw new RuntimeException(ex);
             }
             throw new RuntimeException(e);
+        }
+    }
+
+    private void handleExistingContainer(String containerName) {
+        for (Container container : dockerClient.listContainersCmd()
+                .withShowAll(true)
+                .exec()) {
+            InspectContainerResponse containerInfo = dockerClient.inspectContainerCmd(container.getId()).exec();
+            if (containerInfo.getName().equals("/" + containerName)) {
+                dockerClient.removeContainerCmd(container.getId()).withForce(true).exec();
+                log.info("Removed existing container with name: {}", containerName);
+                return;
+            }
         }
     }
 

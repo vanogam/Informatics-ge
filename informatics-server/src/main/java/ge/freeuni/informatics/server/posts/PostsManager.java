@@ -126,7 +126,7 @@ public class PostsManager implements IPostsManager {
     public void deletePost(long postId) throws InformaticsServerException {
         if (!postRepository.getReferenceById(postId).getAuthor().getId().equals(userManager.getAuthenticatedUser().id())) {
             log.error("User {} is not the author of post {}", userManager.getAuthenticatedUser().id(), postId);
-            throw new InformaticsServerException("permissionDenied");
+            throw InformaticsServerException.PERMISSION_DENIED;
         }
         try {
             commentRepository.deleteAllByPostId(postId);
@@ -174,7 +174,7 @@ public class PostsManager implements IPostsManager {
                 postRepository.getReferenceById(comment.getPostId()).getAuthor().getId().equals(userManager.getAuthenticatedUser().id())
             ) {
                 log.error("User {} is not the author of comment {}", userManager.getAuthenticatedUser().id(), commentId);
-                throw new InformaticsServerException("permissionDenied");
+                throw InformaticsServerException.PERMISSION_DENIED;
             }
             commentRepository.deleteAllByParentId(commentId);
             commentRepository.deleteById(commentId);

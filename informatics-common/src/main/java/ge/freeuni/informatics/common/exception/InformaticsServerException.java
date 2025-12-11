@@ -19,11 +19,19 @@ public class InformaticsServerException extends Exception {
 
     // Task/tests related exceptions
     public static final InformaticsServerException TASK_NOT_FOUND = new InformaticsServerException("taskNotFound", ExceptionType.NOT_FOUND);
+    public static final InformaticsServerException TASK_NOT_IN_CONTEST = new InformaticsServerException("taskNotInContest", ExceptionType.VALIDATION_ERROR);
     public static final InformaticsServerException TEST_NOT_FOUND = new InformaticsServerException("testNotFound", ExceptionType.NOT_FOUND);
     public static final InformaticsServerException INVALID_TEST_KEY = new InformaticsServerException("invalidTestKey", ExceptionType.VALIDATION_ERROR);
     public static final InformaticsServerException INVALID_STATEMENT = new InformaticsServerException("invalidStatement", ExceptionType.UNEXPECTED_ERROR);
     public static final InformaticsServerException TEST_SAVE_EXCEPTION = new InformaticsServerException("testsCanNotBeSaved", ExceptionType.UNEXPECTED_ERROR);
     public static final InformaticsServerException TESTCASE_ALREADY_REMOVED = new InformaticsServerException("testcaseAlreadyRemoved", ExceptionType.CONFLICT);
+
+    // Contest related exceptions
+    public static final InformaticsServerException CONTEST_ID_SHOULD_NOT_BE_PROVIDED = new InformaticsServerException("contestIdShouldNotBeProvided", ExceptionType.VALIDATION_ERROR);
+    public static final InformaticsServerException START_DATE_AND_DURATION_ERROR = new InformaticsServerException("startDateAndDurationError", ExceptionType.VALIDATION_ERROR);
+    public static final InformaticsServerException CONTEST_NAME_REQUIRED = new InformaticsServerException("contestNameRequired", ExceptionType.VALIDATION_ERROR);
+    public static final InformaticsServerException CONTEST_ROOM_ID_MISMATCH = new InformaticsServerException("roomIdMismatch", ExceptionType.VALIDATION_ERROR);
+    public static final InformaticsServerException CONTEST_ID_MISMATCH = new InformaticsServerException("contestIdMismatch", ExceptionType.VALIDATION_ERROR);
 
     public InformaticsServerException(String code, ExceptionType exceptionType) {
         super();

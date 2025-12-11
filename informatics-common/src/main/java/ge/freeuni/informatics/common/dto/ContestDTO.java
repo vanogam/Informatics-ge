@@ -166,7 +166,13 @@ public class ContestDTO {
         contestDTO.setScoringType(contest.getScoringType());
         contestDTO.setVersion(contest.getVersion());
         try {
-            contestDTO.setTasks(TaskDTO.toDTOs(contest.getTasks()));
+            List<TaskDTO> taskDTOs = TaskDTO.toDTOs(contest.getTasks());
+            taskDTOs.sort((a, b) -> {
+                Integer orderA = a.order() != null ? a.order() : 0;
+                Integer orderB = b.order() != null ? b.order() : 0;
+                return orderA.compareTo(orderB);
+            });
+            contestDTO.setTasks(taskDTOs);
             if (contest.getParticipants() != null) {
                 contestDTO.setParticipants(contest.getParticipants()
                         .stream()
@@ -225,5 +231,117 @@ public class ContestDTO {
             contest.setUpsolvingStandings(contestDTO.getUpsolvingStandings().stream().map(ContestantResultDTO::fromDTO).toList());
         }
         return contest;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private Long id;
+        private String name;
+        private Date startDate;
+        private Date endDate;
+        private Long roomId;
+        private ContestStatus status;
+        private List<UserDTO> participants;
+        private List<TaskDTO> tasks;
+        private TreeSet<ContestantResultDTO> standings;
+        private List<ContestantResultDTO> upsolvingStandings;
+        private ScoringType scoringType;
+        private boolean upsolving;
+        private boolean upsolvingAfterFinish;
+        private Integer version;
+
+        public Builder id(Long id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder startDate(Date startDate) {
+            this.startDate = startDate;
+            return this;
+        }
+
+        public Builder endDate(Date endDate) {
+            this.endDate = endDate;
+            return this;
+        }
+
+        public Builder roomId(Long roomId) {
+            this.roomId = roomId;
+            return this;
+        }
+
+        public Builder status(ContestStatus status) {
+            this.status = status;
+            return this;
+        }
+
+        public Builder participants(List<UserDTO> participants) {
+            this.participants = participants;
+            return this;
+        }
+
+        public Builder tasks(List<TaskDTO> tasks) {
+            this.tasks = tasks;
+            return this;
+        }
+
+        public Builder standings(TreeSet<ContestantResultDTO> standings) {
+            this.standings = standings;
+            return this;
+        }
+
+        public Builder upsolvingStandings(List<ContestantResultDTO> upsolvingStandings) {
+            this.upsolvingStandings = upsolvingStandings;
+            return this;
+        }
+
+        public Builder scoringType(ScoringType scoringType) {
+            this.scoringType = scoringType;
+            return this;
+        }
+
+        public Builder upsolving(boolean upsolving) {
+            this.upsolving = upsolving;
+            return this;
+        }
+
+        public Builder upsolvingAfterFinish(boolean upsolvingAfterFinish) {
+            this.upsolvingAfterFinish = upsolvingAfterFinish;
+            return this;
+        }
+
+        public Builder version(Integer version) {
+            this.version = version;
+            return this;
+        }
+
+        public ContestDTO build() {
+            ContestDTO contestDTO = new ContestDTO();
+            contestDTO.setId(id);
+            contestDTO.setName(name);
+            contestDTO.setStartDate(startDate);
+            contestDTO.setEndDate(endDate);
+            contestDTO.setRoomId(roomId);
+            contestDTO.setStatus(status);
+            contestDTO.setParticipants(participants);
+            if (tasks != null) {
+                contestDTO.setTasks(tasks);
+            }
+            contestDTO.setStandings(standings);
+            contestDTO.setUpsolvingStandings(upsolvingStandings);
+            contestDTO.setScoringType(scoringType);
+            contestDTO.setUpsolving(upsolving);
+            contestDTO.setUpsolvingAfterFinish(upsolvingAfterFinish);
+            contestDTO.setVersion(version);
+            return contestDTO;
+        }
     }
 }

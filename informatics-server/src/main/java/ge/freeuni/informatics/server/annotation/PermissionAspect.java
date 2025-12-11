@@ -49,7 +49,7 @@ public class PermissionAspect {
         ContestRoom room = roomJpaRepository.getReferenceById(contest.getRoomId());
 
         if (!room.isOpen() && !room.isTeacher(userId)) {
-            throw new InformaticsServerException("permissionDenied");
+            throw InformaticsServerException.PERMISSION_DENIED;
         }
     }
 
@@ -60,7 +60,7 @@ public class PermissionAspect {
         ContestRoom room = roomJpaRepository.getReferenceById(contest.getRoomId());
 
         if (!room.isOpen() && !room.isTeacher(userId)) {
-            throw new InformaticsServerException("permissionDenied");
+            throw InformaticsServerException.PERMISSION_DENIED;
         }
     }
 
@@ -72,7 +72,7 @@ public class PermissionAspect {
         var room = roomJpaRepository.getReferenceById(contest.getRoomId());
 
         if (!room.isOpen() && !room.isMember(userId)) {
-            throw new InformaticsServerException("permissionDenied");
+            throw InformaticsServerException.PERMISSION_DENIED;
         }
     }
 
@@ -83,7 +83,7 @@ public class PermissionAspect {
         ContestRoom room = roomJpaRepository.getReferenceById(contest.getRoomId());
 
         if (!room.isOpen() && !room.isMember(userId)) {
-            throw new InformaticsServerException("permissionDenied");
+            throw InformaticsServerException.PERMISSION_DENIED;
         }
     }
 
@@ -93,7 +93,7 @@ public class PermissionAspect {
         if (!room.isOpen()) {
             Long userId = userManager.getAuthenticatedUser().id();
             if (!room.isMember(userId)) {
-                throw new InformaticsServerException("permissionDenied");
+                throw InformaticsServerException.PERMISSION_DENIED;
             }
 
         }
@@ -105,7 +105,7 @@ public class PermissionAspect {
         ContestRoom room = roomJpaRepository.getReferenceById(roomId);
 
         if (!room.isOpen() && !room.isTeacher(userId)) {
-            throw new InformaticsServerException("permissionDenied");
+            throw InformaticsServerException.PERMISSION_DENIED;
         }
     }
 

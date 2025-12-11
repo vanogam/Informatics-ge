@@ -12,6 +12,8 @@ import ge.freeuni.informatics.common.model.task.Task;
 import ge.freeuni.informatics.common.model.user.User;
 import ge.freeuni.informatics.repository.contest.ContestJpaRepository;
 import ge.freeuni.informatics.server.annotation.MemberTaskRestricted;
+import ge.freeuni.informatics.server.annotation.RoomTeacherRestricted;
+import ge.freeuni.informatics.server.annotation.TeacherContestRestricted;
 import ge.freeuni.informatics.server.contestroom.IContestRoomManager;
 import ge.freeuni.informatics.server.task.ITaskManager;
 import ge.freeuni.informatics.server.user.IUserManager;
@@ -53,28 +55,20 @@ public class ContestManager implements IContestManager {
         this.eventPublisher = eventPublisher;
     }
 
-    @RolesAllowed({"ROLE_TEACHER", "ROLE_ADMIN"})
+    @RoomTeacherRestricted
     @Override
-    public ContestDTO createContest(ContestDTO contestDTO) throws InformaticsServerException {
-        ContestRoom room = contestRoomManager.getRoom(contestDTO.getRoomId());
-        long userId = userManager.getAuthenticatedUser().id();
-        if (!"ADMIN".equals(userManager.getAuthenticatedUser().role()) &&
-                room.getTeachers().stream().map(User::getId).noneMatch(id -> userId == id)) {
-            throw new InformaticsServerException("permissionDenied");
-        }
-        Contest contest;
+    public ContestDTO createContest(Long roomId, ContestDTO contestDTO) throws InformaticsServerException {
+        // Validations
         if (contestDTO.getId() != null) {
-            contest = getContestInternal(contestDTO.getId(),
-                    false,
-                    false,
-                    false,
-                    false
-            );
-            updateContest(contest, contestDTO);
-        } else {
-            contest = ContestDTO.fromDTO(contestDTO);
-            contest.setStandings(new ArrayList<>());
+            throw InformaticsServerException.CONTEST_ID_SHOULD_NOT_BE_PROVIDED;
         }
+        validateContest(contestDTO);
+        if (contestDTO.getRoomId() == null || !contestDTO.getRoomId().equals(roomId)) {
+            throw InformaticsServerException.CONTEST_ROOM_ID_MISMATCH;
+        }
+        
+        Contest contest = ContestDTO.fromDTO(contestDTO);
+        contest.setStandings(new ArrayList<>());
         contest = contestRepository.saveAndPublish(contest, eventPublisher);
         return ContestDTO.toDTO(contest);
     }
@@ -132,12 +126,26 @@ public class ContestManager implements IContestManager {
         return ContestDTO.toDTO(contestRepository.saveAndPublish(ContestDTO.fromDTO(contest), eventPublisher));
     }
 
+    @TeacherContestRestricted
+    @Override
+    public ContestDTO modifyContest(Long contestId, ContestDTO contestDTO) throws InformaticsServerException {
+        if (contestDTO.getId() == null || !contestDTO.getId().equals(contestId)) {
+            throw InformaticsServerException.CONTEST_ID_MISMATCH;
+        }
+        validateContest(contestDTO);
+
+        Contest contest = contestRepository.getReferenceById(contestId);
+        updateContest(contest, contestDTO);
+        contest = contestRepository.saveAndPublish(contest, eventPublisher);
+        return ContestDTO.toDTO(contest);
+    }
+
     @Override
     public void deleteContest(long contestId) throws InformaticsServerException {
         Contest contest = contestRepository.getReferenceById(contestId);
         ContestRoom room = contestRoomManager.getRoom(contest.getRoomId());
         if (!room.isMember(userManager.getAuthenticatedUser().id())) {
-            throw new InformaticsServerException("permissionDenied");
+            throw InformaticsServerException.PERMISSION_DENIED;
         }
         List<Task> tasks = contest.getTasks();
         for (Task task : tasks) {
@@ -156,7 +164,7 @@ public class ContestManager implements IContestManager {
             long userId = user.id();
             ContestRoom room = contestRoomManager.getRoom(contest.getRoomId());
             if (!room.isMember(userId)) {
-                throw new InformaticsServerException("permissionDenied");
+                throw InformaticsServerException.PERMISSION_DENIED;
             }
             if (contest.getStatus() == ContestStatus.PAST) {
                 throw new InformaticsServerException("contestAlreadyOver");
@@ -219,7 +227,7 @@ public class ContestManager implements IContestManager {
         ContestRoom room = contestRoomManager.getRoom(contest.getRoomId());
         long userId = userManager.getAuthenticatedUser().id();
         if (!room.isMember(userId)) {
-            throw new InformaticsServerException("permissionDenied");
+            throw InformaticsServerException.PERMISSION_DENIED;
         }
         List<ContestantResult> fullStandings = contest.getStandings();
         return ArrayUtils.getPage(fullStandings, offset, size);
@@ -237,13 +245,24 @@ public class ContestManager implements IContestManager {
         Contest contest = contestRepository.getReferenceById(contestId);
         ContestRoom room = contestRoomManager.getRoom(contest.getRoomId());
         if (room.isOpen() || !room.isMember(userManager.getAuthenticatedUser().id())) {
-            throw new InformaticsServerException("permissionDenied");
+            throw InformaticsServerException.PERMISSION_DENIED;
         }
         List<UserSimpleDTO> registrants = new ArrayList<>();
         for (User user : contest.getParticipants()) {
             registrants.add(UserSimpleDTO.toSimpleDTO(user));
         }
         return registrants;
+    }
+
+    private void validateContest(ContestDTO contestDTO) throws InformaticsServerException {
+        if ((contestDTO.getStartDate() == null && contestDTO.getEndDate() != null)
+            || (contestDTO.getStartDate() != null && contestDTO.getEndDate() == null)
+        ) {
+            throw InformaticsServerException.START_DATE_AND_DURATION_ERROR;
+        }
+        if (contestDTO.getName() == null || contestDTO.getName().trim().isEmpty()) {
+            throw InformaticsServerException.CONTEST_NAME_REQUIRED;
+        }
     }
 
     private void updateContest(Contest contest, ContestDTO contestDTO) {

@@ -27,6 +27,7 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import TableCell from "@mui/material/TableCell";
 import {Paper} from "@mui/material";
+import ContestNavigationBar from "../Components/ContestNavigationBar";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
@@ -81,10 +82,16 @@ export default function Problem() {
     })
     const [language, setLanguage] = useState("CPP")
     const [statement, setStatement] = useState("")
+    const [taskOrder, setTaskOrder] = useState(null)
 
     const lang = ['CPP', 'PYTHON']
     useEffect(() => {
-
+        // Fetch task details to get order
+        axiosInstance.get(`/task/${problem_id}`)
+            .then((response) => {
+                setTaskOrder(response.data.order)
+            })
+            .catch(_ => {})
 
         axiosInstance.get(`/task/${problem_id}/statement/KA`,
         )
@@ -93,17 +100,22 @@ export default function Problem() {
             })
             .catch(_ => {})
 
-    }, [])
-    const statementText = !!statement.statement ? `**${statement.statement.title}**` + '\n\n'
+    }, [problem_id])
+    const statementTitle = !!statement.statement 
+        ? (taskOrder ? `${taskOrder}. ${statement.statement.title}` : statement.statement.title)
+        : '';
+    const statementText = !!statement.statement ? `**${statementTitle}**` + '\n\n'
         + statement.statement.statement + '\n\n' +
         `**${getMessage('ka', 'inputContent')}:**\n\n${statement.statement.inputInfo}\n\n` +
         `**${getMessage('ka', 'outputContent')}:**\n\n${statement.statement.outputInfo}\n\n` : '';
     return (
-        <Box sx={{
-            display: 'flex',
-            flexDirection: 'row',
-            marginLeft: '10%'
-        }}>
+        <Box>
+            <ContestNavigationBar />
+            <Box sx={{
+                display: 'flex',
+                flexDirection: 'row',
+                marginLeft: '10%'
+            }}>
             <Box sx={{marginLeft: '2%', marginTop: '5%', width: '60%'}}>
                 <ReactMarkdown
                     children={statementText}
@@ -201,7 +213,7 @@ export default function Problem() {
 
 
             </Box>
-
+        </Box>
         </Box>
     );
 

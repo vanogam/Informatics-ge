@@ -5,56 +5,43 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f9458663-4f40-441f-813f-be32ac644360" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/../informatics-common/src/main/java/ge/freeuni/informatics/common/dto/PostCommentDTO.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../informatics-common/src/main/java/ge/freeuni/informatics/common/exception/ExceptionType.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../informatics-common/src/main/java/ge/freeuni/informatics/common/model/post/PostComment.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../informatics-common/src/main/java/ge/freeuni/informatics/common/model/post/PostStatus.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../informatics-controller/src/main/java/ge/freeuni/informatics/controller/model/AddCommentRequest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../informatics-controller/src/main/java/ge/freeuni/informatics/controller/model/GetCommentsResponse.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../informatics-controller/src/main/java/ge/freeuni/informatics/controller/servlet/ServletUtils.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../informatics-repository/src/main/java/ge/freeuni/informatics/repository/post/CommentJpaRepository.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../informatics-server/src/main/java/ge/freeuni/informatics/server/annotation/PostAuthorRestricted.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../informatics-server/src/main/java/ge/freeuni/informatics/server/annotation/PostIdAuthorRestricted.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../informatics-server/src/main/java/ge/freeuni/informatics/server/annotation/RoomMemberRestricted.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../informatics-server/src/main/java/ge/freeuni/informatics/server/annotation/RoomTeacherRestricted.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../informatics-ui/src/Components/post/Comment.jsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../informatics-ui/src/Components/post/CommentSection.jsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../informatics-ui/src/Components/post/Post.jsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../informatics-ui/src/Pages/AddPost.jsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../informatics-ui/src/utils/constants.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/../docker-compose.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../informatics-common/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-common/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../informatics-common/src/main/java/ge/freeuni/informatics/common/dto/PostDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-common/src/main/java/ge/freeuni/informatics/common/dto/PostDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../informatics-common/src/main/java/ge/freeuni/informatics/common/dto/ContestDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-common/src/main/java/ge/freeuni/informatics/common/dto/ContestDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../informatics-common/src/main/java/ge/freeuni/informatics/common/dto/TaskDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-common/src/main/java/ge/freeuni/informatics/common/dto/TaskDTO.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../informatics-common/src/main/java/ge/freeuni/informatics/common/exception/InformaticsServerException.java" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-common/src/main/java/ge/freeuni/informatics/common/exception/InformaticsServerException.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../informatics-common/src/main/java/ge/freeuni/informatics/common/model/post/Post.java" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-common/src/main/java/ge/freeuni/informatics/common/model/post/Post.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../informatics-controller/src/main/java/ge/freeuni/informatics/controller/model/AddPostResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-controller/src/main/java/ge/freeuni/informatics/controller/model/AddPostResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../informatics-controller/src/main/java/ge/freeuni/informatics/controller/model/GetPostsResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-controller/src/main/java/ge/freeuni/informatics/controller/model/GetPostsResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../informatics-controller/src/main/java/ge/freeuni/informatics/controller/servlet/post/PostController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-controller/src/main/java/ge/freeuni/informatics/controller/servlet/post/PostController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../informatics-common/src/main/java/ge/freeuni/informatics/common/model/task/Task.java" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-common/src/main/java/ge/freeuni/informatics/common/model/task/Task.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../informatics-controller/src/main/java/ge/freeuni/informatics/controller/model/CreateContestRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-controller/src/main/java/ge/freeuni/informatics/controller/model/CreateContestRequest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../informatics-controller/src/main/java/ge/freeuni/informatics/controller/servlet/contest/ContestController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-controller/src/main/java/ge/freeuni/informatics/controller/servlet/contest/ContestController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../informatics-controller/src/main/java/ge/freeuni/informatics/controller/servlet/tasks/TaskController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-controller/src/main/java/ge/freeuni/informatics/controller/servlet/tasks/TaskController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../informatics-repository/src/main/java/ge/freeuni/informatics/repository/post/IPostRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-repository/src/main/java/ge/freeuni/informatics/repository/post/PostJpaRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../informatics-repository/src/main/java/ge/freeuni/informatics/repository/post/PostRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../informatics-controller/src/test/java/ge/freeuni/informatics/controller/servlet/tasks/TaskControllerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-controller/src/test/java/ge/freeuni/informatics/controller/servlet/tasks/TaskControllerTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../informatics-controller/src/test/java/ge/freeuni/informatics/controller/servlet/testcase/TestcaseControllerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-controller/src/test/java/ge/freeuni/informatics/controller/servlet/testcase/TestcaseControllerTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../informatics-repository/src/main/java/ge/freeuni/informatics/repository/submission/SubmissionJpaRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-repository/src/main/java/ge/freeuni/informatics/repository/submission/SubmissionJpaRepository.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../informatics-server/src/main/java/ge/freeuni/informatics/server/annotation/PermissionAspect.java" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-server/src/main/java/ge/freeuni/informatics/server/annotation/PermissionAspect.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../informatics-server/src/main/java/ge/freeuni/informatics/server/files/FileManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-server/src/main/java/ge/freeuni/informatics/server/files/FileManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../informatics-server/src/main/java/ge/freeuni/informatics/server/posts/IPostsManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-server/src/main/java/ge/freeuni/informatics/server/posts/IPostsManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../informatics-server/src/main/java/ge/freeuni/informatics/server/contest/ContestManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-server/src/main/java/ge/freeuni/informatics/server/contest/ContestManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../informatics-server/src/main/java/ge/freeuni/informatics/server/contest/IContestManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-server/src/main/java/ge/freeuni/informatics/server/contest/IContestManager.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../informatics-server/src/main/java/ge/freeuni/informatics/server/posts/PostsManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-server/src/main/java/ge/freeuni/informatics/server/posts/PostsManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../informatics-server/src/main/java/ge/freeuni/informatics/server/submission/SubmissionManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-server/src/main/java/ge/freeuni/informatics/server/submission/SubmissionManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../informatics-server/src/main/java/ge/freeuni/informatics/server/task/ITaskManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-server/src/main/java/ge/freeuni/informatics/server/task/ITaskManager.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../informatics-server/src/main/java/ge/freeuni/informatics/server/task/TaskManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-server/src/main/java/ge/freeuni/informatics/server/task/TaskManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../informatics-system/src/main/java/ge/freeuni/informatics/system/configuration/SecurityConfiguration.java" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-system/src/main/java/ge/freeuni/informatics/system/configuration/SecurityConfiguration.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../informatics-system/src/main/resources/META-INF/persistence.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-system/src/main/resources/META-INF/persistence.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../informatics-system/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-system/src/main/resources/application.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../informatics-ui/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-ui/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../informatics-ui/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-ui/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../informatics-ui/src/App.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-ui/src/App.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../informatics-ui/src/Components/NewTaskCard.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-ui/src/Components/NewTaskCard.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../informatics-ui/src/Components/lang.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-ui/src/Components/lang.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../informatics-ui/src/Components/markdownEditor.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-ui/src/Components/markdownEditor.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../informatics-ui/src/Pages/Main.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-ui/src/Pages/Main.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../informatics-ui/src/Pages/NewNews.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../informatics-ui/src/Pages/Archive.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-ui/src/Pages/Archive.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../informatics-ui/src/Pages/Contest.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-ui/src/Pages/Contest.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../informatics-ui/src/Pages/ContestSubmissions.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-ui/src/Pages/ContestSubmissions.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../informatics-ui/src/Pages/MySubmissions.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-ui/src/Pages/MySubmissions.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../informatics-ui/src/Pages/Problem.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-ui/src/Pages/Problem.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../informatics-ui/src/Pages/Results.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-ui/src/Pages/Results.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../informatics-ui/src/Pages/contest/EditContest.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-ui/src/Pages/contest/EditContest.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../informatics-ui/src/Pages/contest/NewContest.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-ui/src/Pages/contest/NewContest.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../informatics-ui/src/utils/axiosInstance.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../informatics-ui/src/utils/axiosInstance.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/ge/informatics/sandbox/Sandbox.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/ge/informatics/sandbox/Sandbox.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="EmbeddingIndexingInfo">
+    <option name="cachedIndexableFilesCount" value="71" />
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -112,9 +99,12 @@
     &quot;Remote JVM Debug.Unnamed (1).executor&quot;: &quot;Debug&quot;,
     &quot;Remote JVM Debug.Unnamed.executor&quot;: &quot;Debug&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
     &quot;SHELLCHECK.PATH&quot;: &quot;/home/vano/.local/share/JetBrains/IntelliJIdea2025.1/Shell Script/shellcheck&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;release/v0.1&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
     &quot;last_opened_file_path&quot;: &quot;/home/vano/Desktop/informatics/Informatics-ge/informatics-worker/src/test/resources&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
@@ -274,15 +264,6 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration default="true" type="JetRunConfigurationType">
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration default="true" type="KotlinStandaloneScriptRunConfigurationType">
-      <option name="filePath" />
-      <method v="2" />
-    </configuration>
     <configuration name="Unnamed (1)" type="Remote" nameIsGenerated="true">
       <module name="informatics-worker" />
       <option name="USE_SOCKET_TRANSPORT" value="true" />
@@ -348,8 +329,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-9823dce3aa75-fbdcb00ec9e3-intellij.indexing.shared.core-IU-251.26094.121" />
-        <option value="bundled-js-predefined-d6986cc7102b-b26f3e71634d-JavaScript-IU-251.26094.121" />
+        <option value="bundled-jdk-30f59d01ecdd-cffe25b9f5b3-intellij.indexing.shared.core-IU-253.28294.334" />
+        <option value="bundled-js-predefined-d6986cc7102b-c7e53b3be11b-JavaScript-IU-253.28294.334" />
       </set>
     </attachedChunks>
   </component>
@@ -410,6 +391,9 @@
       <workItem from="1752921330466" duration="2297000" />
       <workItem from="1753013691162" duration="1203000" />
       <workItem from="1753098391099" duration="644000" />
+      <workItem from="1763825942506" duration="1555000" />
+      <workItem from="1765465303362" duration="1202000" />
+      <workItem from="1765491302318" duration="599000" />
     </task>
     <servers />
   </component>
@@ -482,5 +466,13 @@
         <watch expression="result.message" />
       </configuration>
     </watches-manager>
+  </component>
+  <component name="github-copilot-workspace">
+    <instructionFileLocations>
+      <option value=".github/instructions" />
+    </instructionFileLocations>
+    <promptFileLocations>
+      <option value=".github/prompts" />
+    </promptFileLocations>
   </component>
 </project>

@@ -18,6 +18,8 @@ import ge.freeuni.informatics.repository.task.TestcaseRepository;
 import ge.freeuni.informatics.server.contestroom.IContestRoomManager;
 import ge.freeuni.informatics.server.task.TaskManager;
 import ge.freeuni.informatics.server.user.IUserManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -39,6 +41,7 @@ public class SubmissionManager implements ISubmissionManager {
             SubmissionStatus.COMPILING,
             SubmissionStatus.RUNNING
     );
+    private static final Logger log = LoggerFactory.getLogger(SubmissionManager.class);
     private final TestcaseRepository testcaseRepository;
 
     @Value("${ge.freeuni.informatics.Task.submissionDirectoryAddress}")
@@ -92,7 +95,8 @@ public class SubmissionManager implements ISubmissionManager {
                     .toList();
             return SubmissionDTO.toDTOFull(submission, code, testResults);
         } catch (Exception e) {
-            throw new InformaticsServerException("unexpectedException", e);
+            log.error("unexpected exception:", e);
+            throw InformaticsServerException.UNEXPECTED_ERROR;
         }
     }
 
@@ -124,9 +128,14 @@ public class SubmissionManager implements ISubmissionManager {
         } catch (InformaticsServerException ignored) {
         }
         if (!room.isMember(currentUserId)) {
-            throw new InformaticsServerException("permissionDenied");
+            throw InformaticsServerException.PERMISSION_DENIED;
         }
-
+        if (offset == null) {
+            offset = 0;
+        }
+        if (limit == null) {
+            limit = 20;
+        }
         return submissionRepository.findSubmissions(userId, taskId, contestId, roomId, offset, limit)
                 .stream()
                 .map(SubmissionDTO::toDtoLight)

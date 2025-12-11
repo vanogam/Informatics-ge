@@ -21,7 +21,8 @@ public record TaskDTO(
         String inputTemplate,
         String outputTemplate,
         Map<Language, String> statements,
-        List<TestcaseDTO> testcases
+        List<TestcaseDTO> testcases,
+        Integer order
 ) {
 
     public static Task fromDTO(TaskDTO taskDTO) {
@@ -38,6 +39,7 @@ public record TaskDTO(
         task.setMemoryLimitMB(taskDTO.memoryLimitMB());
         task.setTimeLimitMillis(taskDTO.timeLimitMillis());
         task.setTitle(taskDTO.title());
+        task.setOrder(taskDTO.order());
 
         return task;
     }
@@ -68,7 +70,8 @@ public record TaskDTO(
                 task.getStatements(),
                 task.getTestcases() == null ? null : task.getTestcases().stream()
                         .map(tc -> new TestcaseDTO(tc.getKey(), tc.isPublicTestcase(), tc.getInputSnippet(), tc.getOutputSnippet()))
-                        .toList()
+                        .toList(),
+                task.getOrder()
         );
     }
 

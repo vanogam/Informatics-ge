@@ -98,35 +98,48 @@ public class ContestController {
         }
     }
 
-    @PostMapping("/create-contest")
+    @PostMapping("/contest")
     public ResponseEntity<CreateContestResponse> createContest(@RequestBody CreateContestRequest contestRequest) {
-        if ((contestRequest.getStartDate() == null && contestRequest.getDurationInSeconds() != null)
-            || (contestRequest.getStartDate() != null && contestRequest.getDurationInSeconds() == null)
-        ) {
-            return ResponseEntity.badRequest().body(new CreateContestResponse("FAIL", "startDateAndDurationError", null));
-        }
-        ContestDTO contestDTO = new ContestDTO();
-
-        Calendar endDate = Calendar.getInstance();
-        if (contestRequest.getStartDate() != null) {
-            endDate.setTime(convertToDate(contestRequest.getStartDate()));
-            endDate.add(Calendar.SECOND, contestRequest.getDurationInSeconds());
-            contestDTO.setEndDate(endDate.getTime());
-        }
-        contestDTO.setId(contestRequest.getContestId());
-        contestDTO.setName(contestRequest.getName());
-        contestDTO.setRoomId(contestRequest.getRoomId());
-        if (contestRequest.getStartDate() != null) {
-            contestDTO.setStartDate(convertToDate(contestRequest.getStartDate()));
-        }
-        contestDTO.setUpsolvingAfterFinish(contestRequest.isUpsolvingAfterFinish());
-        contestDTO.setUpsolving(contestRequest.isUpsolving());
-        contestDTO.setScoringType(contestRequest.getScoringType());
+        ContestDTO contestDTO = buildContestDTO(contestRequest, null);
         try {
-            return ResponseEntity.ok(new CreateContestResponse("SUCCESS", null, contestManager.createContest(contestDTO)));
+            return ResponseEntity.ok(new CreateContestResponse("SUCCESS", null, contestManager.createContest(contestRequest.getRoomId(), contestDTO)));
         } catch (InformaticsServerException ex) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new CreateContestResponse());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new CreateContestResponse("FAIL", ex.getCode(), null));
         }
+    }
+
+    @PutMapping("/contest/{contestId}")
+    public ResponseEntity<CreateContestResponse> modifyContest(@PathVariable Long contestId, @RequestBody CreateContestRequest contestRequest) {
+        ContestDTO contestDTO = buildContestDTO(contestRequest, contestId);
+        try {
+            return ResponseEntity.ok(new CreateContestResponse("SUCCESS", null, contestManager.modifyContest(contestId, contestDTO)));
+        } catch (InformaticsServerException ex) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new CreateContestResponse("FAIL", ex.getCode(), null));
+        }
+    }
+
+    private ContestDTO buildContestDTO(CreateContestRequest contestRequest, Long contestId) {
+        ContestDTO.Builder builder = ContestDTO.builder()
+                .id(contestId)
+                .name(contestRequest.getName())
+                .roomId(contestRequest.getRoomId())
+                .upsolvingAfterFinish(contestRequest.isUpsolvingAfterFinish())
+                .upsolving(contestRequest.isUpsolving())
+                .scoringType(contestRequest.getScoringType());
+
+        if (contestRequest.getStartDate() != null) {
+            Date startDate = convertToDate(contestRequest.getStartDate());
+            builder.startDate(startDate);
+
+            if (contestRequest.getDurationInSeconds() != null) {
+                Calendar endDate = Calendar.getInstance();
+                endDate.setTime(startDate);
+                endDate.add(Calendar.SECOND, contestRequest.getDurationInSeconds());
+                builder.endDate(endDate.getTime());
+            }
+        }
+
+        return builder.build();
     }
 
     @DeleteMapping("/contest/{contestId}")

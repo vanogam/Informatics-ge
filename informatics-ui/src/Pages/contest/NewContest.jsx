@@ -55,14 +55,14 @@ export default function NewContest() {
                     : durationType === 'Minutes'
                         ? durationRef?.current.value * 60
                         : durationRef?.current.value * 3600,
-            roomId: "1",
+            roomId: 1,
             scoringType,
             upsolvingAfterFinish,
+            upsolving: false,
         };
-        params["durationInSeconds"] = params["durationInSeconds"]?.toString();
         setContestName(nameRef?.current.value);
         axiosInstance
-            .post('/create-contest', params)
+            .post('/contest', params)
             .then((res) => {
                 toast.success(getMessage('ka', 'contestAdded'));
                 window.location = `/contest/${res.data.contest.id}/edit`;

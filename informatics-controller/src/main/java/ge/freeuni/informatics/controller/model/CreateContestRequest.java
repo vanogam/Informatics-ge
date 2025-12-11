@@ -8,8 +8,6 @@ import java.time.LocalDateTime;
 
 public class CreateContestRequest {
 
-    private Long contestId;
-
     private String name;
 
     @JsonFormat(pattern="dd/MM/yyyy HH:mm")
@@ -24,14 +22,6 @@ public class CreateContestRequest {
     private boolean upsolving;
 
     private ScoringType scoringType;
-
-    public Long getContestId() {
-        return contestId;
-    }
-
-    public void setContestId(Long contestId) {
-        this.contestId = contestId;
-    }
 
     public String getName() {
         return name;

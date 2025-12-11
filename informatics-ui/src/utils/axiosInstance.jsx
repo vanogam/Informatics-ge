@@ -27,11 +27,23 @@ export const AxiosInstanceProvider = (props) => {
             return response
         }, (error) => {
             const config = error.config || {};
-            if (error.config.url === '/user') {
-                return;
+            
+            // Handle /user endpoint errors silently (used for auth checks)
+            if (error.config?.url === '/user') {
+                return Promise.reject(error);
             }
+            
+            // Check if error has a response (network errors won't have one)
+            if (!error.response) {
+                if (!config.ignoreErrors) {
+                    toast.error(getMessage('ka', 'networkError') || 'Network error occurred');
+                }
+                return Promise.reject(error);
+            }
+            
             if (!config.ignoreErrors) {
-                switch (error.response.status) {
+                const status = error.response.status;
+                switch (status) {
                     case 500:
                         toast.error(getMessage('ka', 'unexpectedException'));
                         break;
@@ -39,15 +51,26 @@ export const AxiosInstanceProvider = (props) => {
                         toast.error(getMessage('ka', 'insufficientPrivileges'));
                         break;
                     case 401:
+                        // Handle 401 globally - logout user and show message
                         authContext.logout();
                         toast.error(getMessage('ka', 'pleaseLogin'), {toastId: 'pleaseLogin'});
-                        return;
+                        // Return a resolved promise to prevent error propagation
+                        // This prevents unhandled errors from showing up client-side
+                        // Code can check response.data === null and response.status === 401 if needed
+                        return Promise.resolve({ 
+                            data: null, 
+                            status: 401, 
+                            statusText: 'Unauthorized',
+                            headers: error.response.headers,
+                            config: error.config,
+                            handled: true 
+                        });
                     case 400:
                         toast.error(getMessage('ka', error.response.data.message))
                         break;
                 }
-                throw error;
             }
+            return Promise.reject(error);
         })
 
         return axiosInstance

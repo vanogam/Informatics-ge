@@ -278,14 +278,14 @@ class TestcaseControllerTest {
     void testSetPublicTestcases_ServerException() throws Exception {
         SetPublicTestcasesRequest request = new SetPublicTestcasesRequest(true);
 
-        doThrow(new InformaticsServerException("testcaseNotFound"))
+        doThrow(InformaticsServerException.TEST_NOT_FOUND)
                 .when(taskManager).setPublicTestcase(eq(1L), eq("test01"), eq(true));
 
         mockMvc.perform(put("/api/task/1/testcases/test01/public")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("testcaseNotFound"));
+                .andExpect(jsonPath("$.message").value(InformaticsServerException.TEST_NOT_FOUND.getCode()));
 
         verify(log).error(eq("Error during setting public testcases"), any(InformaticsServerException.class));
     }
@@ -303,12 +303,12 @@ class TestcaseControllerTest {
 
     @Test
     void testDeleteSingleTestcase_Error() throws Exception {
-        doThrow(new InformaticsServerException("testcaseNotFound"))
+        doThrow(InformaticsServerException.TEST_NOT_FOUND)
                 .when(taskManager).removeTestCase(eq(1L), eq("test01"));
 
         mockMvc.perform(delete("/api/task/1/testcase/test01"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("testcaseNotFound"));
+                .andExpect(jsonPath("$.message").value(InformaticsServerException.TEST_NOT_FOUND.getCode()));
 
         verify(log).error(eq("Error during deleting testcase"), any(InformaticsServerException.class));
     }

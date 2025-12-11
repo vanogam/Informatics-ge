@@ -22,5 +22,5 @@ public interface SubmissionJpaRepository extends JpaRepository<Submission, Long>
               ORDER BY s.submissionTime DESC
               LIMIT :limit OFFSET :offset
     """)
-    public List<Submission> findSubmissions(Long userId, Long taskId, Long contestId, Long roomId, Integer offset, Integer limit);
+    List<Submission> findSubmissions(Long userId, Long taskId, Long contestId, Long roomId, Integer offset, Integer limit);
 }

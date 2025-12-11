@@ -80,7 +80,8 @@ class TaskControllerTest {
                 "test*.in",
                 "test*.out",
                 new HashMap<>(),
-                new ArrayList<>()
+                new ArrayList<>(),
+                1
         );
     }
 
@@ -115,7 +116,7 @@ class TaskControllerTest {
     @Test
     void testGetTasks_Error() throws Exception {
         when(taskManager.getUpsolvingTasks(eq(1L), any(), any()))
-                .thenThrow(new InformaticsServerException("permissionDenied"));
+                .thenThrow(InformaticsServerException.PERMISSION_DENIED);
 
         mockMvc.perform(get("/api/room/1/tasks")
                         .param("offset", "0")

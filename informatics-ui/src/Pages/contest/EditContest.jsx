@@ -7,6 +7,7 @@ import {LocalizationProvider} from "@mui/x-date-pickers/LocalizationProvider";
 import {AdapterDayjs} from "@mui/x-date-pickers/AdapterDayjs";
 import {Box, Button, Container, Paper, Stack, Typography} from "@mui/material";
 import ContestForm from "./contestForm";
+import {toast} from "react-toastify";
 
 export default function EditContest() {
     const axiosInstance = useContext(AxiosContext)
@@ -21,6 +22,7 @@ export default function EditContest() {
         duration: 0,
         archive: false,
         autoArchive: false,
+        scoringType: 'BEST_SUBMISSION',
     })
 
 
@@ -28,33 +30,86 @@ export default function EditContest() {
         axiosInstance.get(`/contest/${params.contest_id}`).then((response) => {
             const contest = response.data
             setName(contest.name)
-            setTasks(contest.tasks)
+            const sortedTasks = [...(contest.tasks || [])].sort((a, b) => {
+                const orderA = a.order || 0
+                const orderB = b.order || 0
+                return orderA - orderB
+            })
+            setTasks(sortedTasks)
             setContestData((prevData) => ({
                 ...prevData,
                 contestName: contest.name,
                 startDate: dayjs(contest.startDate),
-                duration: contest.durationInSeconds / 60,
+                duration: dayjs(contest.endDate).diff(dayjs(contest.startDate), 'minute'),
                 archive: contest.upsolving,
                 autoArchive: contest.upsolvingAfterFinish,
+                scoringType: contest.scoringType || 'BEST_SUBMISSION',
             }))
             setInitialName(contest.name)
         })
     }, [axiosInstance, params.contest_id])
 
+    const [draggedIndex, setDraggedIndex] = useState(null)
+
+    const handleDragStart = (index) => {
+        setDraggedIndex(index)
+    }
+
+    const handleDragOver = (e, index) => {
+        e.preventDefault()
+    }
+
+    const handleDrop = (e, dropIndex) => {
+        e.preventDefault()
+        if (draggedIndex === null || draggedIndex === dropIndex) {
+            setDraggedIndex(null)
+            return
+        }
+
+        const newTasks = [...tasks]
+        const draggedTask = newTasks[draggedIndex]
+        newTasks.splice(draggedIndex, 1)
+        newTasks.splice(dropIndex, 0, draggedTask)
+        setTasks(newTasks)
+        setDraggedIndex(null)
+
+        // Update order on backend
+        const taskIds = newTasks.map(task => task.id)
+        axiosInstance.put(`/contest/${params.contest_id}/tasks/order`, { taskIds })
+            .then(() => {
+                toast.success(getMessage('ka', 'saved') || 'Order updated')
+            })
+            .catch((error) => {
+                console.error('Error updating task order:', error)
+                toast.error('Failed to update task order')
+                // Reload tasks on error
+                axiosInstance.get(`/contest/${params.contest_id}`).then((response) => {
+                    const contest = response.data
+                    const sortedTasks = [...(contest.tasks || [])].sort((a, b) => {
+                        const orderA = a.order || 0
+                        const orderB = b.order || 0
+                        return orderA - orderB
+                    })
+                    setTasks(sortedTasks)
+                })
+            })
+    }
+
     const handleAddContest = () => {
-        const params = {
+        const requestParams = {
             name: contestData.contestName,
             startDate: contestData.startDate?.format('DD/MM/YYYY HH:mm'),
-            durationInSeconds: contestData.duration * 60,
-            roomId: '1',
-            contestId: parseInt(params.contest_id),
+            durationInSeconds: contestData.startDate && contestData.duration
+                ? contestData.duration * 60
+                : null,
+            roomId: 1,
             upsolving: contestData.archive,
             upsolvingAfterFinish: contestData.autoArchive,
+            scoringType: contestData.scoringType,
         }
-        params['durationInSeconds'] = params['durationInSeconds'].toString()
-        console.log(params)
-        axiosInstance.post('/contest', params).then(() => {
+        axiosInstance.put(`/contest/${params.contest_id}`, requestParams).then(() => {
             setSaved(true)
+            toast.success(getMessage('ka', 'saved'))
         })
     }
 
@@ -88,8 +143,20 @@ export default function EditContest() {
                         {tasks?.map((task, index) => (
                             <Paper
                                 elevation={4}
-                                sx={{padding: '1rem', marginBottom: '0.5rem'}}
-                                key={task}
+                                sx={{
+                                    padding: '1rem',
+                                    marginBottom: '0.5rem',
+                                    cursor: 'move',
+                                    opacity: draggedIndex === index ? 0.5 : 1,
+                                    '&:hover': {
+                                        backgroundColor: '#f5f5f5'
+                                    }
+                                }}
+                                key={task.id}
+                                draggable
+                                onDragStart={() => handleDragStart(index)}
+                                onDragOver={(e) => handleDragOver(e, index)}
+                                onDrop={(e) => handleDrop(e, index)}
                             >
                                 <Typography>
 												<span style={{fontWeight: 700}}>
@@ -99,7 +166,7 @@ export default function EditContest() {
                                                         width: '100%'
                                                     }}>
 														<Box>
-															#{index + 1} : {task.title}
+															#{task.order || index + 1} : {task.title}
 														</Box>
 														<Box sx={{display: 'flex', justifyContent: 'flex-end'}}>
 															<Button component={NavLink}
@@ -112,7 +179,6 @@ export default function EditContest() {
 														</Box>
 													</Box>
 												</span>
-                                    {/*{tasks}*/}
                                 </Typography>
                             </Paper>
                         ))}
@@ -130,13 +196,6 @@ export default function EditContest() {
                         </Paper>
                     </Stack>
                 </Paper>
-                <Button
-                    sx={{background: '#3c324e'}} variant='contained' size='large'
-                    component={NavLink}
-                    to='/contests'
-                >
-                    დასრულება
-                </Button>
             </Container>
         </LocalizationProvider>
     )

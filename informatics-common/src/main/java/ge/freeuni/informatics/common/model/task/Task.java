@@ -57,6 +57,9 @@ public class Task {
     @OneToMany(cascade = CascadeType.ALL)
     List<Testcase> testcases;
 
+    @Column(name = "order")
+    Integer order;
+
     public Long getId() {
         return id;
     }
@@ -177,6 +180,14 @@ public class Task {
 
     public void setTestCases(List<Testcase> testcases) {
         this.testcases = testcases;
+    }
+
+    public Integer getOrder() {
+        return order;
+    }
+
+    public void setOrder(Integer order) {
+        this.order = order;
     }
 
     @Transient

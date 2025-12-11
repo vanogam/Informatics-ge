@@ -14,6 +14,7 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import { NavLink } from "react-router-dom";
 import { useState, useEffect, useContext } from 'react'
 import { AxiosContext, getAxiosInstance } from '../utils/axiosInstance'
+import ContestNavigationBar from '../Components/ContestNavigationBar'
 
 function handleContestResponse(response, setProblems){
 	var curTasks = []
@@ -61,6 +62,7 @@ export default function Archive(){
     // ]
     return (
        <main>
+			<ContestNavigationBar />
 			<Typography  variant="h6"
 				fontWeight="bold"
 				mt="1rem"

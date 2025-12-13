@@ -10,6 +10,7 @@ import ge.freeuni.informatics.common.dto.UserDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.contest.Contest;
 import ge.freeuni.informatics.common.model.contest.ContestantResult;
+import ge.freeuni.informatics.common.model.contest.TaskResult;
 import ge.freeuni.informatics.common.model.contestroom.ContestRoom;
 import ge.freeuni.informatics.common.model.task.Statement;
 import ge.freeuni.informatics.common.model.task.Task;
@@ -107,16 +108,23 @@ public class TaskManager implements ITaskManager {
         List<Contest> contests = contestRepository.findUpsolvingContests(roomId, new Date());
         List<TaskInfo> result = new ArrayList<>();
         for (Contest contest : contests) {
+            if (contest.getTasks() == null) {
+                continue;
+            }
+            String contestName = contest.getName();
             for (Task task : contest.getTasks()) {
                 TaskDTO taskDTO = TaskDTO.toDTO(task);
                 ContestantResult contestantResult = contest.getUpsolvingStandings().stream()
                         .filter(res -> res.getContestantId() == currentUser.id())
                         .findFirst().orElse(null);
-                if (contestantResult == null) {
-                    result.add(new TaskInfo(taskDTO, 0F));
-                } else {
-                    result.add(new TaskInfo(taskDTO, contestantResult.getTaskResults().get(task.getCode()).getScore()));
+                Float score = null;
+                if (contestantResult != null && contestantResult.getTaskResults() != null) {
+                    TaskResult taskResult = contestantResult.getTaskResults().get(task.getCode());
+                    if (taskResult != null) {
+                        score = taskResult.getScore();
+                    }
                 }
+                result.add(new TaskInfo(taskDTO, score, contestName));
             }
         }
         return result;
@@ -185,6 +193,9 @@ public class TaskManager implements ITaskManager {
             }
             task.setTestCases(existingTask.getTestcases());
             task.setStatements(existingTask.getStatements());
+            if (task.getOrder() == null) {
+                task.setOrder(existingTask.getOrder());
+            }
         } else {
             task.setCode(FileUtils.getRandomFileName(10));
             int taskCount = contest.getTasks() != null ? contest.getTasks().size() : 0;
@@ -387,7 +398,7 @@ public class TaskManager implements ITaskManager {
         Testcase testcase = testcaseRepository.findFirstByTaskIdAndKey(taskId, testKey);
         if (testcase == null) {
             log.error("Test case with key {} not found in task {}", testKey, taskId);
-            throw new InformaticsServerException("testcaseAlreadyRemoved");
+            throw InformaticsServerException.TESTCASE_ALREADY_REMOVED;
         }
         int index = task.getTestcases().indexOf(testcase);
         try {
@@ -407,6 +418,27 @@ public class TaskManager implements ITaskManager {
         } catch (IOException e) {
             log.error("Unexpected exception: ", e);
             throw InformaticsServerException.UNEXPECTED_ERROR;
+        }
+    }
+
+    @Override
+    @Transactional
+    @TeacherTaskRestricted
+    public void removeTestcases(long taskId, List<String> testKeys) throws InformaticsServerException {
+        if (testKeys == null || testKeys.isEmpty()) {
+            return;
+        }
+        
+        for (String testKey : testKeys) {
+            try {
+                removeTestCase(taskId, testKey);
+            } catch (InformaticsServerException ex) {
+                if (ex == InformaticsServerException.TESTCASE_ALREADY_REMOVED) {
+                    log.warn("Test case with key {} not found in task {}, skipping", testKey, taskId);
+                } else {
+                    throw ex;
+                }
+            }
         }
     }
 

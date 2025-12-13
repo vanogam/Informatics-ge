@@ -105,5 +105,16 @@ public class TestcaseController {
         }
         return ResponseEntity.ok(new InformaticsResponse(null));
     }
+
+    @DeleteMapping("/task/{taskId}/testcases")
+    ResponseEntity<InformaticsResponse> deleteTestcases(@PathVariable Long taskId, @RequestBody DeleteTestcasesRequest request) {
+        try {
+            taskManager.removeTestcases(taskId, request.testKeys());
+        } catch (InformaticsServerException ex) {
+            log.error("Error during deleting testcases", ex);
+            return ResponseEntity.badRequest().body(new InformaticsResponse(ex.getCode()));
+        }
+        return ResponseEntity.ok(new InformaticsResponse(null));
+    }
 }
 

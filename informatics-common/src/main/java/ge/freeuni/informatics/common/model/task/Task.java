@@ -57,7 +57,7 @@ public class Task {
     @OneToMany(cascade = CascadeType.ALL)
     List<Testcase> testcases;
 
-    @Column(name = "order")
+    @Column(name = "taskorder")
     Integer order;
 
     public Long getId() {

@@ -50,6 +50,8 @@ public interface ITaskManager {
 
     void removeTestCase(long taskId, String testKey) throws InformaticsServerException;
 
+    void removeTestcases(long taskId, List<String> testKeys) throws InformaticsServerException;
+
     void updateTaskOrder(long contestId, List<Long> taskIds) throws InformaticsServerException;
 
 }

@@ -4,13 +4,16 @@ import getMessage from "../lang";
 import {useContext, useState} from "react";
 import {AxiosContext} from "../../utils/axiosInstance";
 import {toast} from "react-toastify";
+import {useConfirmDialog} from "../../utils/ConfirmDialogContext";
 
 export default function TestcasesEditor({taskId, loadTask, testcases, setTestcases, changePublic}) {
     const [inputFile, setInputFile] = useState(null);
     const [outputFile, setOutputFile] = useState(null);
     const [multipleTestcasesFile, setMultipleTestcasesFile] = useState(null);
+    const [selectedTestcases, setSelectedTestcases] = useState([]);
 
     const axiosInstance = useContext(AxiosContext)
+    const { showConfirmDialog } = useConfirmDialog()
 
     const downloadTestcases = () => {
         axiosInstance.get(`/task/${taskId}/testcases`, {responseType: 'blob'})
@@ -44,6 +47,38 @@ export default function TestcasesEditor({taskId, loadTask, testcases, setTestcas
                     setTestcases(testcases.filter((testcase) => testcase.key !== key));
                 }
             })
+    }
+
+    const handleRemoveTestcases = (testKeys) => {
+        if (!testKeys || testKeys.length === 0) {
+            return;
+        }
+        
+        axiosInstance.delete(`/task/${taskId}/testcases`, {
+            data: { testKeys: testKeys }
+        })
+            .then((response) => {
+                if (response.status === 200) {
+                    const count = testKeys.length;
+                    toast.success(getMessage('ka', 'testcaseDeleted') + (count > 1 ? ` (${count})` : ''));
+                    setTestcases(testcases.filter((testcase) => !testKeys.includes(testcase.key)));
+                    setSelectedTestcases([]);
+                    loadTask();
+                }
+            })
+            .catch((error) => {
+                toast.error(getMessage('ka', 'error') || 'Failed to delete testcases');
+            })
+    }
+
+    const handleToggleSelection = (key) => {
+        setSelectedTestcases(prev => {
+            if (prev.includes(key)) {
+                return prev.filter(k => k !== key);
+            } else {
+                return [...prev, key];
+            }
+        });
     }
 
     const handleAddSingleTestcase = () => {
@@ -120,10 +155,23 @@ export default function TestcasesEditor({taskId, loadTask, testcases, setTestcas
             </Typography>
             <Stack direction="row" justifyContent="space-between" alignItems="center"
                    sx={{px: '1rem', py: '0.5rem', backgroundColor: '#f5f5f5', borderRadius: '4px'}}>
-                <Typography sx={{width: '10%'}}>#</Typography>
-                <Typography sx={{width: '60%'}}>{getMessage("ka", "name")}</Typography>
+                <Stack sx={{display: 'flex', alignItems: 'center', width: '5%'}}>
+                    <input 
+                        type="checkbox" 
+                        checked={testcases.length > 0 && selectedTestcases.length === testcases.length}
+                        onChange={(e) => {
+                            if (e.target.checked) {
+                                setSelectedTestcases(testcases.map(tc => tc.key));
+                            } else {
+                                setSelectedTestcases([]);
+                            }
+                        }}
+                    />
+                </Stack>
+                <Typography sx={{width: '5%'}}>#</Typography>
+                <Typography sx={{width: '55%'}}>{getMessage("ka", "name")}</Typography>
                 <Typography sx={{width: '10%'}}>{getMessage("ka", "public")}</Typography>
-                <Stack direction="row" gap="0.5rem" sx={{width: '20%', justifyContent: 'flex-end'}}>
+                <Stack direction="row" gap="0.5rem" sx={{width: '25%', justifyContent: 'flex-end'}}>
                     <Tooltip title={getMessage('ka', 'downloadTestcases')}>
                         <Button
                             variant="contained"
@@ -138,6 +186,15 @@ export default function TestcasesEditor({taskId, loadTask, testcases, setTestcas
                             variant="contained"
                             color="error"
                             onClick={() => {
+                                if (testcases.length > 0) {
+                                    showConfirmDialog({
+                                        message: getMessage('ka', 'confirmDeleteAll') || 'Are you sure you want to delete all testcases?',
+                                        type: 'warning',
+                                        onConfirm: () => {
+                                            handleRemoveTestcases(testcases.map(tc => tc.key));
+                                        }
+                                    });
+                                }
                             }}
                         >
                             <DeleteForever/>
@@ -160,7 +217,18 @@ export default function TestcasesEditor({taskId, loadTask, testcases, setTestcas
                                        borderRadius: '4px',
                                    }
                                }}>
-                            <Typography sx={{display: 'flex', alignItems: 'center', width: '80%', ml: '1rem'}}>
+                            <Stack sx={{display: 'flex', alignItems: 'center', width: '5%', ml: '1rem'}}>
+                                <input 
+                                    type="checkbox" 
+                                    checked={selectedTestcases.includes(testcase.key)}
+                                    onChange={(e) => {
+                                        e.stopPropagation();
+                                        handleToggleSelection(testcase.key);
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                />
+                            </Stack>
+                            <Typography sx={{display: 'flex', alignItems: 'center', width: '75%'}}>
                         <span style={{
                             width: '20%',
                             fontWeight: 700,
@@ -174,10 +242,11 @@ export default function TestcasesEditor({taskId, loadTask, testcases, setTestcas
                                         whiteSpace: 'nowrap'
                                     }}>{testcase.key}</span>
                             </Typography>
-                            <Stack direction="row" gap="0.5rem" sx={{width: '60%', justifyContent: 'flex-end'}}>
+                            <Stack direction="row" gap="0.5rem" sx={{width: '20%', justifyContent: 'flex-end'}}>
                                 <Stack sx={{display: 'flex', alignItems: 'center', width: '40%', ml: '1rem'}}>
                                     <input type="checkbox" checked={testcase.isPublic}
-                                           onChange={() => changePublic(testcase.key, !testcase.isPublic)}/>
+                                           onChange={() => changePublic(testcase.key, !testcase.isPublic)}
+                                           onClick={(e) => e.stopPropagation()}/>
                                 </Stack>
 
                                 <Button
@@ -219,7 +288,11 @@ export default function TestcasesEditor({taskId, loadTask, testcases, setTestcas
                     variant="contained"
                     color="error"
                     onClick={() => {
+                        if (selectedTestcases.length > 0) {
+                            handleRemoveTestcases(selectedTestcases);
+                        }
                     }}
+                    disabled={selectedTestcases.length === 0}
                     sx={{ml: '1rem'}}
                 >
                     {getMessage('ka', 'deleteSelected')}

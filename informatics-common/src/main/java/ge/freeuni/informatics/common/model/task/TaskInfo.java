@@ -8,9 +8,17 @@ public class TaskInfo {
 
     private Float score;
 
+    private String contestName;
+
     public TaskInfo(TaskDTO task, Float score) {
         this.task = task;
         this.score = score;
+    }
+
+    public TaskInfo(TaskDTO task, Float score, String contestName) {
+        this.task = task;
+        this.score = score;
+        this.contestName = contestName;
     }
 
     public TaskDTO getTask() {
@@ -27,5 +35,13 @@ public class TaskInfo {
 
     public void setScore(Float score) {
         this.score = score;
+    }
+
+    public String getContestName() {
+        return contestName;
+    }
+
+    public void setContestName(String contestName) {
+        this.contestName = contestName;
     }
 }

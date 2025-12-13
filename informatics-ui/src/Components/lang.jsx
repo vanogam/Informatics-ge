@@ -22,6 +22,8 @@ const langDictionary = {
 
 		// კონტესტები
 		'name': 'სახელი',
+		'contest': 'შეჯიბრი',
+		'score': 'ქულა',
 		'duration': 'ხანგრძლივობა',
 		'hourShort': 'სთ',
 		'minuteShort': 'წთ',

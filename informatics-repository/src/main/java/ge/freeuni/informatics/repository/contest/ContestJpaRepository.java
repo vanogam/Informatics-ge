@@ -1,11 +1,8 @@
 package ge.freeuni.informatics.repository.contest;
 
-import com.sun.mail.imap.protocol.ID;
 import ge.freeuni.informatics.common.dto.ContestDTO;
 import ge.freeuni.informatics.common.events.ContestChangeEvent;
 import ge.freeuni.informatics.common.model.contest.Contest;
-import ge.freeuni.informatics.common.model.user.User;
-import ge.freeuni.informatics.utils.BeanUtils;
 import jakarta.persistence.TemporalType;
 import org.hibernate.Hibernate;
 import org.springframework.context.ApplicationEventPublisher;
@@ -78,10 +75,11 @@ public interface ContestJpaRepository extends JpaRepository<Contest, Long> {
     }
 
     @Query("""
-                SELECT c FROM Contest c WHERE
+                SELECT DISTINCT c FROM Contest c
+                WHERE
                     c.roomId = :roomId AND
                     c.upsolving = true AND
-                    (c.endDate = NULL OR c.endDate <= :time)
+                    (c.endDate IS NULL OR c.endDate <= :time)
             """)
     List<Contest> findUpsolvingContests(@Param("roomId") Long roomId,
                                         @Param("time") Date time);

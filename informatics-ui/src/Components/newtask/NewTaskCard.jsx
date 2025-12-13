@@ -25,7 +25,8 @@ export default function NewTaskCard() {
     const [outputTemplate, setOutputTemplate] = useState('');
     const [kaStatement, setKaStatement] = useState({});
     const [initStatement, setInitStatement] = useState({});
-    const [testcases, setTestcases] = useState([])
+    const [testcases, setTestcases] = useState([]);
+    const [order, setOrder] = useState(0);
 
     const [fieldValidations, setFieldValidations] = useState({
         code: true,
@@ -80,6 +81,7 @@ export default function NewTaskCard() {
             setInputTemplate(task.inputTemplate);
             setOutputTemplate(task.outputTemplate);
             setTestcases(task.testcases);
+            setOrder(task.order);
         })
             .catch(_ => {})
     }
@@ -124,6 +126,7 @@ export default function NewTaskCard() {
             memoryLimitMB: parseInt(memoryLimitMB),
             inputTemplate: inputTemplate.toString(),
             outputTemplate: outputTemplate.toString(),
+            order: order,
         };
 
         if (kaStatement !== initStatement) {

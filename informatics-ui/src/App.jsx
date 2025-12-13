@@ -21,6 +21,7 @@ import axios from 'axios'
 import Cookies from "js-cookie";
 import { renewCsrfToken } from './utils/csrfUtils'
 import AddPost from "./Pages/AddPost";
+import { ConfirmDialogProvider } from './utils/ConfirmDialogContext'
 
 function App() {
 	useEffect(() => {
@@ -30,9 +31,10 @@ function App() {
 	}, []);
 
 	return (
-		<div className='App'>
-			<Box display='flex' flexDirection='column'>
-				<Navbar />
+		<ConfirmDialogProvider>
+			<div className='App'>
+				<Box display='flex' flexDirection='column'>
+					<Navbar />
 
 				<Routes>
 					<Route path='/' element={<Main />} />
@@ -78,6 +80,7 @@ function App() {
 				</Routes>
 			</Box>
 		</div>
+		</ConfirmDialogProvider>
 	)
 }
 

@@ -1,23 +1,18 @@
 package ge.freeuni.informatics.controller.servlet.post;
 
-import ge.freeuni.informatics.common.Language;
 import ge.freeuni.informatics.common.dto.PostCommentDTO;
 import ge.freeuni.informatics.common.dto.PostDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.controller.model.*;
 import ge.freeuni.informatics.server.files.FileManager;
 import ge.freeuni.informatics.server.posts.IPostsManager;
-import ge.freeuni.informatics.server.posts.PostsManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.List;
 
 @RestController

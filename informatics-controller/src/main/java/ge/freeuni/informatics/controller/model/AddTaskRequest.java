@@ -3,7 +3,6 @@ package ge.freeuni.informatics.controller.model;
 import ge.freeuni.informatics.common.model.task.CheckerType;
 import ge.freeuni.informatics.common.model.task.TaskScoreType;
 import ge.freeuni.informatics.common.model.task.TaskType;
-import java.util.Map;
 
 public record AddTaskRequest(
         Long taskId,

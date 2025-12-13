@@ -2,13 +2,14 @@ package ge.freeuni.informatics.controller.servlet.tasks;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ge.freeuni.informatics.common.Language;
-import ge.freeuni.informatics.common.dto.ContestDTO;
 import ge.freeuni.informatics.common.dto.TaskDTO;
 import ge.freeuni.informatics.common.dto.TestcaseDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.contest.Contest;
 import ge.freeuni.informatics.common.model.task.*;
-import ge.freeuni.informatics.controller.model.*;
+import ge.freeuni.informatics.controller.model.AddStatementRequest;
+import ge.freeuni.informatics.controller.model.AddTaskRequest;
+import ge.freeuni.informatics.controller.model.TaskNamesRequest;
 import ge.freeuni.informatics.server.task.ITaskManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,8 +28,10 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(MockitoExtension.class)
 class TaskControllerTest {

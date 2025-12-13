@@ -27,21 +27,22 @@ import ge.freeuni.informatics.server.contestroom.IContestRoomManager;
 import ge.freeuni.informatics.server.user.IUserManager;
 import ge.freeuni.informatics.utils.FileUtils;
 import jakarta.persistence.EntityNotFoundException;
-import org.springframework.transaction.annotation.Transactional;
 import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -164,8 +165,8 @@ public class TaskManager implements ITaskManager {
                     .filter(res -> res.getContestantId() == currentUser.id())
                     .findFirst()
                     .orElse(null);
-            if (contestantResult == null) {
-                result.add(new TaskInfo(taskDTO, 0F));
+            if (contestantResult == null || contestantResult.getTaskResults() == null || !contestantResult.getTaskResults().containsKey(task.getCode())) {
+                result.add(new TaskInfo(taskDTO, null));
             } else {
                 result.add(new TaskInfo(taskDTO, contestantResult.getTaskResults().get(task.getCode()).getScore()));
             }

@@ -1,8 +1,8 @@
 package ge.freeuni.informatics.common.model.contest;
 
-import java.util.Map;
-
 import jakarta.persistence.*;
+
+import java.util.Map;
 
 @Entity
 @Table(name = "contestant_result", indexes = {

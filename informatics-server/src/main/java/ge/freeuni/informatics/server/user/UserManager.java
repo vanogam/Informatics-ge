@@ -1,10 +1,10 @@
 package ge.freeuni.informatics.server.user;
 
 import ge.freeuni.informatics.common.dto.UserDTO;
+import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.user.RecoverPassword;
 import ge.freeuni.informatics.common.model.user.User;
 import ge.freeuni.informatics.common.model.user.UserRole;
-import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.security.InformaticsPrincipal;
 import ge.freeuni.informatics.repository.user.PasswordRecoveryJpaRepository;
 import ge.freeuni.informatics.repository.user.UserJpaRepository;

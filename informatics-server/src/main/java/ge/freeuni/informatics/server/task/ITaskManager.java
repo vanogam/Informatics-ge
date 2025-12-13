@@ -10,7 +10,8 @@ import ge.freeuni.informatics.common.model.task.Task;
 import ge.freeuni.informatics.common.model.task.TaskInfo;
 
 import java.io.File;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 public interface ITaskManager {
 

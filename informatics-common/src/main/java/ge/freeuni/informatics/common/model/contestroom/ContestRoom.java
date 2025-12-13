@@ -1,6 +1,5 @@
 package ge.freeuni.informatics.common.model.contestroom;
 
-import ge.freeuni.informatics.common.model.contest.Contest;
 import ge.freeuni.informatics.common.model.user.User;
 import jakarta.persistence.*;
 

@@ -1,5 +1,6 @@
 package ge.freeuni.informatics.common.dto;
 
+import ge.freeuni.informatics.common.model.contest.Contest;
 import ge.freeuni.informatics.common.model.contest.ContestantResult;
 import ge.freeuni.informatics.common.model.contest.TaskResult;
 
@@ -10,6 +11,7 @@ import java.util.stream.Collectors;
 public record ContestantResultDTO(
         Float totalScore,
         Long contestantId,
+        Long contestId,
         String username,
         Map<String, TaskResultDTO> taskResults,
         Map<String, String> taskNames
@@ -47,23 +49,28 @@ public record ContestantResultDTO(
     }
 
     public static ContestantResultDTO toDTO(ContestantResult contestantResult) {
+        return toDTO(contestantResult, null);
+    }
+
+    public static ContestantResultDTO toDTO(ContestantResult contestantResult, String username) {
         Map<String, TaskResultDTO> taskResultsMap = contestantResult
                 .getTaskResults()
                 .values()
                 .stream()
                 .map(TaskResultDTO::toDTO)
                 .collect(Collectors.toMap(TaskResultDTO::getTaskCode, taskResultDTO -> taskResultDTO));
-        
+
         return new ContestantResultDTO(
                 contestantResult.getTotalScore(),
                 contestantResult.getContestantId(),
-                null,
+                contestantResult.getContest().getId(),
+                username,
                 taskResultsMap,
                 null
         );
     }
 
-    public static ContestantResult fromDTO(ContestantResultDTO contestantResultDTO) {
+    public static ContestantResult fromDTO(ContestantResultDTO contestantResultDTO, Contest contest) {
         ContestantResult contestantResult = new ContestantResult();
         contestantResult.setTaskResults(contestantResultDTO
                 .taskResults()
@@ -72,6 +79,8 @@ public record ContestantResultDTO(
                 .map(TaskResultDTO::fromDTO)
                 .collect(Collectors.toMap(TaskResult::getTaskCode, taskResult -> taskResult)));
         contestantResult.setTotalScore(contestantResultDTO.totalScore());
+        contestantResult.setContestant(contestantResultDTO.contestantId());
+        contestantResult.setContest(contest);
         return contestantResult;
     }
 
@@ -86,6 +95,7 @@ public record ContestantResultDTO(
     public static class Builder {
         private Float totalScore;
         private Long contestantId;
+        private Long contestId;
         private String username;
         private Map<String, TaskResultDTO> taskResults;
         private Map<String, String> taskNames;
@@ -98,6 +108,7 @@ public record ContestantResultDTO(
         public Builder(ContestantResultDTO source) {
             this.totalScore = source.totalScore();
             this.contestantId = source.contestantId();
+            this.contestId = source.contestId();
             this.username = source.username();
             this.taskResults = source.taskResults() != null ? new HashMap<>(source.taskResults()) : new HashMap<>();
             this.taskNames = source.taskNames() != null ? new HashMap<>(source.taskNames()) : new HashMap<>();
@@ -110,6 +121,11 @@ public record ContestantResultDTO(
 
         public Builder contestantId(Long contestantId) {
             this.contestantId = contestantId;
+            return this;
+        }
+
+        public Builder contestId(Long contestId) {
+            this.contestId = contestId;
             return this;
         }
 
@@ -155,6 +171,7 @@ public record ContestantResultDTO(
             return new ContestantResultDTO(
                     totalScore,
                     contestantId,
+                    contestId,
                     username,
                     taskResults,
                     taskNames

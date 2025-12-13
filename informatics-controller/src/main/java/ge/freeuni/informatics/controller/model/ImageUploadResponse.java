@@ -1,7 +1,5 @@
 package ge.freeuni.informatics.controller.model;
 
-import ge.freeuni.informatics.common.exception.InformaticsServerException;
-
 public class ImageUploadResponse extends InformaticsResponse {
 
     private String imageUrl;

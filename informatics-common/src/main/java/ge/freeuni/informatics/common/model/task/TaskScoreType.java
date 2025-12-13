@@ -1,7 +1,5 @@
 package ge.freeuni.informatics.common.model.task;
 
-import ge.freeuni.informatics.common.exception.InformaticsServerException;
-import ge.freeuni.informatics.common.model.submission.Submission;
 import ge.freeuni.informatics.common.model.submission.SubmissionTestResult;
 import org.slf4j.LoggerFactory;
 
@@ -9,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiFunction;
-import java.util.logging.Logger;
 
 public enum TaskScoreType {
     /**

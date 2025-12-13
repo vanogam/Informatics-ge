@@ -5,7 +5,6 @@ import ge.freeuni.informatics.common.model.post.PostStatus;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.Collection;
 import java.util.List;
 
 public interface PostJpaRepository extends JpaRepository<Post, Long> {

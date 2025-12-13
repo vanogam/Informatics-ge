@@ -1,7 +1,10 @@
 package ge.freeuni.informatics.common.dto;
 
 import ge.freeuni.informatics.common.Language;
-import ge.freeuni.informatics.common.model.task.*;
+import ge.freeuni.informatics.common.model.task.CheckerType;
+import ge.freeuni.informatics.common.model.task.Task;
+import ge.freeuni.informatics.common.model.task.TaskScoreType;
+import ge.freeuni.informatics.common.model.task.TaskType;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -2,8 +2,6 @@ package ge.freeuni.informatics.common.dto;
 
 import ge.freeuni.informatics.common.model.contest.TaskResult;
 
-import java.util.Map;
-
 public class TaskResultDTO {
         private final String taskCode;
         private final Float score;

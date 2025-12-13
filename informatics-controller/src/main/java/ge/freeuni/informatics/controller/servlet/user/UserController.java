@@ -1,9 +1,9 @@
 package ge.freeuni.informatics.controller.servlet.user;
 
-import ge.freeuni.informatics.controller.model.*;
 import ge.freeuni.informatics.common.dto.AuthenticationDetails;
 import ge.freeuni.informatics.common.dto.UserDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
+import ge.freeuni.informatics.controller.model.*;
 import ge.freeuni.informatics.server.user.IUserManager;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

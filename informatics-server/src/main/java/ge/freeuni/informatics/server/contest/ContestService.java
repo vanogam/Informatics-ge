@@ -3,17 +3,19 @@ package ge.freeuni.informatics.server.contest;
 import ge.freeuni.informatics.common.dto.ContestDTO;
 import ge.freeuni.informatics.common.dto.ContestantResultDTO;
 import ge.freeuni.informatics.common.dto.TaskResultDTO;
+import ge.freeuni.informatics.common.events.ContestChangeEvent;
+import ge.freeuni.informatics.common.events.SubmissionEvent;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.contest.Contest;
 import ge.freeuni.informatics.common.model.contest.ContestStatus;
 import ge.freeuni.informatics.common.model.contest.ScoringType;
 import ge.freeuni.informatics.common.model.contestroom.ContestRoom;
 import ge.freeuni.informatics.common.model.submission.Submission;
-import ge.freeuni.informatics.common.events.ContestChangeEvent;
-import ge.freeuni.informatics.common.events.SubmissionEvent;
+import ge.freeuni.informatics.common.model.user.User;
 import ge.freeuni.informatics.repository.contest.ContestJpaRepository;
 import ge.freeuni.informatics.repository.contest.ContestantResultJpaRepository;
 import ge.freeuni.informatics.repository.contestroom.ContestRoomJpaRepository;
+import ge.freeuni.informatics.server.user.IUserManager;
 import ge.freeuni.informatics.utils.ArrayUtils;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
@@ -39,6 +41,9 @@ public class ContestService {
 
     @Autowired
     private IContestManager contestManager;
+
+    @Autowired
+    private IUserManager userManager;
 
     @Autowired
     private TaskScheduler taskScheduler;
@@ -100,9 +105,17 @@ public class ContestService {
         } else {
             return contestManager.getStandings(contestId, offset, size)
                     .stream()
-                    .map(ContestantResultDTO::toDTO)
+                    .map(res -> ContestantResultDTO.toDTO(res, getUsername(res.getContestantId())))
                     .toList();
         }
+    }
+
+    public String getUsername(Long userId) {
+        User user = userManager.getUser(userId);
+        if (user == null) {
+            return null;
+        }
+        return user.getUsername();
     }
 
     public List<Long> getLiveContests() {
@@ -258,25 +271,31 @@ public class ContestService {
             contestDTO.setUpsolvingStandings(new ArrayList<>());
         }
         
-        updateStandings(contestDTO.getUpsolvingStandings(), submission, contestDTO, false, contestantResultJpaRepository);
+        updateStandings(contestDTO.getUpsolvingStandings(), submission, contestDTO, false, contestantResultJpaRepository, contestRepository);
         
         contestManager.updateContest(contestDTO);
     }
 
-    private static ContestantResultDTO findContestantResult(Collection<ContestantResultDTO> standings, long userId) {
+    private static ContestantResultDTO findContestantResult(Collection<ContestantResultDTO> standings, long userId, long contestId) {
         return standings
                 .stream()
                 .filter(result -> Objects.equals(result.contestantId(), userId))
                 .findFirst()
                 .orElseGet(() -> ContestantResultDTO.builder()
                         .contestantId(userId)
+                        .contestId(contestId)
                         .totalScore(0f)
                         .taskResults(new HashMap<>())
                         .build());
     }
 
-    private static void updateStandings(Collection<ContestantResultDTO> standings, Submission submission, ContestDTO contestDTO, boolean isLiveContest, ContestantResultJpaRepository contestantResultJpaRepository) {
-        ContestantResultDTO contestantResult = findContestantResult(standings, submission.getUser().getId());
+    private static void updateStandings(Collection<ContestantResultDTO> standings,
+                                        Submission submission,
+                                        ContestDTO contestDTO,
+                                        boolean isLiveContest,
+                                        ContestantResultJpaRepository contestantResultJpaRepository,
+                                        ContestJpaRepository contestRepository) {
+        ContestantResultDTO contestantResult = findContestantResult(standings, submission.getUser().getId(), contestDTO.getId());
         standings.remove(contestantResult);
 
         TaskResultDTO existingTaskResult = contestantResult.getTaskResult(submission.getTask().getCode());
@@ -304,8 +323,8 @@ public class ContestService {
                 contestDTO.getScoringType(),
                 successTime
         );
-        
-        contestantResultJpaRepository.save(ContestantResultDTO.fromDTO(updatedContestantResult));
+        Contest contest = contestRepository.getReferenceById(submission.getContest().getId());
+        contestantResultJpaRepository.save(ContestantResultDTO.fromDTO(updatedContestantResult, contest));
         standings.add(updatedContestantResult);
     }
 
@@ -463,7 +482,7 @@ public class ContestService {
             lock.writeLock().lock();
             try {
                 ensureStandingsInitialized();
-                ContestService.updateStandings(contest.getStandings(), submission, contest, true, contestantResultJpaRepository);
+                ContestService.updateStandings(contest.getStandings(), submission, contest, true, contestantResultJpaRepository, contestRepository);
                 return copyContest(contest);
             } finally {
                 lock.writeLock().unlock();

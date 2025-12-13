@@ -1,7 +1,6 @@
 package ge.freeuni.informatics.controller.servlet;
 
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
-import ge.freeuni.informatics.controller.model.InformaticsResponse;
 
 public class ServletUtils {
 

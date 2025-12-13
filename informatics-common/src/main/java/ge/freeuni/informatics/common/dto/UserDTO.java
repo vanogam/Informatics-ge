@@ -3,10 +3,6 @@ package ge.freeuni.informatics.common.dto;
 
 import ge.freeuni.informatics.common.model.user.User;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 public record UserDTO(
     long id,
     String username,

@@ -219,7 +219,7 @@ public class ContestDTO {
         if (contest.getScoringType() != null) {
             contest.setStandings(contestDTO.getStandings()
                     .stream()
-                    .map(ContestantResultDTO::fromDTO)
+                    .map(res -> ContestantResultDTO.fromDTO(res, contest))
                     .toList()
             );
         }
@@ -228,7 +228,10 @@ public class ContestDTO {
         contest.setScoringType(contestDTO.getScoringType());
         contest.setVersion(contestDTO.getVersion());
         if (contestDTO.getUpsolvingStandings() != null) {
-            contest.setUpsolvingStandings(contestDTO.getUpsolvingStandings().stream().map(ContestantResultDTO::fromDTO).toList());
+            contest.setUpsolvingStandings(contestDTO.getUpsolvingStandings()
+                                                    .stream()
+                                                    .map(res -> ContestantResultDTO.fromDTO(res, contest))
+                                                    .toList());
         }
         return contest;
     }

@@ -74,7 +74,7 @@ export default function Results() {
 				setTaskNameMap(taskNameMapData)
 
 				const processedResults = standings.map((standing) => {
-					const displayName = standing.username || `User ${standing.contestantId}`
+					const displayName = standing.username || `deleted`
 
 					const taskScores = {}
 					if (standing.taskResults) {

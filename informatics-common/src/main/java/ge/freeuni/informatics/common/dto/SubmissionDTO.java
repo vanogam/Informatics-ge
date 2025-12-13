@@ -1,12 +1,9 @@
 package ge.freeuni.informatics.common.dto;
 
 
-import ge.freeuni.informatics.common.Language;
 import ge.freeuni.informatics.common.model.submission.Submission;
 import ge.freeuni.informatics.common.model.submission.SubmissionStatus;
-import ge.freeuni.informatics.common.model.submission.SubmissionTestResult;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 

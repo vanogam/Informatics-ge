@@ -143,4 +143,32 @@ public class PermissionAspect {
             throw InformaticsServerException.PERMISSION_DENIED;
         }
     }
+
+    @Before("@annotation(workerRestricted)")
+    public void workerRestricted(WorkerRestricted workerRestricted) throws InformaticsServerException {
+        if (!userManager.isLoggedIn()) {
+            log.warn("Unauthenticated access attempt to worker-restricted method");
+            throw InformaticsServerException.PERMISSION_DENIED;
+        }
+        
+        String role = userManager.getAuthenticatedUser().role();
+        if (role == null || !role.contains("WORKER")) {
+            log.warn("User {} attempted to access worker-restricted method without WORKER role", userManager.getAuthenticatedUser().username());
+            throw InformaticsServerException.PERMISSION_DENIED;
+        }
+    }
+
+    @Before("@annotation(adminRestricted)")
+    public void adminRestricted(AdminRestricted adminRestricted) throws InformaticsServerException {
+        if (!userManager.isLoggedIn()) {
+            log.warn("Unauthenticated access attempt to admin-restricted method");
+            throw InformaticsServerException.PERMISSION_DENIED;
+        }
+        
+        String role = userManager.getAuthenticatedUser().role();
+        if (role == null || !role.contains("ADMIN")) {
+            log.warn("User {} attempted to access admin-restricted method without ADMIN role", userManager.getAuthenticatedUser().username());
+            throw InformaticsServerException.PERMISSION_DENIED;
+        }
+    }
 }

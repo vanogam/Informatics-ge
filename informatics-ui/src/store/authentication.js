@@ -19,16 +19,20 @@ export const AuthContextProvider = (props) => {
     const [isLoggedIn, setIsLoggedIn] = useState(false)
     const [role, setRole] = useState('')
     const [username, setUsername] = useState('')
+    const [authLoading, setAuthLoading] = useState(true)
     useEffect(() => {
         const fetchUsername = async () => {
+            setAuthLoading(true)
             axiosInstance.get('/user').then((response) => {
                 setUsername(response.data.username);
                 setRole(response.data.role);
                 setIsLoggedIn(true);
+                setAuthLoading(false);
             }).catch((error) => {
                 setIsLoggedIn(false);
                 setUsername('');
                 setRole('');
+                setAuthLoading(false);
             })
         };
 
@@ -52,6 +56,7 @@ export const AuthContextProvider = (props) => {
         isLoggedIn: isLoggedIn,
         username: isLoggedIn ? username : '',
         role: isLoggedIn ? role : '',
+        authLoading: authLoading,
         login: loginHandler,
         logout: logoutHandler,
     }

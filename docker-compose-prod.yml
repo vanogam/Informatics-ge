@@ -7,6 +7,7 @@ services:
     ports:
       - "8080:8080"
     environment:
+      SPRING_PROFILES_ACTIVE: prod
       SPRING_DATASOURCE_URL: jdbc:postgresql://informatics-db:5432/informatics
       SPRING_DATASOURCE_USERNAME: ${DB_USER}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
@@ -14,6 +15,7 @@ services:
     volumes:
       - /home/informatics/prod/files:/files
       - /home/informatics/prod/logs/core:/logs
+      - /var/run/docker.sock:/var/run/docker.sock
     networks:
       informatics:
         aliases:
@@ -77,29 +79,30 @@ services:
       informatics:
         aliases:
           - kafka
-  worker:
-    depends_on:
-      - kafka
-    image: informatics/worker:${VERSION}
-    profiles:
-      - prod
-    volumes:
-      - /home/informatics/prod/files/tasks:/files
-      - /home/informatics/prod/files/worker/shared:/shared
-      - /home/informatics/prod/logs/worker:/logs
-      - /var/run/docker.sock:/var/run/docker.sock
-    ports:
-      - "8999:8989"
-    environment:
-      JDBC_URL: jdbc:postgresql://db:5432/informatics
-      JDBC_USERNAME: ${DB_USER}
-      JDBC_PASSWORD: ${DB_PASSWORD}
-      APP_ID: 1
-      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-    networks:
-      informatics:
-        aliases:
-          - worker
+#  worker:
+#    depends_on:
+#      - kafka
+#    image: informatics/worker:${VERSION}
+#    profiles:
+#      - prod
+#    volumes:
+#      - /home/informatics/prod/files/tasks:/files
+#      - /home/informatics/prod/files/worker/shared:/shared
+#      - /home/informatics/prod/logs/worker:/logs
+#      - /var/run/docker.sock:/var/run/docker.sock
+#    ports:
+#      - "8999:8989"
+#    environment:
+#      JDBC_URL: jdbc:postgresql://db:5432/informatics
+#      JDBC_USERNAME: ${DB_USER}
+#      JDBC_PASSWORD: ${DB_PASSWORD}
+#      APP_ID: 1
+#      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+#    networks:
+#      informatics:
+#        aliases:
+#          - worker
 networks:
   informatics:
+    name: informatics
     driver: bridge

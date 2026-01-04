@@ -25,9 +25,10 @@ public class JobConsumer {
     private static final Logger log = LoggerFactory.getLogger(JobConsumer.class);
     private final KafkaConsumer<String, String> consumer;
     private final Sandbox sandbox;
+    private final HeartbeatSender heartbeatSender;
     public boolean running = true;
 
-    public JobConsumer(String bootstrapServers, String groupId, String id) {
+    public JobConsumer(String bootstrapServers, String groupId, String id, String serverUrl) {
         Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
@@ -37,6 +38,24 @@ public class JobConsumer {
 
         consumer = new KafkaConsumer<>(props);
         sandbox = new Sandbox(id);
+        
+        // Initialize heartbeat sender if server URL is provided
+        if (serverUrl != null && !serverUrl.isEmpty()) {
+            String workerUsername = System.getenv("WORKER_USERNAME");
+            String workerPassword = System.getenv("WORKER_PASSWORD");
+            
+            if (workerUsername != null && workerPassword != null && !workerUsername.isEmpty() && !workerPassword.isEmpty()) {
+                heartbeatSender = new HeartbeatSender(serverUrl, id, workerUsername, workerPassword);
+                heartbeatSender.start();
+                log.info("Heartbeat sender started for worker: {}", id);
+            } else {
+                heartbeatSender = null;
+                log.warn("Worker credentials not provided (WORKER_USERNAME and WORKER_PASSWORD), heartbeat sender disabled");
+            }
+        } else {
+            heartbeatSender = null;
+            log.warn("Server URL not provided, heartbeat sender disabled");
+        }
     }
 
     public void listenToSubmissionTopic() {
@@ -67,7 +86,15 @@ public class JobConsumer {
                         continue;
                     }
                     try {
+                        // Set working status when starting to process
+                        if (heartbeatSender != null) {
+                            heartbeatSender.setWorking(true);
+                        }
                         processMessage(task);
+                        // Increment jobs processed counter after successful processing
+                        if (heartbeatSender != null) {
+                            heartbeatSender.incrementJobsProcessed();
+                        }
                     } catch (Exception e) {
                         log.error("Failed to process message {}", record.value(), e);
                         sendCallback(new TestResult.Builder()
@@ -76,6 +103,11 @@ public class JobConsumer {
                                 .withTestcaseKey(task.testId())
                                 .build()
                         );
+                    } finally {
+                        // Clear working status when done processing
+                        if (heartbeatSender != null) {
+                            heartbeatSender.setWorking(false);
+                        }
                     }
                 }
                 consumer.commitSync();
@@ -87,6 +119,9 @@ public class JobConsumer {
             }
         } finally {
             try {
+                if (heartbeatSender != null) {
+                    heartbeatSender.stop();
+                }
                 sandbox.close();
             } catch (Exception e) {
                 log.error("Error closing sandbox", e);
@@ -153,7 +188,12 @@ public class JobConsumer {
         if (args.length > 0) {
             Config.loadCustomConfig(args[0]);
         }
-        JobConsumer consumer = new JobConsumer("kafka:9092", "worker", System.getenv("APP_ID"));
+        String serverUrl = System.getenv("SERVER_URL");
+        if (serverUrl == null || serverUrl.isEmpty()) {
+            // Default to http://main:8080 if not specified (for docker-compose)
+            serverUrl = "http://main:8080";
+        }
+        JobConsumer consumer = new JobConsumer("kafka:9092", "worker", System.getenv("APP_ID"), serverUrl);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             log.info("Shutdown signal received. Terminating...");

@@ -21,6 +21,7 @@ import axios from 'axios'
 import Cookies from "js-cookie";
 import { renewCsrfToken } from './utils/csrfUtils'
 import AddPost from "./Pages/AddPost";
+import AdminPanel from "./Pages/AdminPanel";
 import { ConfirmDialogProvider } from './utils/ConfirmDialogContext'
 
 function App() {
@@ -76,6 +77,7 @@ function App() {
 					<Route path='/task/:taskId' element={<NewTaskCard />} />\
 					<Route path='/room/:room_id/post' element={<AddPost />} />
 					<Route path='/room/:room_id/post/:post_id' element={<AddPost />} />
+					<Route path='/admin' element={<AdminPanel />} />
 					<Route element={<Error/>} />
 				</Routes>
 			</Box>

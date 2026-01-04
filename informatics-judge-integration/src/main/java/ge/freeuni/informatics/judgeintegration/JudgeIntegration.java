@@ -60,7 +60,7 @@ public class JudgeIntegration implements IJudgeIntegration{
                 null,
                 null,
                 null,
-                CheckerType.TOKEN,
+                task.getCheckerType(),
                 Stage.COMPILATION
         );
         submissionLocks.put(submission.getId(), new Object());

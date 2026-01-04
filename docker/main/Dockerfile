@@ -1,4 +1,4 @@
-FROM openjdk:21-jdk-slim
+FROM amazoncorretto:21-alpine
 WORKDIR /opt/app
 
 COPY informatics-system/target-informatics/Informatics.jar Informatics.jar

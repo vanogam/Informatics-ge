@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,11 +21,13 @@ public class UserController {
 
     final Logger log;
     final IUserManager userManager;
+    final TokenBasedRememberMeServices rememberMeServices;
 
     @Autowired
-    public UserController(IUserManager userManager, Logger log) {
+    public UserController(IUserManager userManager, Logger log, TokenBasedRememberMeServices rememberMeServices) {
         this.userManager = userManager;
         this.log = log;
+        this.rememberMeServices = rememberMeServices;
     }
 
     @PostMapping("/register")
@@ -55,7 +58,9 @@ public class UserController {
 
     @PostMapping("/login")
     @ResponseBody
-    public ResponseEntity<LoginResponse> login(@RequestBody AuthenticationDetails authenticationDetails, HttpServletRequest request) {
+    public ResponseEntity<LoginResponse> login(@RequestBody AuthenticationDetails authenticationDetails, 
+                                               HttpServletRequest request, 
+                                               HttpServletResponse response) {
         try {
             if (userManager.isLoggedIn()) {
                 if (userManager.getAuthenticatedUser().username().equals(authenticationDetails.username())) {
@@ -65,6 +70,16 @@ public class UserController {
                 }
             }
             request.login(authenticationDetails.username(), authenticationDetails.password());
+            
+            // Handle remember me if requested
+            if (authenticationDetails.rememberMe() != null && authenticationDetails.rememberMe()) {
+                // Set remember-me parameter in request for Spring Security to process
+                request.setAttribute("remember-me", "true");
+                // Manually trigger remember me services
+                rememberMeServices.loginSuccess(request, response, 
+                    org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication());
+            }
+            
             return ResponseEntity.ok(new LoginResponse(userManager.getAuthenticatedUser().username()));
         } catch (InformaticsServerException ex) {
             return ResponseEntity.badRequest().body(new LoginResponse(null, ex.getCode()));

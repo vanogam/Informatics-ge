@@ -1,5 +1,5 @@
 import { useRef, useState, useContext } from 'react'
-import { Button, Modal, TextField } from '@mui/material'
+import { Button, Modal, TextField, FormControlLabel, Checkbox } from '@mui/material'
 import { Box } from '@mui/system'
 import { NavLink } from 'react-router-dom'
 import { AuthContext } from '../store/authentication'
@@ -10,6 +10,7 @@ import getMessage from "./lang";
 export default function Login() {
 	const [popUp, setPopUp] = useState(false)
 	const [credentialsError, setCredentialsError] = useState(false)
+	const [rememberMe, setRememberMe] = useState(false)
 	const username = useRef('')
 	const password = useRef('')
 	const authContext = useContext(AuthContext)
@@ -35,6 +36,7 @@ export default function Login() {
 			.post('/login', {
 				username: username.current.value,
 				password: password.current.value,
+				rememberMe: rememberMe,
 			},
 				{ withCredentials: true })
 			.then((response) => handleLoginResponse(response))
@@ -94,8 +96,19 @@ export default function Login() {
 							autoComplete="current-password"
 							inputRef={password}
 						/>
+						<FormControlLabel
+							control={
+								<Checkbox
+									checked={rememberMe}
+									onChange={(e) => setRememberMe(e.target.checked)}
+									color="primary"
+								/>
+							}
+							label="დამახსოვრება"
+							sx={{ marginLeft: '5px', marginTop: '10px' }}
+						/>
 						<Button
-							sx={{ background: '#3c324e' , marginLeft: '5%', marginBottom: '15%'}}
+							sx={{ background: '#3c324e' , marginLeft: '5%', marginBottom: '15%', marginTop: '10px'}}
 							onClick={() => handleLoginSubmit()}
 							variant="contained"
 							color="success"

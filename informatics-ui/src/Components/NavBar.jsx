@@ -115,6 +115,18 @@ function Navbar() {
 						>
 							არქივი
 						</Button>
+						{authContext.role && authContext.role.includes('ADMIN') && (
+							<Button
+								className="items"
+								sx={{
+									color: '#e1dce6',
+								}}
+								component={NavLink}
+								to="/admin"
+							>
+								ადმინისტრირება
+							</Button>
+						)}
 					</Box>
 
 					<Box

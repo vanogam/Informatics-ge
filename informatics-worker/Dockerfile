@@ -1,4 +1,4 @@
-FROM openjdk:21-jdk-slim
+FROM amazoncorretto:21-alpine
 WORKDIR /opt/app
 
 # Copy the entire target directory to include dependencies

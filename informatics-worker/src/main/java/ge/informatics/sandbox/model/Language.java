@@ -5,14 +5,14 @@ import ge.informatics.sandbox.executors.Executor;
 import ge.informatics.sandbox.executors.PythonExecutor;
 
 public enum Language {
-    JAVA("java", "openjdk:21", null),
+    JAVA("java", "amazoncorretto:21-alpine", null),
     PYTHON("python", "python:3.9", new PythonExecutor()),
     C("c", "cpp-worker", null),
     CPP("cpp", "cpp-worker", new CppExecutor()),
     CSHARP("csharp", "mcr.microsoft.com/dotnet/sdk:6.0", null),
     RUBY("ruby", "ruby:latest", null),
     GO("go", "golang:latest", null),
-    KOTLIN("kotlin", "openjdk:21", null),
+    KOTLIN("kotlin", "amazoncorretto:21-alpine", null),
     PHP("php", "php:latest", null),
     JAVASCRIPT("javascript", "node:latest", null);
 

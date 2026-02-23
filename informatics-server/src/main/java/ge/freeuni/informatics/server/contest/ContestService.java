@@ -8,6 +8,7 @@ import ge.freeuni.informatics.common.events.SubmissionEvent;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.contest.Contest;
 import ge.freeuni.informatics.common.model.contest.ContestStatus;
+import ge.freeuni.informatics.common.model.contest.ContestantResult;
 import ge.freeuni.informatics.common.model.contest.ScoringType;
 import ge.freeuni.informatics.common.model.contestroom.ContestRoom;
 import ge.freeuni.informatics.common.model.submission.Submission;
@@ -24,7 +25,10 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -57,9 +61,15 @@ public class ContestService {
     @Autowired
     private ContestantResultJpaRepository contestantResultJpaRepository;
 
+    @Autowired
+    private PlatformTransactionManager transactionManager;
+
+    private static final Duration SYNC_INTERVAL = Duration.ofSeconds(30);
+
     private final ConcurrentHashMap<Long, LiveContestState> liveContests = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Long, ScheduledFuture<?>> startSchedules = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Long, ScheduledFuture<?>> endSchedules = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, ScheduledFuture<?>> syncSchedules = new ConcurrentHashMap<>();
 
     @PostConstruct
     public void startup() {
@@ -188,11 +198,8 @@ public class ContestService {
             throw InformaticsServerException.PERMISSION_DENIED;
         }
 
-        ContestDTO snapshotForPersistence = state.updateStandings(submission);
-        ContestDTO persisted = contestManager.updateContest(snapshotForPersistence);
-        if (persisted != null) {
-            state.refresh(persisted);
-        }
+        // Update in-memory standings only; DB sync happens periodically
+        state.updateStandings(submission);
     }
 
     private static Long getSuccessTime(Submission submission, TaskResultDTO taskResult, ContestDTO contestDTO) {
@@ -266,14 +273,76 @@ public class ContestService {
     private void addUpsolvingSubmission(Submission submission) throws InformaticsServerException {
         Contest contest = contestRepository.getReferenceById(submission.getContest().getId());
         ContestDTO contestDTO = ContestDTO.toDTO(contest);
-        
+
         if (contestDTO.getUpsolvingStandings() == null) {
             contestDTO.setUpsolvingStandings(new ArrayList<>());
         }
-        
-        updateStandings(contestDTO.getUpsolvingStandings(), submission, contestDTO, false, contestantResultJpaRepository, contestRepository);
-        
+
+        applySubmissionToStandings(contestDTO.getUpsolvingStandings(), submission, contestDTO, false);
+
+        // Upsolving persists immediately since there's no concurrency concern
         contestManager.updateContest(contestDTO);
+    }
+
+    private void syncContestStandings(long contestId) {
+        LiveContestState state = liveContests.get(contestId);
+        if (state == null) return;
+        syncContestStandings(contestId, state, false);
+    }
+
+    private void syncContestStandings(long contestId, LiveContestState state, boolean force) {
+        List<ContestantResultDTO> standings = force
+                ? state.getAllStandings()
+                : state.getDirtyStandings();
+        if (standings == null || standings.isEmpty()) return;
+
+        TransactionTemplate txTemplate = new TransactionTemplate(transactionManager);
+        Map<Long, Long> newIds = txTemplate.execute(status -> {
+            Contest contestRef = contestRepository.getReferenceById(contestId);
+            List<ContestantResult> entities = new ArrayList<>();
+            for (ContestantResultDTO dto : standings) {
+                entities.add(ContestantResultDTO.fromDTO(dto, contestRef));
+            }
+            List<ContestantResult> saved = contestantResultJpaRepository.saveAll(entities);
+
+            Map<Long, Long> ids = new HashMap<>();
+            for (ContestantResult entity : saved) {
+                ids.put(entity.getContestantId(), entity.getId());
+            }
+            return ids;
+        });
+
+        if (newIds != null && !newIds.isEmpty()) {
+            state.updateIds(newIds);
+        }
+        log.info("Synced standings to DB for contest [{}], {} entries", contestId, standings.size());
+    }
+
+    private void safeSyncStandings(long contestId) {
+        try {
+            syncContestStandings(contestId);
+        } catch (Exception ex) {
+            log.error("Failed to sync standings for contest [{}]: {}", contestId, ex.getMessage(), ex);
+        }
+    }
+
+    private void scheduleSyncTask(long contestId) {
+        cancelSyncSchedule(contestId);
+        ScheduledFuture<?> future = taskScheduler.scheduleAtFixedRate(
+                () -> safeSyncStandings(contestId),
+                Instant.now().plus(SYNC_INTERVAL),
+                SYNC_INTERVAL
+        );
+        if (future != null) {
+            syncSchedules.put(contestId, future);
+        }
+    }
+
+    private void cancelSyncSchedule(long contestId) {
+        ScheduledFuture<?> future = syncSchedules.remove(contestId);
+        if (future != null) {
+            future.cancel(false);
+        }
     }
 
     private static ContestantResultDTO findContestantResult(Collection<ContestantResultDTO> standings, long userId, long contestId) {
@@ -289,42 +358,35 @@ public class ContestService {
                         .build());
     }
 
-    private static void updateStandings(Collection<ContestantResultDTO> standings,
-                                        Submission submission,
-                                        ContestDTO contestDTO,
-                                        boolean isLiveContest,
-                                        ContestantResultJpaRepository contestantResultJpaRepository,
-                                        ContestJpaRepository contestRepository) {
+    private static void applySubmissionToStandings(Collection<ContestantResultDTO> standings,
+                                                    Submission submission,
+                                                    ContestDTO contestDTO,
+                                                    boolean isLiveContest) {
         ContestantResultDTO contestantResult = findContestantResult(standings, submission.getUser().getId(), contestDTO.getId());
         standings.remove(contestantResult);
 
         TaskResultDTO existingTaskResult = contestantResult.getTaskResult(submission.getTask().getCode());
-        
-        // Calculate success time (relative for live contests, absolute for upsolving)
+
         Long successTime;
         if (isLiveContest) {
             successTime = getSuccessTime(submission, existingTaskResult, contestDTO);
         } else {
             successTime = submission.getSubmissionTime().getTime();
         }
-        
-        // Create new TaskResultDTO for the submission
+
         TaskResultDTO newTaskResult = new TaskResultDTO(
                 submission.getTask().getCode(),
                 submission.getScore(),
                 existingTaskResult != null ? existingTaskResult.getAttempts() + 1 : 1,
                 successTime
         );
-        
-        // Use the static method to update task result based on ScoringType
+
         ContestantResultDTO updatedContestantResult = updateTaskResult(
                 contestantResult,
                 newTaskResult,
                 contestDTO.getScoringType(),
                 successTime
         );
-        Contest contest = contestRepository.getReferenceById(submission.getContest().getId());
-        contestantResultJpaRepository.save(ContestantResultDTO.fromDTO(updatedContestantResult, contest));
         standings.add(updatedContestantResult);
     }
 
@@ -340,6 +402,7 @@ public class ContestService {
             LiveContestState state = liveContests.computeIfAbsent(contest.getId(),
                     id -> new LiveContestState(contest));
             state.merge(contest);
+            scheduleSyncTask(contest.getId());
             scheduleContestEnd(contest);
             cancelStartSchedule(contest.getId());
             return;
@@ -364,18 +427,26 @@ public class ContestService {
     }
 
     private void safeContestEnd(long contestId) {
+        cancelSyncSchedule(contestId);
         LiveContestState state = liveContests.remove(contestId);
         cancelEndSchedule(contestId);
         if (state == null) {
             return;
         }
         try {
+            // Final sync of standings directly to contestant_result table
+            syncContestStandings(contestId, state, true);
+
+            // Update contest metadata (upsolving flag) if needed
             ContestDTO snapshot = state.snapshot();
-            snapshot.setStatus(ContestStatus.PAST);
             if (snapshot.isUpsolvingAfterFinish()) {
-                snapshot.setUpsolving(true);
+                TransactionTemplate txTemplate = new TransactionTemplate(transactionManager);
+                txTemplate.executeWithoutResult(status -> {
+                    Contest contest = contestRepository.getReferenceById(contestId);
+                    contest.setUpsolving(true);
+                    contestRepository.save(contest);
+                });
             }
-            contestManager.updateContest(snapshot);
             log.info("Contest [{}] has been finished.", contestId);
         } catch (Exception ex) {
             log.error("Failed to finish contest [{}]: {}", contestId, ex.getMessage(), ex);
@@ -386,12 +457,14 @@ public class ContestService {
         liveContests.remove(contestId);
         cancelStartSchedule(contestId);
         cancelEndSchedule(contestId);
+        cancelSyncSchedule(contestId);
     }
 
     private void activateContest(ContestDTO contest) {
         contest.setStatus(ContestStatus.LIVE);
         LiveContestState state = new LiveContestState(contest);
         liveContests.put(contest.getId(), state);
+        scheduleSyncTask(contest.getId());
         scheduleContestEnd(contest);
     }
 
@@ -451,6 +524,7 @@ public class ContestService {
     private class LiveContestState {
         private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
         private ContestDTO contest;
+        private volatile boolean dirty = false;
 
         LiveContestState(ContestDTO contest) {
             this.contest = copyContest(contest);
@@ -478,26 +552,70 @@ public class ContestService {
             }
         }
 
-        ContestDTO updateStandings(Submission submission) {
+        void updateStandings(Submission submission) {
             lock.writeLock().lock();
             try {
                 ensureStandingsInitialized();
-                ContestService.updateStandings(contest.getStandings(), submission, contest, true, contestantResultJpaRepository, contestRepository);
-                return copyContest(contest);
+                ContestService.applySubmissionToStandings(contest.getStandings(), submission, contest, true);
+                dirty = true;
             } finally {
                 lock.writeLock().unlock();
             }
         }
 
-        void refresh(ContestDTO snapshot) {
+        /**
+         * Returns a copy of standings if dirty, resetting the flag atomically.
+         * Returns null if standings have not changed since last sync.
+         */
+        List<ContestantResultDTO> getDirtyStandings() {
             lock.writeLock().lock();
             try {
-                this.contest = copyContest(snapshot);
+                if (!dirty) return null;
+                dirty = false;
+                return new ArrayList<>(contest.getStandings());
             } finally {
                 lock.writeLock().unlock();
             }
         }
 
+        /**
+         * Returns a copy of all standings regardless of dirty flag (for final sync).
+         */
+        List<ContestantResultDTO> getAllStandings() {
+            lock.writeLock().lock();
+            try {
+                dirty = false;
+                if (contest.getStandings() == null || contest.getStandings().isEmpty()) {
+                    return null;
+                }
+                return new ArrayList<>(contest.getStandings());
+            } finally {
+                lock.writeLock().unlock();
+            }
+        }
+
+        /**
+         * Updates entity IDs in the in-memory standings after DB sync.
+         */
+        void updateIds(Map<Long, Long> contestantIdToEntityId) {
+            lock.writeLock().lock();
+            try {
+                TreeSet<ContestantResultDTO> updated = new TreeSet<>();
+                for (ContestantResultDTO dto : contest.getStandings()) {
+                    Long entityId = contestantIdToEntityId.get(dto.contestantId());
+                    if (entityId != null && !entityId.equals(dto.id())) {
+                        updated.add(ContestantResultDTO.builder(dto)
+                                .id(entityId)
+                                .build());
+                    } else {
+                        updated.add(dto);
+                    }
+                }
+                contest.setStandings(updated);
+            } finally {
+                lock.writeLock().unlock();
+            }
+        }
 
         private void merge(ContestDTO snapshot) {
             lock.writeLock().lock();

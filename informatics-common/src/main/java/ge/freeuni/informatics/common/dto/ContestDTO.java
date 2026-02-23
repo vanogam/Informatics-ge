@@ -1,6 +1,7 @@
 package ge.freeuni.informatics.common.dto;
 
 import ge.freeuni.informatics.common.model.contest.Contest;
+import ge.freeuni.informatics.common.model.contest.ContestantResult;
 import ge.freeuni.informatics.common.model.contest.ContestStatus;
 import ge.freeuni.informatics.common.model.contest.ScoringType;
 
@@ -181,9 +182,10 @@ public class ContestDTO {
             }
         } catch (Exception ignored) {}
         try {
-            if (contest.getScoringType() != null) {
+            if (contest.getScoringType() != null && contest.getStandings() != null) {
                 contestDTO.setStandings(contest.getStandings()
                         .stream()
+                        .filter(r -> r.getUpsolvingContest() == null)
                         .map(ContestantResultDTO::toDTO)
                         .collect(Collectors.toCollection(TreeSet::new)));
             }
@@ -216,22 +218,24 @@ public class ContestDTO {
         if (contestDTO.getTasks() != null) {
             contest.setTasks(TaskDTO.fromDTOs(contestDTO.getTasks()));
         }
-        if (contest.getScoringType() != null) {
+        contest.setUpsolving(contestDTO.isUpsolving());
+        contest.setUpsolvingAfterFinished(contestDTO.isUpsolvingAfterFinish());
+        contest.setScoringType(contestDTO.getScoringType());
+        contest.setVersion(contestDTO.getVersion());
+        if (contestDTO.getStandings() != null && !contestDTO.getStandings().isEmpty()) {
             contest.setStandings(contestDTO.getStandings()
                     .stream()
                     .map(res -> ContestantResultDTO.fromDTO(res, contest))
                     .toList()
             );
         }
-        contest.setUpsolving(contestDTO.isUpsolving());
-        contest.setUpsolvingAfterFinished(contestDTO.isUpsolvingAfterFinish());
-        contest.setScoringType(contestDTO.getScoringType());
-        contest.setVersion(contestDTO.getVersion());
         if (contestDTO.getUpsolvingStandings() != null) {
-            contest.setUpsolvingStandings(contestDTO.getUpsolvingStandings()
-                                                    .stream()
-                                                    .map(res -> ContestantResultDTO.fromDTO(res, contest))
-                                                    .toList());
+            List<ContestantResult> upsolvingResults = contestDTO.getUpsolvingStandings()
+                    .stream()
+                    .map(res -> ContestantResultDTO.fromDTO(res, contest))
+                    .toList();
+            upsolvingResults.forEach(r -> r.setUpsolvingContest(contest));
+            contest.setUpsolvingStandings(upsolvingResults);
         }
         return contest;
     }

@@ -1,5 +1,6 @@
 package ge.freeuni.informatics.server.submission;
 
+import ge.freeuni.informatics.common.dto.UserProblemDTO;
 import ge.freeuni.informatics.common.dto.SubmissionDTO;
 import ge.freeuni.informatics.common.dto.SubmissionTestResultDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
@@ -10,11 +11,13 @@ import ge.freeuni.informatics.common.model.submission.Submission;
 import ge.freeuni.informatics.common.model.submission.SubmissionStatus;
 import ge.freeuni.informatics.common.model.task.Task;
 import ge.freeuni.informatics.common.model.task.Testcase;
-import ge.freeuni.informatics.judgeintegration.JudgeIntegration;
+import ge.freeuni.informatics.common.model.user.ProblemAttemptStatus;
+import ge.freeuni.informatics.judgeintegration.IJudgeIntegration;
 import ge.freeuni.informatics.repository.contest.ContestJpaRepository;
 import ge.freeuni.informatics.repository.submission.SubmissionJpaRepository;
 import ge.freeuni.informatics.repository.task.TaskRepository;
 import ge.freeuni.informatics.repository.task.TestcaseRepository;
+import ge.freeuni.informatics.repository.user.SolvedProblemJpaRepository;
 import ge.freeuni.informatics.server.contestroom.IContestRoomManager;
 import ge.freeuni.informatics.server.task.TaskManager;
 import ge.freeuni.informatics.server.user.IUserManager;
@@ -30,6 +33,7 @@ import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static ge.freeuni.informatics.common.model.contestroom.ContestRoom.GLOBAL_ROOM_ID;
 
@@ -57,9 +61,11 @@ public class SubmissionManager implements ISubmissionManager {
 
     private final TaskRepository taskRepository;
 
-    private final JudgeIntegration judgeIntegration;
+    private final IJudgeIntegration judgeIntegration;
 
     private final TaskManager taskManager;
+
+    private final SolvedProblemJpaRepository solvedProblemRepository;
 
     @Autowired
     public SubmissionManager(SubmissionJpaRepository submissionRepository,
@@ -67,9 +73,10 @@ public class SubmissionManager implements ISubmissionManager {
                              ContestJpaRepository contestRepository,
                              IContestRoomManager roomManager,
                              TaskRepository taskRepository,
-                             JudgeIntegration judgeIntegration,
+                             IJudgeIntegration judgeIntegration,
                              TestcaseRepository testcaseRepository,
-                             TaskManager taskManager) {
+                             TaskManager taskManager,
+                             SolvedProblemJpaRepository solvedProblemRepository) {
         this.submissionRepository = submissionRepository;
         this.userManager = userManager;
         this.contestRepository = contestRepository;
@@ -78,6 +85,7 @@ public class SubmissionManager implements ISubmissionManager {
         this.judgeIntegration = judgeIntegration;
         this.testcaseRepository = testcaseRepository;
         this.taskManager = taskManager;
+        this.solvedProblemRepository = solvedProblemRepository;
     }
 
     @Override
@@ -113,12 +121,12 @@ public class SubmissionManager implements ISubmissionManager {
                 throw new InformaticsServerException("taskNotInContest");
             }
         }
-        Contest contest = contestRepository.getReferenceById(contestId);
+        Contest contest = contestId == null ? null : contestRepository.getReferenceById(contestId);
 
         if (roomId == null) {
             roomId = contest.getRoomId();
         }
-        if (!Objects.equals(contest.getRoomId(), roomId)) {
+        if (contest != null && !Objects.equals(contest.getRoomId(), roomId)) {
             throw new InformaticsServerException("contestNotInRoom");
         }
         ContestRoom room = roomManager.getRoom(roomId);
@@ -144,7 +152,7 @@ public class SubmissionManager implements ISubmissionManager {
 
     @Override
     @Transactional
-    public void addSubmission(SubmissionDTO submissionDTO) throws InformaticsServerException {
+    public Long addSubmission(SubmissionDTO submissionDTO) throws InformaticsServerException {
         Submission submission = SubmissionDTO.fromDTO(submissionDTO);
         long userId = userManager.getAuthenticatedUser().id();
         submission.setUser(userManager.getUser(userId));
@@ -163,10 +171,25 @@ public class SubmissionManager implements ISubmissionManager {
         submission = submissionRepository.save(submission);
 
         judgeIntegration.addSubmission(task, submission);
+        
+        return submission.getId();
     }
 
 
     @Override
-    public void registerSubmission(Long submissionId, Long cmsId) {
+    public List<UserProblemDTO> getUserProblems(Long userId, ProblemAttemptStatus status) throws InformaticsServerException {
+        return solvedProblemRepository.findByUserIdAndStatus(userId, status)
+                .stream()
+                .map(solvedProblem -> {
+                    Task task = solvedProblem.getTask();
+                    Contest contest = task.getContest();
+                    return new UserProblemDTO(
+                            task.getId(),
+                            task.getTitle(),
+                            contest.getName(),
+                            solvedProblem.getLastAttemptAt()
+                    );
+                })
+                .collect(Collectors.toList());
     }
 }

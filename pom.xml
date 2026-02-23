@@ -10,6 +10,7 @@
         <module>informatics-utils</module>
         <module>informatics-repository</module>
         <module>informatics-judge-integration</module>
+        <module>informatics-acceptance-tests</module>
     </modules>
     <parent>
         <groupId>org.springframework.boot</groupId>

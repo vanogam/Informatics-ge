@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<persistence xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-             version="1.0"
-             xmlns="http://java.sun.com/xml/ns/persistence"
-             xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_1_0.xsd">
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
+             version="3.0">
     <persistence-unit name="default">
         <class>ge.freeuni.informatics.common.model.user.User</class>
         <class>ge.freeuni.informatics.common.model.user.RecoverPassword</class>
+        <class>ge.freeuni.informatics.common.model.user.SolvedProblem</class>
         <class>ge.freeuni.informatics.common.model.contestroom.ContestRoom</class>
         <class>ge.freeuni.informatics.common.model.contest.Contest</class>
         <class>ge.freeuni.informatics.common.model.contest.ContestantResult</class>
@@ -16,7 +17,7 @@
         <class>ge.freeuni.informatics.common.model.submission.Submission</class>
         <class>ge.freeuni.informatics.common.model.worker.Worker</class>
         <properties>
-        <property name="hibernate.hbm2ddl.auto" value="update"/>
+            <!-- hibernate.hbm2ddl.auto is set from spring.jpa.hibernate.ddl-auto via DatasourceConfiguration -->
         </properties>
     </persistence-unit>
 </persistence>

@@ -26,7 +26,12 @@ public class Contest {
     @Column
     private Long roomId;
 
-    @OneToMany
+    @ManyToMany
+    @JoinTable(
+            name = "Contest_principal",
+            joinColumns = @JoinColumn(name = "Contest_id"),
+            inverseJoinColumns = @JoinColumn(name = "participants_id")
+    )
     private List<User> participants;
 
     @OneToMany
@@ -38,12 +43,10 @@ public class Contest {
     @Column(nullable = false)
     private boolean upsolving;
 
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "contest_id")
+    @OneToMany(mappedBy = "contest", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ContestantResult> standings;
 
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "upsolving_contest_id")
+    @OneToMany(mappedBy = "upsolvingContest", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ContestantResult> upsolvingStandings;
 
     @Column(nullable = false)

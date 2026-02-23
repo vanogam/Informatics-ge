@@ -1,2 +1,2 @@
 alter table testcase
-    add publictestcase boolean not null default false;
+    add column if not exists publictestcase boolean not null default false;

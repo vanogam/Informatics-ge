@@ -6,6 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.jpa.JpaVendorAdapter;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
@@ -18,6 +19,12 @@ import java.util.Properties;
 @Configuration
 @EnableTransactionManagement
 public class DatasourceConfiguration {
+
+    private final Environment environment;
+
+    public DatasourceConfiguration(Environment environment) {
+        this.environment = environment;
+    }
 
     @Bean
     @ConfigurationProperties("spring.datasource")
@@ -54,8 +61,21 @@ public class DatasourceConfiguration {
 
     private Properties additionalProperties() {
         Properties properties = new Properties();
-        properties.put("hibernate.hbm2ddl.auto", "update");
-        properties.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
+        String ddlAuto = environment.getProperty("spring.jpa.hibernate.ddl-auto",
+                environment.getProperty("spring.jpa.properties.hibernate.hbm2ddl.auto", "none"));
+        String dialect = environment.getProperty("spring.jpa.database-platform",
+                environment.getProperty("spring.jpa.properties.hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect"));
+        properties.put("hibernate.hbm2ddl.auto", ddlAuto);
+        properties.put("hibernate.dialect", dialect);
+
+        String jakartaAction = switch (ddlAuto) {
+            case "create-drop" -> "drop-and-create";
+            case "create" -> "create";
+            case "drop" -> "drop";
+            default -> "none";
+        };
+        properties.put("jakarta.persistence.schema-generation.database.action", jakartaAction);
+
         return properties;
     }
 }

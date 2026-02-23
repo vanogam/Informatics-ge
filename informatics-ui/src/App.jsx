@@ -16,6 +16,7 @@ import MySubmissions from './Pages/MySubmissions'
 import ContestSubmissions from './Pages/ContestSubmissions'
 import NewTaskCard from './Components/newtask/NewTaskCard'
 import Error from './Pages/Error'
+import UserProfile from './Pages/UserProfile'
 import { useEffect } from 'react'
 import axios from 'axios'
 import Cookies from "js-cookie";
@@ -78,6 +79,8 @@ function App() {
 					<Route path='/room/:room_id/post' element={<AddPost />} />
 					<Route path='/room/:room_id/post/:post_id' element={<AddPost />} />
 					<Route path='/admin' element={<AdminPanel />} />
+					<Route path='/profile' element={<UserProfile />} />
+					<Route path='/user/:userId/profile' element={<UserProfile />} />
 					<Route element={<Error/>} />
 				</Routes>
 			</Box>

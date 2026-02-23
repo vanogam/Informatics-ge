@@ -137,10 +137,21 @@ function Navbar() {
 						{isLoggedIn ? (
 							<div style={{ display: 'flex', alignItems: 'center' }}>
 								<PersonIcon />
-								<Typography variant="button">
-									{' '}
-									{authContext.username}
-								</Typography>
+								<Button
+									component={NavLink}
+									to="/profile"
+									sx={{
+										color: '#e1dce6',
+										textTransform: 'none',
+										minWidth: 'auto',
+										padding: '0.5rem',
+									}}
+								>
+									<Typography variant="button">
+										{' '}
+										{authContext.username}
+									</Typography>
+								</Button>
 								<Button
 									className="items"
 									sx={{

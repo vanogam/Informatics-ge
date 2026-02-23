@@ -20,10 +20,20 @@ public class ContestRoom {
     @Column(nullable = false)
     private boolean open;
 
-    @OneToMany
+    @ManyToMany
+    @JoinTable(
+            name = "contest_room_teachers",
+            joinColumns = @JoinColumn(name = "contest_room_id"),
+            inverseJoinColumns = @JoinColumn(name = "teachers_id")
+    )
     private Set<User> teachers;
 
-    @OneToMany
+    @ManyToMany
+    @JoinTable(
+            name = "contest_room_participants",
+            joinColumns = @JoinColumn(name = "contest_room_id"),
+            inverseJoinColumns = @JoinColumn(name = "participants_id")
+    )
     private Set<User> participants;
 
     public long getId() {

@@ -15,6 +15,10 @@ import org.springframework.security.web.authentication.rememberme.TokenBasedReme
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestHandler;
 import org.springframework.security.web.csrf.XorCsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
+
+import java.util.Arrays;
 
 @EnableWebSecurity
 @Configuration
@@ -27,6 +31,18 @@ public class SecurityConfiguration {
             "/api/contests",
             "/api/csrf",
             "/error",
+    };
+
+    // Contest endpoints that should be accessible for global room (room 1) contests
+    private static final String[] GLOBAL_ROOM_CONTEST_ADDRESSES = {
+            "/api/contest/*/registrants",
+            "/api/contest/*/is-registered",
+            "/api/contest/*/standings",
+            "/api/contest/*/submissions",
+            "/api/contest/*/status",
+            "/api/contest/*/tasks",
+            "/api/contest/*/task-names",
+            "/api/contest/*"
     };
 
     private static final String[] ALL_ACCOUNT_ADDRESSES = {"/profile"};
@@ -49,11 +65,15 @@ public class SecurityConfiguration {
         auth.authenticationProvider(new InformaticsAuthenticationProvider());
     }
 
+    private static RequestMatcher[] antMatchers(String... patterns) {
+        return Arrays.stream(patterns).map(AntPathRequestMatcher::new).toArray(RequestMatcher[]::new);
+    }
+
     @Bean
     @Order(1)
     public SecurityFilterChain workerHeartbeatSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-                .securityMatcher("/api/admin/workers/**/heartbeat")
+                .securityMatcher(new AntPathRequestMatcher("/api/admin/workers/*/heartbeat"))
                 .authorizeHttpRequests(authz -> authz
                         .anyRequest().hasRole("WORKER")
                 )
@@ -76,7 +96,8 @@ public class SecurityConfiguration {
         CsrfTokenRequestHandler requestHandler = delegate::handle;
         http
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers(GLOBAL_ADDRESSES).permitAll()
+                        .requestMatchers(antMatchers(GLOBAL_ADDRESSES)).permitAll()
+                        .requestMatchers(antMatchers(GLOBAL_ROOM_CONTEST_ADDRESSES)).permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception
@@ -94,7 +115,7 @@ public class SecurityConfiguration {
                 .csrf((csrf) -> csrf
                         .csrfTokenRepository(tokenRepository)
                         .csrfTokenRequestHandler(requestHandler)
-                        .ignoringRequestMatchers("/api/csrf")
+                        .ignoringRequestMatchers(new AntPathRequestMatcher("/api/csrf"))
                 )
                 .rememberMe(rememberMe -> rememberMe
                         .rememberMeServices(rememberMeServices())

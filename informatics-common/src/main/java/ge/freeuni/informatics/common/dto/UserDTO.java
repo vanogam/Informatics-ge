@@ -2,6 +2,7 @@ package ge.freeuni.informatics.common.dto;
 
 
 import ge.freeuni.informatics.common.model.user.User;
+import java.util.Date;
 
 public record UserDTO(
     long id,
@@ -10,7 +11,8 @@ public record UserDTO(
     String firstName,
     String lastName,
     Integer version,
-    String role
+    String role,
+    Date lastLogin
 ) {
     public static UserDTO toDTO(User user) {
         if (user == null) {
@@ -23,7 +25,8 @@ public record UserDTO(
             user.getFirstName(),
             user.getLastName(),
             user.getVersion(),
-            user.getRole()
+            user.getRole(),
+            user.getLastLogin()
         );
     }
 
@@ -37,6 +40,7 @@ public record UserDTO(
         user.setEmail(userDTO.email());
         user.setVersion(userDTO.version());
         user.setRole(userDTO.role());
+        user.setLastLogin(userDTO.lastLogin());
 
         return user;
     }

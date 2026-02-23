@@ -81,7 +81,8 @@ class UserManagerTest {
                 "Test",
                 "User",
                 1,
-                "STUDENT"
+                "STUDENT",
+                null
         );
     }
 
@@ -105,6 +106,7 @@ class UserManagerTest {
                 "new@example.com",
                 "New",
                 "User",
+                null,
                 null,
                 null
         );
@@ -136,6 +138,7 @@ class UserManagerTest {
                 "New",
                 "User",
                 null,
+                null,
                 null
         );
 
@@ -151,11 +154,9 @@ class UserManagerTest {
 
     @Test
     void testAuthenticate_Success() {
-        // Use a known salt and password for testing
         String testSalt = "testsalt";
         String testPassword = "password123";
         
-        // Compute the actual hash using UserUtils (same method used in UserManager)
         String expectedHash = UserUtils.getHash(testPassword, testSalt);
         
         User userWithPassword = new User();
@@ -170,15 +171,12 @@ class UserManagerTest {
 
         when(userRepository.getFirstByUsername("testuser")).thenReturn(userWithPassword);
         
-        // Authenticate with the correct password
         User result = userManager.authenticate("testuser", testPassword);
         
-        // Verify authentication succeeded
         assertNotNull(result, "Authentication should succeed with correct password");
         assertEquals("testuser", result.getUsername(), "Username should match");
         assertEquals(1L, result.getId(), "User ID should match");
         
-        // Verify repository was called
         verify(userRepository).getFirstByUsername("testuser");
     }
 

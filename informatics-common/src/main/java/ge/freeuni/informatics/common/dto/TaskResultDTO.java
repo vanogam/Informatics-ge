@@ -3,13 +3,20 @@ package ge.freeuni.informatics.common.dto;
 import ge.freeuni.informatics.common.model.contest.TaskResult;
 
 public class TaskResultDTO {
-        private final String taskCode;
-        private final Float score;
+        private String taskCode;
+        private Float score;
         private Integer attempts;
         private Long successTime;
 
+    // Default constructor for Jackson
+    public TaskResultDTO() {
+    }
+
     public TaskResultDTO(String taskCode, Float score) {
-        this(taskCode, score, 0, null);
+        this.taskCode = taskCode;
+        this.score = score;
+        this.attempts = 0;
+        this.successTime = null;
     }
 
     public TaskResultDTO(String taskCode, Float score, Integer attempts, Long successTime) {
@@ -23,8 +30,16 @@ public class TaskResultDTO {
         return taskCode;
     }
 
+    public void setTaskCode(String taskCode) {
+        this.taskCode = taskCode;
+    }
+
     public Float getScore() {
         return score;
+    }
+
+    public void setScore(Float score) {
+        this.score = score;
     }
 
     public Integer getAttempts() {

@@ -21,6 +21,10 @@ public class ContestantResult {
     @JoinColumn(name = "contest_id", nullable = false)
     private Contest contest;
 
+    @ManyToOne
+    @JoinColumn(name = "upsolving_contest_id")
+    private Contest upsolvingContest;
+
     @Column(name = "totalScore", nullable = false)
     private Float totalScore;
     @ElementCollection
@@ -52,6 +56,14 @@ public class ContestantResult {
 
     public void setContest(Contest contest) {
         this.contest = contest;
+    }
+
+    public Contest getUpsolvingContest() {
+        return upsolvingContest;
+    }
+
+    public void setUpsolvingContest(Contest upsolvingContest) {
+        this.upsolvingContest = upsolvingContest;
     }
 
     public Float getTotalScore() {

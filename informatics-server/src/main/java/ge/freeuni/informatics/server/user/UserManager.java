@@ -1,12 +1,15 @@
 package ge.freeuni.informatics.server.user;
 
 import ge.freeuni.informatics.common.dto.UserDTO;
+import ge.freeuni.informatics.common.dto.UserProfileDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
+import ge.freeuni.informatics.common.model.user.ProblemAttemptStatus;
 import ge.freeuni.informatics.common.model.user.RecoverPassword;
 import ge.freeuni.informatics.common.model.user.User;
 import ge.freeuni.informatics.common.model.user.UserRole;
 import ge.freeuni.informatics.common.security.InformaticsPrincipal;
 import ge.freeuni.informatics.repository.user.PasswordRecoveryJpaRepository;
+import ge.freeuni.informatics.repository.user.SolvedProblemJpaRepository;
 import ge.freeuni.informatics.repository.user.UserJpaRepository;
 import ge.freeuni.informatics.utils.FileUtils;
 import ge.freeuni.informatics.utils.MailSender;
@@ -47,13 +50,17 @@ public class UserManager implements IUserManager {
 
     final MailSender mailSender;
 
+    final SolvedProblemJpaRepository solvedProblemRepository;
+
     @Autowired
     public UserManager(UserJpaRepository userRepository,
                        PasswordRecoveryJpaRepository passwordRecoveryJpaRepository,
-                       MailSender mailSender) {
+                       MailSender mailSender,
+                       SolvedProblemJpaRepository solvedProblemRepository) {
         this.userRepository = userRepository;
         this.recoveryJpaRepository = passwordRecoveryJpaRepository;
         this.mailSender = mailSender;
+        this.solvedProblemRepository = solvedProblemRepository;
     }
 
     @Override
@@ -69,6 +76,7 @@ public class UserManager implements IUserManager {
         user.setPassword(UserUtils.getHash(password, user.getPasswordSalt()));
         user.setVersion(1);
         user.setRole(UserRole.STUDENT.name());
+        user.setRegistrationTime(new Date());
         try {
             userRepository.save(user);
         } catch (Exception e) {
@@ -84,6 +92,8 @@ public class UserManager implements IUserManager {
         }
         String hash = UserUtils.getHash(password, user.getPasswordSalt());
         if (hash.equals(user.getPassword())) {
+            user.setLastLogin(new Date());
+            userRepository.save(user);
             return user;
         }
 
@@ -171,5 +181,36 @@ public class UserManager implements IUserManager {
     private String generateRecoverText(String link) {
         String address = host + ("80".equals(port) ? "" : ":" + port) + "/recover/update-password/" + link;
         return "პაროლის აღსადგენად გადადით მოცემულ ლინკზე\n" + address;
+    }
+
+    @Override
+    public UserProfileDTO getUserProfile(Long userId) throws InformaticsServerException {
+        User user = userRepository.getReferenceById(userId);
+        long solvedProblemsCount = solvedProblemRepository.countByUserIdAndStatus(userId, ProblemAttemptStatus.SOLVED);
+        return new UserProfileDTO(
+                user.getUsername(),
+                solvedProblemsCount,
+                user.getLastLogin(),
+                user.getRegistrationTime()
+        );
+    }
+
+    @Override
+    public void changePassword(String oldPassword, String newPassword) throws InformaticsServerException {
+        UserDTO currentUser = getAuthenticatedUser();
+        User user = userRepository.getFirstByUsername(currentUser.username());
+        
+        if (user == null) {
+            throw new InformaticsServerException("userNotFound");
+        }
+        
+        String oldHash = UserUtils.getHash(oldPassword, user.getPasswordSalt());
+        if (!oldHash.equals(user.getPassword())) {
+            throw new InformaticsServerException("incorrectPassword");
+        }
+        
+        user.setPasswordSalt(UserUtils.getSalt());
+        user.setPassword(UserUtils.getHash(newPassword, user.getPasswordSalt()));
+        userRepository.save(user);
     }
 }

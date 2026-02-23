@@ -22,10 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
@@ -133,6 +130,7 @@ public class JudgeIntegration implements IJudgeIntegration{
                     case COMPILATION_COMPLETED:
                         submission.setStatus(SubmissionStatus.RUNNING);
                         submission.setCurrentTest(1);
+                        submission.setSubmissionTestResults(new java.util.ArrayList<>());
                         sendTestMessages(submission.getTask(), submission);
                         submissionRepository.save(submission);
                         break;
@@ -151,6 +149,14 @@ public class JudgeIntegration implements IJudgeIntegration{
                         if (!testCompletionMap.get(submission.getId()).containsKey(callback.testcaseKey())) {
                             return;
                         }
+                        
+                        // Create and store test result
+                        SubmissionTestResult testResult = createTestResult(callback);
+                        if (submission.getSubmissionTestResults() == null) {
+                            submission.setSubmissionTestResults(new ArrayList<>());
+                        }
+                        submission.getSubmissionTestResults().add(testResult);
+                        
                         testCompletionMap.get(submission.getId()).remove(callback.testcaseKey());
                         if (testCompletionMap.get(submission.getId()).isEmpty()) {
                             finalizeSubmission(submission, callback);
@@ -158,7 +164,8 @@ public class JudgeIntegration implements IJudgeIntegration{
                         }
                         submission.setCurrentTest(testCompletionMap.get(submission.getId()).firstEntry().getValue());
                         submissionRepository.save(submission);
-                        log.info("Test completed for submission: {}, test case: {}", submission.getId(), callback.testcaseKey());
+                        log.info("Test completed for submission: {}, test case: {}, score: {}, status: {}", 
+                                submission.getId(), callback.testcaseKey(), testResult.getScore(), testResult.getTestStatus());
                         break;
                     default:
                 }
@@ -169,18 +176,58 @@ public class JudgeIntegration implements IJudgeIntegration{
         }
     }
 
+    private SubmissionTestResult createTestResult(KafkaCallback callback) {
+        SubmissionTestResult testResult = new SubmissionTestResult();
+        testResult.setTestKey(callback.testcaseKey());
+        testResult.setTestStatus(callback.status());
+        testResult.setMessage(callback.message());
+        
+        // Normalize score from 0-100 (Long) to 0.0-1.0 (Float)
+        if (callback.score() != null) {
+            testResult.setScore(callback.score() / 100.0f);
+        } else {
+            testResult.setScore(0.0f);
+        }
+        
+        // Convert time and memory from Long to Integer
+        if (callback.timeMillis() != null) {
+            testResult.setTime(callback.timeMillis().intValue());
+        }
+        if (callback.memoryKB() != null) {
+            testResult.setMemory(callback.memoryKB().intValue());
+        }
+        
+        return testResult;
+    }
+
     private void finalizeSubmission(Submission submission, KafkaCallback callback) {
         if (submission.getStatus() == SubmissionStatus.COMPILATION_ERROR) {
             submission.setScore(0f);
             submission.setCompilationMessage(callback.message());
         } else {
-            float finalScore = submission.getSubmissionTestResults().stream().map(SubmissionTestResult::getScore).reduce(0f, (sum, result) -> sum + result);
-            if (finalScore == 0f) {
-                submission.setStatus(SubmissionStatus.FAILED);
-            } else if (submission.getSubmissionTestResults().stream().allMatch(res -> res.getScore() == 1f)) {
-                submission.setStatus(SubmissionStatus.CORRECT);
+            // Check for special test statuses that should be reflected in submission status
+            boolean hasTimeLimitExceeded = submission.getSubmissionTestResults().stream()
+                    .anyMatch(res -> res.getTestStatus() == ge.freeuni.informatics.common.model.submission.TestStatus.TIME_LIMIT_EXCEEDED);
+            boolean hasMemoryLimitExceeded = submission.getSubmissionTestResults().stream()
+                    .anyMatch(res -> res.getTestStatus() == ge.freeuni.informatics.common.model.submission.TestStatus.MEMORY_LIMIT_EXCEEDED);
+            boolean hasRuntimeError = submission.getSubmissionTestResults().stream()
+                    .anyMatch(res -> res.getTestStatus() == ge.freeuni.informatics.common.model.submission.TestStatus.RUNTIME_ERROR);
+            
+            if (hasTimeLimitExceeded) {
+                submission.setStatus(SubmissionStatus.TIME_LIMIT_EXCEEDED);
+            } else if (hasMemoryLimitExceeded) {
+                submission.setStatus(SubmissionStatus.MEMORY_LIMIT_EXCEEDED);
+            } else if (hasRuntimeError) {
+                submission.setStatus(SubmissionStatus.RUNTIME_ERROR);
             } else {
-                submission.setStatus(SubmissionStatus.PARTIAL);
+                float finalScore = submission.getSubmissionTestResults().stream().map(SubmissionTestResult::getScore).reduce(0f, (sum, result) -> sum + result);
+                if (finalScore == 0f) {
+                    submission.setStatus(SubmissionStatus.FAILED);
+                } else if (submission.getSubmissionTestResults().stream().allMatch(res -> res.getScore() == 1f)) {
+                    submission.setStatus(SubmissionStatus.CORRECT);
+                } else {
+                    submission.setStatus(SubmissionStatus.PARTIAL);
+                }
             }
         }
         float finalScore = 0f;

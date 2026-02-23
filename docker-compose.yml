@@ -25,8 +25,8 @@ services:
     profiles:
       - dev
     volumes:
-        - /home/informatics/dev/data:/var/lib/postgresql/data
-        - ./docker/db/conf/postgresql.conf:/var/lib/postgresql/data/postgresql.conf
+        # PG 18+ mount at /var/lib/postgresql. To migrate from PG16 without losing data: ./docker/scripts/migrate-postgres-to-18.sh
+        - /home/informatics/dev/data_pg:/var/lib/postgresql
         - /home/informatics/dev/logs/db:/logs
     environment:
       POSTGRES_DB: ${DB_NAME}

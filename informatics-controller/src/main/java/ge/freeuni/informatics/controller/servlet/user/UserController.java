@@ -2,7 +2,9 @@ package ge.freeuni.informatics.controller.servlet.user;
 
 import ge.freeuni.informatics.common.dto.AuthenticationDetails;
 import ge.freeuni.informatics.common.dto.UserDTO;
+import ge.freeuni.informatics.common.dto.UserProfileDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
+import ge.freeuni.informatics.common.model.user.User;
 import ge.freeuni.informatics.controller.model.*;
 import ge.freeuni.informatics.server.user.IUserManager;
 import jakarta.servlet.ServletException;
@@ -12,6 +14,7 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,6 +46,7 @@ public class UserController {
                             registerDTO.getFirstName(),
                             registerDTO.getLastName(),
                             0,
+                            null,
                             null
                     ), registerDTO.getPassword());
             return ResponseEntity.ok(response);
@@ -71,13 +75,10 @@ public class UserController {
             }
             request.login(authenticationDetails.username(), authenticationDetails.password());
             
-            // Handle remember me if requested
             if (authenticationDetails.rememberMe() != null && authenticationDetails.rememberMe()) {
-                // Set remember-me parameter in request for Spring Security to process
                 request.setAttribute("remember-me", "true");
-                // Manually trigger remember me services
                 rememberMeServices.loginSuccess(request, response, 
-                    org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication());
+                    SecurityContextHolder.getContext().getAuthentication());
             }
             
             return ResponseEntity.ok(new LoginResponse(userManager.getAuthenticatedUser().username()));
@@ -104,6 +105,19 @@ public class UserController {
             return ResponseEntity.ok(userManager.getAuthenticatedUser());
         } catch (InformaticsServerException e) {
             return null;
+        }
+    }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<UserDTO> getUserById(@PathVariable Long userId) {
+        try {
+            User user = userManager.getUser(userId);
+            if (user == null) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok(UserDTO.toDTO(user));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
         }
     }
 
@@ -135,6 +149,28 @@ public class UserController {
             return new InformaticsResponse(ex.getCode());
         }
         return new InformaticsResponse(null);
+    }
+
+    @GetMapping("/user/{userId}/profile")
+    public ResponseEntity<UserProfileDTO> getUserProfile(@PathVariable Long userId) {
+        try {
+            UserProfileDTO profile = userManager.getUserProfile(userId);
+            return ResponseEntity.ok(profile);
+        } catch (InformaticsServerException ex) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping("/user/change-password")
+    public ResponseEntity<InformaticsResponse> changePassword(@RequestBody ChangePasswordRequest request) {
+        InformaticsResponse response = new InformaticsResponse();
+        try {
+            userManager.changePassword(request.getOldPassword(), request.getNewPassword());
+            return ResponseEntity.ok(response);
+        } catch (InformaticsServerException ex) {
+            response.setMessage(ex.getCode());
+            return ResponseEntity.badRequest().body(response);
+        }
     }
 
 }

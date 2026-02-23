@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public record ContestantResultDTO(
+        Long id,
         Float totalScore,
         Long contestantId,
         Long contestId,
@@ -61,6 +62,7 @@ public record ContestantResultDTO(
                 .collect(Collectors.toMap(TaskResultDTO::getTaskCode, taskResultDTO -> taskResultDTO));
 
         return new ContestantResultDTO(
+                contestantResult.getId(),
                 contestantResult.getTotalScore(),
                 contestantResult.getContestantId(),
                 contestantResult.getContest().getId(),
@@ -72,6 +74,7 @@ public record ContestantResultDTO(
 
     public static ContestantResult fromDTO(ContestantResultDTO contestantResultDTO, Contest contest) {
         ContestantResult contestantResult = new ContestantResult();
+        contestantResult.setId(contestantResultDTO.id());
         contestantResult.setTaskResults(contestantResultDTO
                 .taskResults()
                 .values()
@@ -93,6 +96,7 @@ public record ContestantResultDTO(
     }
 
     public static class Builder {
+        private Long id;
         private Float totalScore;
         private Long contestantId;
         private Long contestId;
@@ -106,12 +110,18 @@ public record ContestantResultDTO(
         }
 
         public Builder(ContestantResultDTO source) {
+            this.id = source.id();
             this.totalScore = source.totalScore();
             this.contestantId = source.contestantId();
             this.contestId = source.contestId();
             this.username = source.username();
             this.taskResults = source.taskResults() != null ? new HashMap<>(source.taskResults()) : new HashMap<>();
             this.taskNames = source.taskNames() != null ? new HashMap<>(source.taskNames()) : new HashMap<>();
+        }
+
+        public Builder id(Long id) {
+            this.id = id;
+            return this;
         }
 
         public Builder totalScore(Float totalScore) {
@@ -169,6 +179,7 @@ public record ContestantResultDTO(
 
         public ContestantResultDTO build() {
             return new ContestantResultDTO(
+                    id,
                     totalScore,
                     contestantId,
                     contestId,

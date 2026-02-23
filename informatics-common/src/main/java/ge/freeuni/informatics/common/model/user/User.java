@@ -2,6 +2,7 @@ package ge.freeuni.informatics.common.model.user;
 
 
 import jakarta.persistence.*;
+import java.util.Date;
 
 @Entity
 @Table(name = "principal")
@@ -31,6 +32,13 @@ public class User {
 
     @Column(name = "email", nullable = false)
     private String email;
+
+    @Column(name = "last_login")
+    private Date lastLogin;
+
+    @Column(name = "registration_time")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date registrationTime;
 
     @Version
     private Integer version;
@@ -97,6 +105,22 @@ public class User {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public Date getLastLogin() {
+        return lastLogin;
+    }
+
+    public void setLastLogin(Date lastLogin) {
+        this.lastLogin = lastLogin;
+    }
+
+    public Date getRegistrationTime() {
+        return registrationTime;
+    }
+
+    public void setRegistrationTime(Date registrationTime) {
+        this.registrationTime = registrationTime;
     }
 
     public Integer getVersion() {

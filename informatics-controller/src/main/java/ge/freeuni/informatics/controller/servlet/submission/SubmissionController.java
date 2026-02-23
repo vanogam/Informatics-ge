@@ -1,11 +1,14 @@
 package ge.freeuni.informatics.controller.servlet.submission;
 
+import ge.freeuni.informatics.common.dto.UserProblemDTO;
 import ge.freeuni.informatics.common.dto.SubmissionDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.CodeLanguage;
+import ge.freeuni.informatics.common.model.user.ProblemAttemptStatus;
 import ge.freeuni.informatics.controller.model.CodeLanguageDTO;
 import ge.freeuni.informatics.controller.model.GetLanguagesResponse;
 import ge.freeuni.informatics.controller.model.InformaticsResponse;
+import ge.freeuni.informatics.controller.model.SubmitResponse;
 import ge.freeuni.informatics.controller.model.TextSubmitRequest;
 import ge.freeuni.informatics.server.files.FileManager;
 import ge.freeuni.informatics.server.submission.ISubmissionManager;
@@ -17,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api")
@@ -45,8 +49,8 @@ public class SubmissionController {
     }
 
     @PostMapping("/submit")
-    public ResponseEntity<InformaticsResponse> submit(@RequestBody TextSubmitRequest request) {
-        InformaticsResponse response = new InformaticsResponse();
+    public ResponseEntity<SubmitResponse> submit(@RequestBody TextSubmitRequest request) {
+        SubmitResponse response = new SubmitResponse();
 
         SubmissionDTO submissionDTO;
         try {
@@ -64,15 +68,46 @@ public class SubmissionController {
                     );
         } catch (InformaticsServerException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(new InformaticsResponse());
+                    .body(new SubmitResponse());
         }
 
         try {
-            submissionManager.addSubmission(submissionDTO);
+            Long submissionId = submissionManager.addSubmission(submissionDTO);
+            response.setSubmissionId(submissionId);
             return ResponseEntity.ok(response);
         } catch (InformaticsServerException e) {
             response.setMessage(e.getCode());
             return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    @GetMapping("/user/{userId}/submissions")
+    public ResponseEntity<List<SubmissionDTO>> getUserSubmissions(
+            @PathVariable Long userId,
+            @RequestParam(required = false) Long contestId,
+            @RequestParam(required = false) Long roomId,
+            @RequestParam(required = false, defaultValue = "0") Integer offset,
+            @RequestParam(required = false, defaultValue = "20") Integer limit) {
+        try {
+            List<SubmissionDTO> submissions = submissionManager.filter(userId, null, contestId, roomId, offset, limit);
+            return ResponseEntity.ok(submissions);
+        } catch (InformaticsServerException ex) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/user/{userId}/problems/{status}")
+    public ResponseEntity<List<UserProblemDTO>> getUserProblems(
+            @PathVariable Long userId,
+            @PathVariable String status) {
+        try {
+            ProblemAttemptStatus attemptStatus = ProblemAttemptStatus.valueOf(status.toUpperCase());
+            List<UserProblemDTO> problems = submissionManager.getUserProblems(userId, attemptStatus);
+            return ResponseEntity.ok(problems);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().build();
+        } catch (InformaticsServerException ex) {
+            return ResponseEntity.badRequest().build();
         }
     }
 }

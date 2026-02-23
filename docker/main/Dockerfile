@@ -1,7 +1,7 @@
 FROM amazoncorretto:21-alpine
 WORKDIR /opt/app
 
-COPY informatics-system/target-informatics/Informatics.jar Informatics.jar
+COPY informatics-system/target-informatics/Informatics-exec.jar Informatics.jar
 COPY docker/run.sh run.sh
 RUN ["chmod", "+x", "/opt/app/run.sh"]
 

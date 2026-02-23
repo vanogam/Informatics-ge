@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Console Appender -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- File Appender for all test logs -->
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>target/test-logs/acceptance-tests.log</file>
+        <append>false</append>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- File Appender for mock Kafka worker -->
+    <appender name="MOCK_WORKER_FILE" class="ch.qos.logback.core.FileAppender">
+        <file>target/test-logs/mock-worker.log</file>
+        <append>false</append>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- File Appender for submission processing -->
+    <appender name="SUBMISSION_FILE" class="ch.qos.logback.core.FileAppender">
+        <file>target/test-logs/submissions.log</file>
+        <append>false</append>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- File Appender for judge integration -->
+    <appender name="JUDGE_FILE" class="ch.qos.logback.core.FileAppender">
+        <file>target/test-logs/judge-integration.log</file>
+        <append>false</append>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Specific loggers with file output -->
+    <logger name="ge.freeuni.informatics.acceptance.mock.MockKafkaWorker" level="DEBUG" additivity="false">
+        <appender-ref ref="MOCK_WORKER_FILE" />
+        <appender-ref ref="CONSOLE" />
+    </logger>
+    
+    <logger name="ge.freeuni.informatics.judgeintegration" level="DEBUG" additivity="false">
+        <appender-ref ref="JUDGE_FILE" />
+        <appender-ref ref="CONSOLE" />
+    </logger>
+
+    <logger name="ge.freeuni.informatics.server.submission" level="DEBUG" additivity="false">
+        <appender-ref ref="SUBMISSION_FILE" />
+        <appender-ref ref="CONSOLE" />
+    </logger>
+
+    <logger name="ge.freeuni.informatics.acceptance" level="DEBUG" additivity="false">
+        <appender-ref ref="FILE" />
+        <appender-ref ref="CONSOLE" />
+    </logger>
+
+    <!-- Spring async debugging -->
+    <logger name="org.springframework.scheduling" level="DEBUG" additivity="false">
+        <appender-ref ref="FILE" />
+        <appender-ref ref="CONSOLE" />
+    </logger>
+
+    <logger name="ge.freeuni.informatics" level="INFO"/>
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="org.hibernate" level="WARN"/>
+    <logger name="org.apache.kafka" level="WARN"/>
+    <logger name="kafka" level="WARN"/>
+
+    <root level="WARN">
+        <appender-ref ref="FILE" />
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>

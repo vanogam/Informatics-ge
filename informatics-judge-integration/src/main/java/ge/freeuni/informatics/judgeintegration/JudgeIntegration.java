@@ -4,10 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ge.freeuni.informatics.common.events.SubmissionEvent;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.CodeLanguage;
+import ge.freeuni.informatics.common.model.customtest.CustomTestRun;
 import ge.freeuni.informatics.common.model.submission.Submission;
 import ge.freeuni.informatics.common.model.submission.SubmissionStatus;
 import ge.freeuni.informatics.common.model.submission.SubmissionTestResult;
-import ge.freeuni.informatics.common.model.task.CheckerType;
 import ge.freeuni.informatics.common.model.task.Task;
 import ge.freeuni.informatics.common.model.task.Testcase;
 import ge.freeuni.informatics.judgeintegration.model.KafkaCallback;
@@ -44,6 +44,18 @@ public class JudgeIntegration implements IJudgeIntegration{
 
     private static final ConcurrentHashMap<Long, Object> submissionLocks = new ConcurrentHashMap<>();
 
+    private static final int COMPILATION_MESSAGE_MAX_LENGTH = 990;
+
+    private String truncateCompilationMessage(String message) {
+        if (message == null) {
+            return null;
+        }
+        if (message.length() <= COMPILATION_MESSAGE_MAX_LENGTH) {
+            return message;
+        }
+        return message.substring(0, COMPILATION_MESSAGE_MAX_LENGTH);
+    }
+
     @Override
     public void addSubmission(Task task, Submission submission) throws InformaticsServerException {
         KafkaTask kafkaTask = new KafkaTask(
@@ -68,6 +80,35 @@ public class JudgeIntegration implements IJudgeIntegration{
             kafkaProducerService.sendMessage("submission-topic", message);
         } catch (IOException e) {
             log.error("Failed to serialize compilation kafka message", e);
+            throw new InformaticsServerException("serializationError", e);
+        }
+    }
+
+    @Override
+    public void addCustomTest(Task task, CustomTestRun run, CodeLanguage language) throws InformaticsServerException {
+        String contestId = task.getContest() != null ? String.valueOf(task.getContest().getId()) : "0";
+
+        KafkaTask kafkaTask = new KafkaTask(
+                String.valueOf(task.getId()),
+                contestId,
+                String.valueOf(run.getId()),
+                run.getSubmissionFile(),
+                language,
+                task.getTimeLimitMillis(),
+                task.getMemoryLimitMB() * 1024,
+                null,
+                null,
+                null,
+                task.getCheckerType(),
+                Stage.COMPILATION
+        );
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            String message = objectMapper.writeValueAsString(kafkaTask);
+            log.debug("Publishing custom test compilation message: {}", message);
+            kafkaProducerService.sendMessage("submission-topic", message);
+        } catch (IOException e) {
+            log.error("Failed to serialize custom test compilation kafka message", e);
             throw new InformaticsServerException("serializationError", e);
         }
     }
@@ -115,7 +156,14 @@ public class JudgeIntegration implements IJudgeIntegration{
             ObjectMapper objectMapper = new ObjectMapper();
             KafkaCallback callback = objectMapper.readValue(message, KafkaCallback.class);
             log.info("`Received callback for submission`: {}, {}, {}", callback.submissionId(), callback.messageType(), callback.testcaseKey());
-            Submission submission = submissionRepository.getReferenceById(callback.submissionId());
+
+            // If this callback is not for a regular submission (e.g., custom test run),
+            // ignore it here and let other listeners handle it.
+            Submission submission = submissionRepository.findById(callback.submissionId()).orElse(null);
+            if (submission == null) {
+                log.info("No Submission entity found for id {}, skipping in JudgeIntegration", callback.submissionId());
+                return;
+            }
             if (!submissionLocks.containsKey(submission.getId())) {
                 log.warn("No lock found for submission: {}", submission.getId());
                 // TODO: Add restart handling
@@ -131,6 +179,7 @@ public class JudgeIntegration implements IJudgeIntegration{
                         submission.setStatus(SubmissionStatus.RUNNING);
                         submission.setCurrentTest(1);
                         submission.setSubmissionTestResults(new java.util.ArrayList<>());
+                        submission.setCompilationMessage(truncateCompilationMessage(callback.message()));
                         sendTestMessages(submission.getTask(), submission);
                         submissionRepository.save(submission);
                         break;
@@ -141,7 +190,7 @@ public class JudgeIntegration implements IJudgeIntegration{
                         break;
                     case SYSTEM_ERROR:
                         submission.setStatus(SubmissionStatus.SYSTEM_ERROR);
-                        submission.setCompilationMessage(callback.message());
+                        submission.setCompilationMessage(truncateCompilationMessage(callback.message()));
                         finalizeSubmission(submission, callback);
                         log.error("System error for submission: {}, message: {}", submission.getId(), callback.message());
                         break;
@@ -181,10 +230,12 @@ public class JudgeIntegration implements IJudgeIntegration{
         testResult.setTestKey(callback.testcaseKey());
         testResult.setTestStatus(callback.status());
         testResult.setMessage(callback.message());
+        testResult.setOutcome(callback.outcome());
         
-        // Normalize score from 0-100 (Long) to 0.0-1.0 (Float)
+        // Normalize score to 0.0-1.0 (Float). Worker sends 0-1 scale; legacy may send 0-100.
         if (callback.score() != null) {
-            testResult.setScore(callback.score() / 100.0f);
+            long s = callback.score();
+            testResult.setScore(s <= 1 ? (float) s : s / 100.0f);
         } else {
             testResult.setScore(0.0f);
         }
@@ -203,31 +254,15 @@ public class JudgeIntegration implements IJudgeIntegration{
     private void finalizeSubmission(Submission submission, KafkaCallback callback) {
         if (submission.getStatus() == SubmissionStatus.COMPILATION_ERROR) {
             submission.setScore(0f);
-            submission.setCompilationMessage(callback.message());
+            submission.setCompilationMessage(truncateCompilationMessage(callback.message()));
         } else {
-            // Check for special test statuses that should be reflected in submission status
-            boolean hasTimeLimitExceeded = submission.getSubmissionTestResults().stream()
-                    .anyMatch(res -> res.getTestStatus() == ge.freeuni.informatics.common.model.submission.TestStatus.TIME_LIMIT_EXCEEDED);
-            boolean hasMemoryLimitExceeded = submission.getSubmissionTestResults().stream()
-                    .anyMatch(res -> res.getTestStatus() == ge.freeuni.informatics.common.model.submission.TestStatus.MEMORY_LIMIT_EXCEEDED);
-            boolean hasRuntimeError = submission.getSubmissionTestResults().stream()
-                    .anyMatch(res -> res.getTestStatus() == ge.freeuni.informatics.common.model.submission.TestStatus.RUNTIME_ERROR);
-            
-            if (hasTimeLimitExceeded) {
-                submission.setStatus(SubmissionStatus.TIME_LIMIT_EXCEEDED);
-            } else if (hasMemoryLimitExceeded) {
-                submission.setStatus(SubmissionStatus.MEMORY_LIMIT_EXCEEDED);
-            } else if (hasRuntimeError) {
-                submission.setStatus(SubmissionStatus.RUNTIME_ERROR);
+            float finalScore = submission.getSubmissionTestResults().stream().map(SubmissionTestResult::getScore).reduce(0f, (sum, result) -> sum + result);
+            if (finalScore == 0f) {
+                submission.setStatus(SubmissionStatus.FAILED);
+            } else if (submission.getSubmissionTestResults().stream().allMatch(res -> res.getScore() == 1f)) {
+                submission.setStatus(SubmissionStatus.CORRECT);
             } else {
-                float finalScore = submission.getSubmissionTestResults().stream().map(SubmissionTestResult::getScore).reduce(0f, (sum, result) -> sum + result);
-                if (finalScore == 0f) {
-                    submission.setStatus(SubmissionStatus.FAILED);
-                } else if (submission.getSubmissionTestResults().stream().allMatch(res -> res.getScore() == 1f)) {
-                    submission.setStatus(SubmissionStatus.CORRECT);
-                } else {
-                    submission.setStatus(SubmissionStatus.PARTIAL);
-                }
+                submission.setStatus(SubmissionStatus.PARTIAL);
             }
         }
         float finalScore = 0f;

@@ -121,6 +121,19 @@ public class UserController {
         }
     }
 
+    @GetMapping("/user/username/{username}")
+    public ResponseEntity<UserDTO> getUserByUsername(@PathVariable String username) {
+        try {
+            User user = userManager.getUserByUsername(username);
+            if (user == null) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok(UserDTO.toDTO(user));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
     @GetMapping("/recover/verify/{link}")
     public InformaticsResponse verifyLink(@PathVariable String link) {
         try {
@@ -155,6 +168,16 @@ public class UserController {
     public ResponseEntity<UserProfileDTO> getUserProfile(@PathVariable Long userId) {
         try {
             UserProfileDTO profile = userManager.getUserProfile(userId);
+            return ResponseEntity.ok(profile);
+        } catch (InformaticsServerException ex) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/user/username/{username}/profile")
+    public ResponseEntity<UserProfileDTO> getUserProfileByUsername(@PathVariable String username) {
+        try {
+            UserProfileDTO profile = userManager.getUserProfileByUsername(username);
             return ResponseEntity.ok(profile);
         } catch (InformaticsServerException ex) {
             return ResponseEntity.badRequest().build();

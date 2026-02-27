@@ -7,26 +7,28 @@ import SubmissionsList from '../Components/SubmissionsList'
 import ChangePassword from '../Components/ChangePassword'
 
 export default function UserProfile() {
-    const { userId } = useParams()
+    const { username } = useParams()
     const axiosInstance = useContext(AxiosContext)
     const authContext = useContext(AuthContext)
     const [profile, setProfile] = useState(null)
     const [user, setUser] = useState(null)
     const [loading, setLoading] = useState(true)
     const [tabValue, setTabValue] = useState(0)
-    const [currentUserId, setCurrentUserId] = useState(null)
+    const [currentUserUsername, setCurrentUserUsername] = useState(null)
+    const [targetUsername, setTargetUsername] = useState(null)
 
     useEffect(() => {
         axiosInstance.get('/user')
             .then((currentUserResponse) => {
-                const currentId = currentUserResponse.data.id
-                setCurrentUserId(currentId)
+                const currentUsername = currentUserResponse.data.username
+                setCurrentUserUsername(currentUsername)
                 
-                const targetUserId = userId || currentId
+                const resolvedTargetUsername = username || currentUsername
+                setTargetUsername(resolvedTargetUsername)
                 
                 return Promise.all([
-                    axiosInstance.get(`/user/${targetUserId}`),
-                    axiosInstance.get(`/user/${targetUserId}/profile`)
+                    axiosInstance.get(`/user/username/${resolvedTargetUsername}`),
+                    axiosInstance.get(`/user/username/${resolvedTargetUsername}/profile`)
                 ])
             })
             .then(([userResponse, profileResponse]) => {
@@ -38,7 +40,7 @@ export default function UserProfile() {
                 console.error('Error fetching user data:', error)
                 setLoading(false)
             })
-    }, [userId, axiosInstance])
+    }, [username, axiosInstance])
 
     const handleTabChange = (event, newValue) => {
         setTabValue(newValue)
@@ -72,48 +74,55 @@ export default function UserProfile() {
         )
     }
 
-    const targetUserId = userId ? Number(userId) : (user?.id || currentUserId)
-    const isOwnProfile = currentUserId && targetUserId && targetUserId === currentUserId
+    const resolvedTargetUsername = targetUsername || user?.username || currentUserUsername
+    const isOwnProfile = currentUserUsername && resolvedTargetUsername && resolvedTargetUsername === currentUserUsername
 
     return (
         <Box sx={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-            <Card sx={{ marginBottom: '2rem' }}>
-                <CardContent>
-                    <Typography variant="h4" component="h1" gutterBottom>
-                        {user ? `${user.firstName} ${user.lastName}` : profile.username}
-                    </Typography>
-                    {user && (
-                        <Typography variant="body2" color="text.secondary" sx={{ marginTop: '0.5rem' }}>
-                            @{user.username}
-                        </Typography>
-                    )}
-                    <Typography variant="body1" color="text.secondary" sx={{ marginTop: '1rem' }}>
-                        <strong>ამოხსნილი ამოცანები:</strong> {profile.solvedProblemsCount}
-                    </Typography>
-                    <Typography variant="body1" color="text.secondary" sx={{ marginTop: '0.5rem' }}>
-                        <strong>ბოლო ავტორიზაცია:</strong> {formatDate(profile.lastLogin)}
-                    </Typography>
-                    <Typography variant="body1" color="text.secondary" sx={{ marginTop: '0.5rem' }}>
-                        <strong>რეგისტრაციის თარიღი:</strong> {formatDate(profile.registrationTime)}
-                    </Typography>
-                </CardContent>
-            </Card>
-
             <Card>
                 <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                     <Tabs value={tabValue} onChange={handleTabChange}>
+                        <Tab label="Information" />
                         <Tab label="მცდელობები" />
                         {isOwnProfile && <Tab label="პაროლის შეცვლა" />}
                     </Tabs>
                 </Box>
                 <Box sx={{ padding: '1rem' }}>
                     {tabValue === 0 && (
+                        <Card elevation={0}>
+                            <CardContent>
+                                {user && (
+                                    <>
+                                        <Typography variant="h4" component="h1" gutterBottom>
+                                            {profile.username}
+                                        </Typography>
+                                        <Typography variant="h5" component="h2" gutterBottom>
+                                            {`${user.firstName} ${user.lastName}`}
+                                        </Typography>
+                                    </>
+                                )}
+                                <Typography variant="body1" color="text.secondary" sx={{ marginTop: '1rem' }}>
+                                    <strong>ამოხსნილი ამოცანები:</strong> {profile.solvedProblemsCount}
+                                </Typography>
+                                <Typography variant="body1" color="text.secondary" sx={{ marginTop: '0.5rem' }}>
+                                    <strong>ბოლო ავტორიზაცია:</strong> {formatDate(profile.lastLogin)}
+                                </Typography>
+                                <Typography variant="body1" color="text.secondary" sx={{ marginTop: '0.5rem' }}>
+                                    <strong>რეგისტრაციის თარიღი:</strong> {formatDate(profile.registrationTime)}
+                                </Typography>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {tabValue === 1 && resolvedTargetUsername && (
                         <SubmissionsList
-                            getEndpoint={() => `/user/${targetUserId}/submissions`}
+                            getEndpoint={() => `/user/username/${resolvedTargetUsername}/submissions`}
                             title=""
+                            autoRefresh={false}
                         />
                     )}
-                    {tabValue === 1 && isOwnProfile && (
+
+                    {tabValue === 2 && isOwnProfile && (
                         <ChangePassword />
                     )}
                 </Box>

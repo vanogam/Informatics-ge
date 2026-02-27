@@ -1,7 +1,6 @@
 package ge.informatics.sandbox;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ge.informatics.sandbox.dao.SubmissionTestResultDao;
 import ge.informatics.sandbox.kafka.CallbackProducer;
 import ge.informatics.sandbox.model.*;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -145,7 +144,7 @@ public class JobConsumer {
         } else if (task.stage() == Stage.TESTING) {
             String testsPath = Config.get("fileStorageDirectory.url") + "/" + task.taskId();
             if (!sandbox.fileExists("/sandbox/tasks/" + task.taskId())) {
-                sandbox.uploadTar(compressFile(new File(testsPath), task.taskId(), "^("+ task.taskId() +"|tests)$"), "/sandbox/tasks/");
+                sandbox.uploadTar(compressFile(new File(testsPath), task.taskId(), "^("+ task.taskId() +"|tests|custom-tests)$"), "/sandbox/tasks/");
             } else {
                 String lastUpdateText = sandbox.readFile("/sandbox/tasks/" + task.taskId() + "/lastUpdate.txt");
                 long lastUpdate = 0;
@@ -159,21 +158,12 @@ public class JobConsumer {
                 }
                 if (currentUpdate > lastUpdate) {
                     log.info("Task {} has been updated, re-uploading files", task.taskId());
-                    sandbox.uploadTar(compressFile(new File(testsPath), task.taskId(), "^("+ task.taskId() +"|tests)$"), "/sandbox/tasks/");
+                    sandbox.uploadTar(compressFile(new File(testsPath), task.taskId(), "^("+ task.taskId() +"|tests|custom-tests)$"), "/sandbox/tasks/");
                 } else {
                     log.info("Task {} has not been updated, skipping upload", task.taskId());
                 }
             }
             TestResult result = sandbox.execute(task);
-            String outcome = sandbox.retrieveOutcome();
-            SubmissionTestResultDao.saveTestResult(task.submissionId(),
-                    task.testId(),
-                    result.getScore(),
-                    result.getStatus(),
-                    result.getMessage(),
-                    (int)result.getTimeMillis(),
-                    (int)result.getMemoryKB(),
-                    outcome);
             sendCallback(result);
         }
     }
@@ -190,7 +180,6 @@ public class JobConsumer {
         }
         String serverUrl = System.getenv("SERVER_URL");
         if (serverUrl == null || serverUrl.isEmpty()) {
-            // Default to http://main:8080 if not specified (for docker-compose)
             serverUrl = "http://main:8080";
         }
         JobConsumer consumer = new JobConsumer("kafka:9092", "worker", System.getenv("APP_ID"), serverUrl);

@@ -13,7 +13,8 @@ public record KafkaCallback(
         @JsonProperty("status") TestStatus status,
         @JsonProperty("exitCode") Integer exitCode,
         @JsonProperty("timeMillis") Long timeMillis,
-        @JsonProperty("memoryKB") Long memoryKB
+        @JsonProperty("memoryKB") Long memoryKB,
+        @JsonProperty("outcome") String outcome
 ) {
     @JsonCreator
     public KafkaCallback {

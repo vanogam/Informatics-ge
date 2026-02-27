@@ -195,7 +195,7 @@ public class Sandbox implements AutoCloseable {
             clearSubmissionDirectory();
             loadChecker(task);
             loadSubmission(task);
-            loadTest(task.taskId(), task.inputName(), task.outputName());
+            loadTest(task);
             log.debug("Test {} loaded for submission", task.testId());
             return executor.execute(dockerClient, containerId, task);
         } catch (Exception e) {
@@ -244,14 +244,21 @@ public class Sandbox implements AutoCloseable {
         log.debug("Cleared submission directory");
     }
 
-    private void loadTest(String taskId, String inputName, String outputName) throws IOException, InterruptedException {
-        copyFile(String.format("/sandbox/tasks/%s/tests/%s", taskId, inputName), taskId,
+    private void loadTest(Task task) throws IOException, InterruptedException {
+        String taskId = task.taskId();
+        String baseDir = "/sandbox/tasks/" + taskId;
+        String testsDirName = "tests";
+        if ("custom".equals(task.testId())) {
+            testsDirName = "custom-tests";
+        }
+
+        copyFile(String.format("%s/%s/%s", baseDir, testsDirName, task.inputName()), taskId,
                 "/sandbox/submission/input");
-        copyFile(String.format("/sandbox/tasks/%s/tests/%s", taskId, outputName), taskId,
+        copyFile(String.format("%s/%s/%s", baseDir, testsDirName, task.outputName()), taskId,
                 "/sandbox/checker/output");
 
         executeCommandSync(dockerClient, containerId, "touch /sandbox/submission/output");
-        log.debug("Loaded test {}-{} for task {}", inputName, outputName, taskId);
+        log.debug("Loaded test {}-{} for task {}", task.inputName(), task.outputName(), taskId);
     }
 
     private void copyFile(String src, String remoteName, String dest) throws InterruptedException, IOException {

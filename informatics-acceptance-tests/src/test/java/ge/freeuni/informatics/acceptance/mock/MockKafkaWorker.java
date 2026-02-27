@@ -107,7 +107,7 @@ public class MockKafkaWorker {
             sendCallback(new KafkaCallback(
                     submissionId,
                     CallbackType.COMPILATION_STARTED,
-                    null, null, null, null, null, null, null
+                    null, null, null, null, null, null, null, null
             ));
             
             // Simulate compilation time
@@ -120,7 +120,7 @@ public class MockKafkaWorker {
                         CallbackType.COMPILATION_FAILED,
                         null, 
                         "error: expected ';' before '}' token", // compilation error message
-                        null, null, null, null, null
+                        null, null, null, null, null, null
                 ));
                 log.info("=== MOCK WORKER === Compilation failed for submission {}", submissionId);
             } else {
@@ -128,7 +128,7 @@ public class MockKafkaWorker {
                 sendCallback(new KafkaCallback(
                         submissionId,
                         CallbackType.COMPILATION_COMPLETED,
-                        null, null, null, null, null, null, null
+                        null, null, null, null, null, null, null, null
                 ));
                 log.info("=== MOCK WORKER === Compilation completed for submission {}", submissionId);
             }
@@ -208,7 +208,8 @@ public class MockKafkaWorker {
                     status,
                     0, // exit code
                     timeMs, // time in ms
-                    1024L // memory in KB
+                    1024L, // memory in KB
+                    "Test outcome"
             ));
             
             log.info("=== MOCK WORKER === Test {} for submission {}: {} (score: {})", 

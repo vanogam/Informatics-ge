@@ -17,7 +17,7 @@ import {AxiosContext} from '../utils/axiosInstance'
 import getMessage from "./lang";
 import SubmissionTestResult from "../Pages/SubmissionTestResult";
 
-export default function SubmissionsList({getEndpoint, title}) {
+export default function SubmissionsList({getEndpoint, title, autoRefresh = true}) {
     const [submissions, setSubmissions] = useState([])
     const [selectedSubmission, setSelectedSubmission] = useState({})
     const [popUp, setPopUp] = useState(false)
@@ -29,19 +29,29 @@ export default function SubmissionsList({getEndpoint, title}) {
             axiosInstance
                 .get(endpoint)
                 .then((response) => {
-                    if (response.status === 200)
-                        setSubmissions(response.data.submissions)
-                    else return <>NO SUBMISSIONS FOUND</>
+                    if (response.status === 200) {
+                        const submissionsList = Array.isArray(response.data.submissions)
+                            ? response.data.submissions
+                            : []
+                        setSubmissions(submissionsList)
+                    } else {
+                        setSubmissions([])
+                    }
                 })
         }
         
         fetchSubmissions()
+
+        if (!autoRefresh) {
+            return
+        }
+
         const interval = setInterval(fetchSubmissions, 5000)
 
         return () => {
             clearInterval(interval)
         }
-    }, [getEndpoint, axiosInstance])
+    }, [getEndpoint, axiosInstance, autoRefresh])
 
     const highlightWithLineNumbers = (input, grammar, language) =>
         highlight(input, grammar, language)
@@ -164,7 +174,7 @@ export default function SubmissionsList({getEndpoint, title}) {
                             გაშვების დრო: {selectedSubmission.submissionTime}
                         </Typography>
                     </Paper>
-                    <Paper elevation={4} sx={{padding: '1rem', marginBottom: '1rem'}}>
+                    <Paper elevation={4} sx={{padding: '1rem', marginBottom: '1rem', userSelect: 'contain', WebkitUserSelect: 'contain'}}>
                         <Editor
                             value={selectedSubmission.text}
                             highlight={(code) =>

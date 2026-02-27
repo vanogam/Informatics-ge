@@ -139,7 +139,7 @@ function Navbar() {
 								<PersonIcon />
 								<Button
 									component={NavLink}
-									to="/profile"
+									to={`/user/${authContext.username}`}
 									sx={{
 										color: '#e1dce6',
 										textTransform: 'none',

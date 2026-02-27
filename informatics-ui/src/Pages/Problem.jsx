@@ -83,6 +83,35 @@ export default function Problem() {
     const [language, setLanguage] = useState("CPP")
     const [statement, setStatement] = useState("")
     const [taskOrder, setTaskOrder] = useState(null)
+    const editorWrapperRef = React.useRef(null)
+
+    useEffect(() => {
+        const wrapper = editorWrapperRef.current
+        if (!wrapper) return
+        const textarea = wrapper.querySelector('#codeArea')
+        if (!textarea) return
+        const scrollToCursor = () => {
+            const lineIndex = textarea.value.substring(0, textarea.selectionStart).split('\n').length - 1
+            const computed = getComputedStyle(textarea)
+            const lineHeightStr = computed.lineHeight
+            const lineHeight = lineHeightStr === 'normal'
+                ? parseFloat(computed.fontSize) * 1.2
+                : parseFloat(lineHeightStr)
+            const cursorTop = lineIndex * lineHeight
+            const cursorBottom = cursorTop + lineHeight
+            if (cursorTop < wrapper.scrollTop) {
+                wrapper.scrollTop = cursorTop
+            } else if (cursorBottom > wrapper.scrollTop + wrapper.clientHeight) {
+                wrapper.scrollTop = cursorBottom - wrapper.clientHeight
+            }
+        }
+        textarea.addEventListener('keyup', scrollToCursor)
+        textarea.addEventListener('click', scrollToCursor)
+        return () => {
+            textarea.removeEventListener('keyup', scrollToCursor)
+            textarea.removeEventListener('click', scrollToCursor)
+        }
+    }, [])
 
     const lang = ['CPP', 'PYTHON']
     useEffect(() => {
@@ -135,10 +164,10 @@ export default function Problem() {
                             <TableBody>
                                 {statement.publicTestcases.map((tc, idx) => (
                                     <TableRow key={idx}>
-                                        <TableCell>
+                                        <TableCell sx={{ userSelect: 'contain', WebkitUserSelect: 'contain' }}>
                                             <pre style={{ margin: 0 }}>{tc.inputSnippet}</pre>
                                         </TableCell>
-                                        <TableCell>
+                                        <TableCell sx={{ userSelect: 'contain', WebkitUserSelect: 'contain' }}>
                                             <pre style={{ margin: 0 }}>{tc.outputSnippet}</pre>
                                         </TableCell>
                                     </TableRow>
@@ -151,31 +180,33 @@ export default function Problem() {
             <Box
                 sx={{
                     paddingTop: '50px',
-                    paddingRight: '10%',
-
-                    paddingLeft: '10%',
+                    paddingRight: '64px',
+                    paddingLeft: '16px',
                     display: 'flex',
                     flexDirection: 'column',
-
+                    flex: 1,
+                    minWidth: 0,
                     fontSize: '20',
                 }}
             >
                 <p sx={{color: 'purple'}}>შეიყვანე კოდი: </p>
-                <Editor
-                    value={code[language].code}
-                    onValueChange={(change) => setCode({...code, [language]: {...code[language], code: change}})}
-                    highlight={(text) =>
-                        highlightWithLineNumbers(text, languages[code[language].grammar], code[language].grammar)
-                    }
-                    className="editor"
-                    textareaId="codeArea"
-                    style={{
-                        overflowY: 'auto',
-                        height: '55vh',
-                        fontFamily: '"Fira code", "Fira Mono", monospace',
-                        fontSize: 12,
-                    }}
-                />
+                <div ref={editorWrapperRef} style={{ minHeight: '55vh', maxHeight: '55vh', overflow: 'auto', width: '100%' }}>
+                    <Editor
+                        value={code[language].code}
+                        onValueChange={(change) => setCode({...code, [language]: {...code[language], code: change}})}
+                        highlight={(text) =>
+                            highlightWithLineNumbers(text, languages[code[language].grammar], code[language].grammar)
+                        }
+                        className="editor"
+                        textareaId="codeArea"
+                        style={{
+                            width: '100%',
+                            minHeight: '55vh',
+                            fontFamily: '"Fira code", "Fira Mono", monospace',
+                            fontSize: 12,
+                        }}
+                    />
+                </div>
                 <TextField
                     select
                     label={getMessage('ka', 'language')}

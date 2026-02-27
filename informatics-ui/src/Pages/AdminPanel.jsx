@@ -70,7 +70,10 @@ export default function AdminPanel() {
 			.get('/admin/workers')
 			.then((response) => {
 				if (response.data && response.data.workers) {
-					setWorkers(response.data.workers)
+					const sortedWorkers = [...response.data.workers].sort((a, b) =>
+						a.workerId.localeCompare(b.workerId, undefined, { numeric: true, sensitivity: 'base' })
+					)
+					setWorkers(sortedWorkers)
 					setError(null)
 				} else {
 					setError('Invalid response format')

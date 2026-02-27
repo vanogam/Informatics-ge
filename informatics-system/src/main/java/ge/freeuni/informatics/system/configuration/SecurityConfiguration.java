@@ -30,6 +30,8 @@ public class SecurityConfiguration {
             "/api/register",
             "/api/contests",
             "/api/csrf",
+            "/api/custom-test",
+            "/api/custom-test/*",
             "/error",
     };
 

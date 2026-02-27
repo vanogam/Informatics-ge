@@ -12,6 +12,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useContext } from 'react'
 import { AxiosContext } from '../utils/axiosInstance'
+import { getScoreRowBackground, getScoreRowHoverBackground } from '../styles/scoreColors'
 import ContestNavigationBar from '../Components/ContestNavigationBar'
 import getMessage from '../Components/lang'
 
@@ -48,21 +49,6 @@ function handleContestResponse(response, setProblems){
 }
 const baseTransparency = 0.2
 const hoverTransparency = 0.3
-function getRowColor(score) {
-	if (score === null || score === undefined) {
-		return 'transparent' // uncolored
-	}
-	if (score < 0.1) {
-		return `rgba(244, 67, 54, ${baseTransparency})` // red (light)
-	}
-	if (score > 0.1 && score < 99.9) {
-		return `rgba(255, 193, 7, ${baseTransparency})` // yellow (light)
-	}
-	if (score > 99.9) {
-		return `rgba(76, 175, 80, ${baseTransparency})` // green (light)
-	}
-	return 'transparent' // default
-}
 
 export default function Archive(){
 	const axiosInstance = useContext(AxiosContext)
@@ -123,7 +109,12 @@ export default function Archive(){
 							</TableRow>
 						) : (
 							problems.map((problem) => {
-								const rowColor = getRowColor(problem.score)
+								const rowColor = getScoreRowBackground(problem.score, baseTransparency)
+								const hoverColor = getScoreRowHoverBackground(
+									problem.score,
+									baseTransparency,
+									hoverTransparency
+								)
 								return (
 									<TableRow
 										key={`${problem.contestId}-${problem.id}`}
@@ -133,9 +124,7 @@ export default function Archive(){
 											cursor: 'pointer',
 											backgroundColor: rowColor,
 											'&:hover': {
-												backgroundColor: rowColor === 'transparent' 
-													? 'rgba(0, 0, 0, 0.04)' 
-													: rowColor.replace(`, ${baseTransparency}`, `, ${hoverTransparency}`) // Darker on hover
+												backgroundColor: hoverColor,
 											}
 										}}
 									>

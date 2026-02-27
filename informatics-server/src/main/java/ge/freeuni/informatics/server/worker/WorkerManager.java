@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Component
@@ -231,7 +232,10 @@ public class WorkerManager implements IWorkerManager {
     public WorkerDTO createWorkerInstance() {
         Worker worker = new Worker();
         worker.setLastHeartbeat(new Date());
-        worker.setWorkerId("unassigned");
+        // Use a unique temporary worker ID to avoid unique constraint violations
+        // when creating multiple workers in a single transaction.
+        String tempWorkerId = workerIdPrefix + "-temp-" + UUID.randomUUID();
+        worker.setWorkerId(tempWorkerId);
         worker.setStartTime(new Date());
         worker.setStatus(WorkerStatus.OFFLINE);
         worker.setJobsProcessed(0L);

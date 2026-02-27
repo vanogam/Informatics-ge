@@ -5,11 +5,8 @@ import ge.freeuni.informatics.common.dto.SubmissionDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.CodeLanguage;
 import ge.freeuni.informatics.common.model.user.ProblemAttemptStatus;
-import ge.freeuni.informatics.controller.model.CodeLanguageDTO;
-import ge.freeuni.informatics.controller.model.GetLanguagesResponse;
-import ge.freeuni.informatics.controller.model.InformaticsResponse;
-import ge.freeuni.informatics.controller.model.SubmitResponse;
-import ge.freeuni.informatics.controller.model.TextSubmitRequest;
+import ge.freeuni.informatics.common.model.user.User;
+import ge.freeuni.informatics.controller.model.*;
 import ge.freeuni.informatics.server.files.FileManager;
 import ge.freeuni.informatics.server.submission.ISubmissionManager;
 import ge.freeuni.informatics.server.user.IUserManager;
@@ -96,6 +93,27 @@ public class SubmissionController {
         }
     }
 
+    @GetMapping("/user/username/{username}/submissions")
+    public ResponseEntity<SubmissionListResponse> getUserSubmissionsByUsername(
+            @PathVariable String username,
+            @RequestParam(required = false) Long contestId,
+            @RequestParam(required = false) Long roomId,
+            @RequestParam(required = false, defaultValue = "0") Integer offset,
+            @RequestParam(required = false, defaultValue = "20") Integer limit) {
+        try {
+            User user = userManager.getUserByUsername(username);
+            if (user == null) {
+                return ResponseEntity.notFound().build();
+            }
+            List<SubmissionDTO> submissions = submissionManager.filter(user.getId(), null, contestId, roomId, offset, limit);
+            SubmissionListResponse response = new SubmissionListResponse("SUCCESS", null);
+            response.setSubmissions(submissions);
+            return ResponseEntity.ok(response);
+        } catch (InformaticsServerException ex) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
     @GetMapping("/user/{userId}/problems/{status}")
     public ResponseEntity<List<UserProblemDTO>> getUserProblems(
             @PathVariable Long userId,
@@ -104,9 +122,7 @@ public class SubmissionController {
             ProblemAttemptStatus attemptStatus = ProblemAttemptStatus.valueOf(status.toUpperCase());
             List<UserProblemDTO> problems = submissionManager.getUserProblems(userId, attemptStatus);
             return ResponseEntity.ok(problems);
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.badRequest().build();
-        } catch (InformaticsServerException ex) {
+        } catch (IllegalArgumentException | InformaticsServerException ex) {
             return ResponseEntity.badRequest().build();
         }
     }

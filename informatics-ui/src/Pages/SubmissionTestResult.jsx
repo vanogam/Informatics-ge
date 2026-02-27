@@ -11,7 +11,8 @@ const SubmissionTestResult = ({testcase}) => {
         sx={{
             padding: '1rem',
             marginBottom: '1rem',
-
+            userSelect: 'contain',
+            WebkitUserSelect: 'contain',
             backgroundColor:
                 testcase.testStatus === 'CORRECT' ? '#CFE8D3' : '#E8CFD4',
         }}
@@ -42,7 +43,7 @@ const SubmissionTestResult = ({testcase}) => {
             </Typography>
         </Box>
         {expanded && (
-            <Box sx={{marginTop: '1rem'}}>
+            <Box sx={{marginTop: '1rem', userSelect: 'contain', WebkitUserSelect: 'contain'}}>
                 <Typography sx={{fontSize: '15px', fontWeight: 700}}>{getMessage('ka', 'inputContent')}:</Typography>
                 <Typography
                     component="pre"

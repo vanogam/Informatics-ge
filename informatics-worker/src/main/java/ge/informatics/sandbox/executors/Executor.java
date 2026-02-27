@@ -73,6 +73,9 @@ public interface Executor {
         }
 
         evaluate(client, containerId, builder);
+        // Attach contestant output snapshot (first 1000 chars) to the result
+        String outcome = retrieveOutcome(client, containerId);
+        builder.withOutcome(outcome);
         return builder.build();
     }
 
@@ -108,5 +111,14 @@ public interface Executor {
         } else {
             builder.withStatus(TestStatus.PARTIAL);
         }
+    }
+
+    default String retrieveOutcome(DockerClient client, String containerId) throws InterruptedException {
+        Utils.CommandResult result = executeCommandSync(
+                client,
+                containerId,
+                "head -c 1000 /sandbox/submission/output"
+        );
+        return result.getStdout().toString(StandardCharsets.UTF_8);
     }
 }

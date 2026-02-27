@@ -10,6 +10,8 @@ public interface IUserManager {
 
     User getUser(Long userId);
 
+    User getUserByUsername(String username);
+
     void createUser(UserDTO user, String password) throws InformaticsServerException;
 
     User authenticate(String username, String password) throws InformaticsServerException;
@@ -27,6 +29,8 @@ public interface IUserManager {
     void recoverPassword(String link, String newPassword) throws InformaticsServerException;
 
     UserProfileDTO getUserProfile(Long userId) throws InformaticsServerException;
+
+    UserProfileDTO getUserProfileByUsername(String username) throws InformaticsServerException;
 
     void changePassword(String oldPassword, String newPassword) throws InformaticsServerException;
 }

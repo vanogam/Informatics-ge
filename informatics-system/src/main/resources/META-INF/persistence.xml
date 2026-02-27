@@ -15,6 +15,7 @@
         <class>ge.freeuni.informatics.common.model.post.Post</class>
         <class>ge.freeuni.informatics.common.model.post.PostComment</class>
         <class>ge.freeuni.informatics.common.model.submission.Submission</class>
+        <class>ge.freeuni.informatics.common.model.customtest.CustomTestRun</class>
         <class>ge.freeuni.informatics.common.model.worker.Worker</class>
         <properties>
             <!-- hibernate.hbm2ddl.auto is set from spring.jpa.hibernate.ddl-auto via DatasourceConfiguration -->

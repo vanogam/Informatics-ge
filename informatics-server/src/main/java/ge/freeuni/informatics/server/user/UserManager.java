@@ -69,6 +69,11 @@ public class UserManager implements IUserManager {
     }
 
     @Override
+    public User getUserByUsername(String username) {
+        return userRepository.getFirstByUsername(username);
+    }
+
+    @Override
     public void createUser(UserDTO userDTO, String password) throws InformaticsServerException {
         User user = UserDTO.fromDTO(userDTO);
         user.setId(null);
@@ -187,6 +192,21 @@ public class UserManager implements IUserManager {
     public UserProfileDTO getUserProfile(Long userId) throws InformaticsServerException {
         User user = userRepository.getReferenceById(userId);
         long solvedProblemsCount = solvedProblemRepository.countByUserIdAndStatus(userId, ProblemAttemptStatus.SOLVED);
+        return new UserProfileDTO(
+                user.getUsername(),
+                solvedProblemsCount,
+                user.getLastLogin(),
+                user.getRegistrationTime()
+        );
+    }
+
+    @Override
+    public UserProfileDTO getUserProfileByUsername(String username) throws InformaticsServerException {
+        User user = userRepository.getFirstByUsername(username);
+        if (user == null) {
+            throw new InformaticsServerException("userNotFound");
+        }
+        long solvedProblemsCount = solvedProblemRepository.countByUserIdAndStatus(user.getId(), ProblemAttemptStatus.SOLVED);
         return new UserProfileDTO(
                 user.getUsername(),
                 solvedProblemsCount,

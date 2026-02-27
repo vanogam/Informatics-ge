@@ -11,6 +11,10 @@ public class TestResult {
     private final Integer exitCode;
     private final Long timeMillis;
     private final Long memoryKB;
+    /**
+     * First 1000 symbols of contestant output for the test case.
+     */
+    private final String outcome;
 
     public TestResult(CallbackType messageType,
                       String testcaseKey,
@@ -20,7 +24,8 @@ public class TestResult {
                       Integer exitCode,
                       Long timeMillis,
                       Long memoryKB,
-                      Double score) {
+                      Double score,
+                      String outcome) {
         this.messageType = messageType;
         this.testcaseKey = testcaseKey;
         this.message = message;
@@ -30,6 +35,7 @@ public class TestResult {
         this.timeMillis = timeMillis;
         this.memoryKB = memoryKB;
         this.score = score;
+        this.outcome = outcome;
     }
 
     public long getSubmissionId() {
@@ -56,6 +62,10 @@ public class TestResult {
         return memoryKB;
     }
 
+    public String getOutcome() {
+        return outcome;
+    }
+
     public CallbackType getMessageType() {
         return messageType;
     }
@@ -78,6 +88,7 @@ public class TestResult {
         private Integer exitCode;
         private long timeMillis;
         private long memoryKB;
+        private String outcome;
 
         public Builder(TestResult testResult) {
             this.messageType = testResult.messageType;
@@ -89,6 +100,7 @@ public class TestResult {
             this.exitCode = testResult.getExitCode();
             this.timeMillis = testResult.timeMillis;
             this.memoryKB = testResult.memoryKB;
+            this.outcome = testResult.outcome;
         }
         public Builder() {
         }
@@ -138,8 +150,13 @@ public class TestResult {
             return this;
         }
 
+        public Builder withOutcome(String outcome) {
+            this.outcome = outcome;
+            return this;
+        }
+
         public TestResult build() {
-            return new TestResult(messageType, testcaseKey, message, submissionId, status, exitCode, timeMillis, memoryKB, score);
+            return new TestResult(messageType, testcaseKey, message, submissionId, status, exitCode, timeMillis, memoryKB, score, outcome);
         }
     }
 }

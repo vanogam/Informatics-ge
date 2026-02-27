@@ -79,8 +79,7 @@ function App() {
 					<Route path='/room/:room_id/post' element={<AddPost />} />
 					<Route path='/room/:room_id/post/:post_id' element={<AddPost />} />
 					<Route path='/admin' element={<AdminPanel />} />
-					<Route path='/profile' element={<UserProfile />} />
-					<Route path='/user/:userId/profile' element={<UserProfile />} />
+					<Route path='/user/:username' element={<UserProfile />} />
 					<Route element={<Error/>} />
 				</Routes>
 			</Box>

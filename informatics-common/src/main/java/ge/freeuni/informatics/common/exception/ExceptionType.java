@@ -5,5 +5,6 @@ public enum ExceptionType {
     VALIDATION_ERROR,
     NOT_FOUND,
     CONFLICT,
+    UNAUTHORIZED,
     PERMISSION_DENIED
 }

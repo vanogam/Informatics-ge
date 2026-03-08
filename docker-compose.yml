@@ -4,9 +4,10 @@ services:
     profiles:
       - dev
     volumes:
-      - /home/informatics/dev/files:/files
-      - /home/informatics/dev/logs/core:/logs
+      - ${INFORMATICS_HOME_DIR:-/home/informatics/dev}/files:/files
+      - ${INFORMATICS_HOME_DIR:-/home/informatics/dev}/logs/core:/logs
       - /var/run/docker.sock:/var/run/docker.sock
+      - ${INFORMATICS_HOME_DIR:-/home/informatics/dev}/config:/opt/app/external-config:ro
     ports:
       - "8787:8787"
     environment:
@@ -15,6 +16,8 @@ services:
       SPRING_DATASOURCE_USERNAME: ${DB_USER}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
       SPRING_REDIS_HOST: redis
+      INFORMATICS_HOME_DIR: ${INFORMATICS_HOME_DIR:-/home/informatics/dev}
+      SPRING_CONFIG_ADDITIONAL_LOCATION: optional:file:/opt/app/external-config/application.properties
     networks:
       informatics_dev:
         aliases:
@@ -26,8 +29,8 @@ services:
       - dev
     volumes:
         # PG 18+ mount at /var/lib/postgresql. To migrate from PG16 without losing data: ./docker/scripts/migrate-postgres-to-18.sh
-        - /home/informatics/dev/data_pg:/var/lib/postgresql
-        - /home/informatics/dev/logs/db:/logs
+        - ${INFORMATICS_HOME_DIR:-/home/informatics/dev}/data_pg:/var/lib/postgresql
+        - ${INFORMATICS_HOME_DIR:-/home/informatics/dev}/logs/db:/logs
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}

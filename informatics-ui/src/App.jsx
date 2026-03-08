@@ -17,20 +17,11 @@ import ContestSubmissions from './Pages/ContestSubmissions'
 import NewTaskCard from './Components/newtask/NewTaskCard'
 import Error from './Pages/Error'
 import UserProfile from './Pages/UserProfile'
-import { useEffect } from 'react'
-import axios from 'axios'
-import Cookies from "js-cookie";
-import { renewCsrfToken } from './utils/csrfUtils'
 import AddPost from "./Pages/AddPost";
 import AdminPanel from "./Pages/AdminPanel";
 import { ConfirmDialogProvider } from './utils/ConfirmDialogContext'
 
 function App() {
-	useEffect(() => {
-		if (Cookies.get('XSRF-TOKEN') === undefined) {
-			renewCsrfToken();
-		}
-	}, []);
 
 	return (
 		<ConfirmDialogProvider>

@@ -8,6 +8,7 @@ public class InformaticsServerException extends Exception {
 
     // General exceptions
     public static final InformaticsServerException UNEXPECTED_ERROR = new InformaticsServerException("unexpectedException", ExceptionType.UNEXPECTED_ERROR);
+    public static final InformaticsServerException UNAUTHORIZED = new InformaticsServerException("unauthorized", ExceptionType.UNAUTHORIZED);
     public static final InformaticsServerException PERMISSION_DENIED = new InformaticsServerException("permissionDenied", ExceptionType.PERMISSION_DENIED);
 
     // Room related exceptions

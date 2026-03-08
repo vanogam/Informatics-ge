@@ -15,13 +15,16 @@ export const AxiosInstanceProvider = (props) => {
         const axiosInstance = axios.create({
                 baseURL: `${process.env.REACT_APP_HOST}`,
                 withCredentials: true,
-                headers: {
-                    'Access-Control-Allow-Origin': `*`,
-                    'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept',
-                    'X-CSRF-Token': Cookies.get('XSRF-TOKEN') || '',
-                },
             },
         );
+
+        axiosInstance.interceptors.request.use((config) => {
+            const token = Cookies.get('XSRF-TOKEN');
+            if (token) {
+                config.headers['X-XSRF-TOKEN'] = token;
+            }
+            return config;
+        });
 
         axiosInstance.interceptors.response.use((response) => {
             return response

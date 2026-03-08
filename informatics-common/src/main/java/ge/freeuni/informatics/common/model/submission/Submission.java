@@ -41,6 +41,7 @@ public class Submission {
 
     private Float score;
 
+    @Column(length = 4000)
     private String compilationMessage;
 
     private Integer currentTest;

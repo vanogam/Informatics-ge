@@ -46,6 +46,16 @@ export default function Compiler() {
 	const [isRunning, setIsRunning] = React.useState(false)
 	const pollRef = React.useRef(null)
 	const editorWrapperRef = React.useRef(null)
+	const fileInputRef = React.useRef(null)
+
+	const handleFileUpload = (e) => {
+		const file = e.target.files[0]
+		if (!file) return
+		const reader = new FileReader()
+		reader.onload = (ev) => setInput(ev.target.result)
+		reader.readAsText(file)
+		e.target.value = ''
+	}
 
 	React.useEffect(() => {
 		const wrapper = editorWrapperRef.current
@@ -217,16 +227,23 @@ export default function Compiler() {
 					onChange={(e) => setInput(e.target.value)}
 				></TextField>
 
+				<input
+					ref={fileInputRef}
+					type="file"
+					accept=".txt,.in,*"
+					style={{ display: 'none' }}
+					onChange={handleFileUpload}
+				/>
 				<Button
 					sx={{
 						marginInline: '2px',
 						alignSelf: 'right',
 						width: '60%',
-						// marginBottom: '20%',
 						marginLeft: '20%',
 						background: '#3c324e',
 					}}
 					variant="contained"
+					onClick={() => fileInputRef.current.click()}
 				>
 					ფაილის ატვირთვა
 				</Button>

@@ -86,6 +86,7 @@ export default function TestcasesEditor({taskId, loadTask, testcases, setTestcas
             `/task/${taskId}/testcase`,
             getSingleTestcasePostData(),
         ).then((response) => {
+
             if (response.status === 200) {
                 toast.success(getMessage('ka', 'addedTestcase')
                     + ': '
@@ -95,6 +96,8 @@ export default function TestcasesEditor({taskId, loadTask, testcases, setTestcas
                         + ': '
                         + response.data.result.unmatched.reduce((acc, cur) => acc + (acc === '' ? '' : ', ') + cur, ''));
                 }
+                setInputFile(null)
+                setOutputFile(null)
                 setMultipleTestcasesFile(null)
                 loadTask()
             }
@@ -306,7 +309,7 @@ export default function TestcasesEditor({taskId, loadTask, testcases, setTestcas
                     <Stack direction="column" gap="0.5rem">
                         <Button align="right" variant="contained" component="label">
                             {getMessage('ka', 'uploadInputFile')}
-                            <input type="file" hidden onChange={(e) => setInputFile(e.target.files[0])}/>
+                            <input type="file" hidden onClick={(e) => e.target.value = ''} onChange={(e) => setInputFile(e.target.files[0])}/>
                         </Button>
                         {inputFile !== null && (
                             <Typography variant="body2" color="textSecondary">
@@ -317,7 +320,7 @@ export default function TestcasesEditor({taskId, loadTask, testcases, setTestcas
                     <Stack direction="column" gap="0.5rem">
                         <Button fullWidth variant="contained" component="label">
                             {getMessage('ka', 'uploadOutputFile')}
-                            <input type="file" hidden onChange={(e) => setOutputFile(e.target.files[0])}/>
+                            <input type="file" hidden onClick={(e) => e.target.value = ''} onChange={(e) => setOutputFile(e.target.files[0])}/>
                         </Button>
                         {outputFile !== null && (
                             <Typography variant="body2" color="textSecondary">
@@ -348,6 +351,7 @@ export default function TestcasesEditor({taskId, loadTask, testcases, setTestcas
                         <Button fullWidth variant="contained" component="label">
                             {getMessage('ka', 'uploadArchive')}
                             <input type="file" hidden
+                                   onClick={(e) => e.target.value = ''}
                                    onChange={(e) => setMultipleTestcasesFile(e.target.files[0])}/>
                         </Button>
                         {multipleTestcasesFile !== null && (

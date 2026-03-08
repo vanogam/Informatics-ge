@@ -1,6 +1,7 @@
 package ge.freeuni.informatics.common.model.submission;
 
 import jakarta.persistence.Embeddable;
+import jakarta.persistence.Column;
 
 @Embeddable
 public class SubmissionTestResult {
@@ -10,16 +11,19 @@ public class SubmissionTestResult {
      */
     private Float score;
 
+    @Column(length = 512)
     private String testKey;
 
     /**
-     * First 1000 symbols of contestant output for the test case.
+     * First symbols of contestant output for the test case.
      */
+    @Column(length = 4000)
     private String outcome;
 
     /**
-     * Compilers message.
+     * Compiler message.
      */
+    @Column(length = 4000)
     private String message;
 
     /**

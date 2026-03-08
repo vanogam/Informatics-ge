@@ -44,16 +44,23 @@ public class JudgeIntegration implements IJudgeIntegration{
 
     private static final ConcurrentHashMap<Long, Object> submissionLocks = new ConcurrentHashMap<>();
 
-    private static final int COMPILATION_MESSAGE_MAX_LENGTH = 990;
+    private static final int COMPILATION_MESSAGE_MAX_LENGTH = 4000;
+    private static final int TEST_RESULT_MESSAGE_MAX_LENGTH = 4000;
+    private static final int TEST_RESULT_OUTCOME_MAX_LENGTH = 4000;
+    private static final int TEST_RESULT_KEY_MAX_LENGTH = 512;
+    private static final String TRUNCATION_SUFFIX = "... [truncated]";
 
-    private String truncateCompilationMessage(String message) {
-        if (message == null) {
+    private String truncateToLength(String value, int maxLength) {
+        if (value == null) {
             return null;
         }
-        if (message.length() <= COMPILATION_MESSAGE_MAX_LENGTH) {
-            return message;
+        if (value.length() <= maxLength) {
+            return value;
         }
-        return message.substring(0, COMPILATION_MESSAGE_MAX_LENGTH);
+        if (maxLength <= TRUNCATION_SUFFIX.length()) {
+            return value.substring(0, maxLength);
+        }
+        return value.substring(0, maxLength - TRUNCATION_SUFFIX.length()) + TRUNCATION_SUFFIX;
     }
 
     @Override
@@ -179,7 +186,7 @@ public class JudgeIntegration implements IJudgeIntegration{
                         submission.setStatus(SubmissionStatus.RUNNING);
                         submission.setCurrentTest(1);
                         submission.setSubmissionTestResults(new java.util.ArrayList<>());
-                        submission.setCompilationMessage(truncateCompilationMessage(callback.message()));
+                        submission.setCompilationMessage(truncateToLength(callback.message(), COMPILATION_MESSAGE_MAX_LENGTH));
                         sendTestMessages(submission.getTask(), submission);
                         submissionRepository.save(submission);
                         break;
@@ -190,7 +197,7 @@ public class JudgeIntegration implements IJudgeIntegration{
                         break;
                     case SYSTEM_ERROR:
                         submission.setStatus(SubmissionStatus.SYSTEM_ERROR);
-                        submission.setCompilationMessage(truncateCompilationMessage(callback.message()));
+                        submission.setCompilationMessage(truncateToLength(callback.message(), COMPILATION_MESSAGE_MAX_LENGTH));
                         finalizeSubmission(submission, callback);
                         log.error("System error for submission: {}, message: {}", submission.getId(), callback.message());
                         break;
@@ -227,10 +234,10 @@ public class JudgeIntegration implements IJudgeIntegration{
 
     private SubmissionTestResult createTestResult(KafkaCallback callback) {
         SubmissionTestResult testResult = new SubmissionTestResult();
-        testResult.setTestKey(callback.testcaseKey());
+        testResult.setTestKey(truncateToLength(callback.testcaseKey(), TEST_RESULT_KEY_MAX_LENGTH));
         testResult.setTestStatus(callback.status());
-        testResult.setMessage(callback.message());
-        testResult.setOutcome(callback.outcome());
+        testResult.setMessage(truncateToLength(callback.message(), TEST_RESULT_MESSAGE_MAX_LENGTH));
+        testResult.setOutcome(truncateToLength(callback.outcome(), TEST_RESULT_OUTCOME_MAX_LENGTH));
         
         // Normalize score to 0.0-1.0 (Float). Worker sends 0-1 scale; legacy may send 0-100.
         if (callback.score() != null) {
@@ -254,7 +261,7 @@ public class JudgeIntegration implements IJudgeIntegration{
     private void finalizeSubmission(Submission submission, KafkaCallback callback) {
         if (submission.getStatus() == SubmissionStatus.COMPILATION_ERROR) {
             submission.setScore(0f);
-            submission.setCompilationMessage(truncateCompilationMessage(callback.message()));
+            submission.setCompilationMessage(truncateToLength(callback.message(), COMPILATION_MESSAGE_MAX_LENGTH));
         } else {
             float finalScore = submission.getSubmissionTestResults().stream().map(SubmissionTestResult::getScore).reduce(0f, (sum, result) -> sum + result);
             if (finalScore == 0f) {

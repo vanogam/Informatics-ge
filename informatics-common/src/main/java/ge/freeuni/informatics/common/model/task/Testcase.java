@@ -36,6 +36,7 @@ public class Testcase {
         this.id = id;
     }
 
+    @Column(length = 512)
     public String getKey() {
         return key;
     }
@@ -52,6 +53,7 @@ public class Testcase {
         this.taskId = taskId;
     }
 
+    @Column(length = 2048)
     public String getInputFileAddress() {
         return inputFileAddress;
     }
@@ -60,6 +62,7 @@ public class Testcase {
         this.inputFileAddress = inputFileAddress;
     }
 
+    @Column(length = 2048)
     public String getOutputFileAddress() {
         return OutputFileAddress;
     }
@@ -68,6 +71,7 @@ public class Testcase {
         OutputFileAddress = outputFileAddress;
     }
 
+    @Column(length = 3000)
     public String getInputSnippet() {
         return inputSnippet;
     }
@@ -76,6 +80,7 @@ public class Testcase {
         this.inputSnippet = inputSnippet;
     }
 
+    @Column(length = 3000)
     public  String getOutputSnippet() {
         return outputSnippet;
     }

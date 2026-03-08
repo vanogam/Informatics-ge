@@ -373,10 +373,13 @@ public class TaskManager implements ITaskManager {
     @Transactional
     @TeacherTaskRestricted
     public void setPublicTestcase(long taskId, String testcaseKey, boolean publicTestcase) throws InformaticsServerException {
-        testcaseRepository.findFirstByKey(testcaseKey).ifPresent(tc -> {
-            tc.setPublicTestcase(publicTestcase);
-            testcaseRepository.save(tc);
-        });
+        Testcase testcase = testcaseRepository.findFirstByTaskIdAndKey(taskId, testcaseKey);
+        if (testcase == null) {
+            log.error("Test case with key {} not found in task {}", testcaseKey, taskId);
+            throw InformaticsServerException.TEST_NOT_FOUND;
+        }
+        testcase.setPublicTestcase(publicTestcase);
+        testcaseRepository.save(testcase);
     }
 
     @Override

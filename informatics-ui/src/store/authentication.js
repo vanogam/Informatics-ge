@@ -1,7 +1,5 @@
 import {createContext, useCallback, useContext, useEffect, useState} from 'react'
-import Cookies from 'js-cookie';
 import {AxiosContext} from '../utils/axiosInstance'
-import {renewCsrfToken} from "../utils/csrfUtils";
 
 
 export const AuthContext = createContext({
@@ -43,7 +41,6 @@ export const AuthContextProvider = (props) => {
         setIsLoggedIn(false)
         setUsername('')
         setRole('')
-        renewCsrfToken()
     }, [])
 
     const loginHandler = useCallback(({username, role}) => {

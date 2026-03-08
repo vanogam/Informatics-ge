@@ -17,6 +17,7 @@ public class ServletUtils {
         }
         return switch (ex.getExceptionType()) {
             case VALIDATION_ERROR -> 400;
+            case UNAUTHORIZED -> 401;
             case PERMISSION_DENIED -> 403;
             case NOT_FOUND -> 404;
             case CONFLICT -> 409;

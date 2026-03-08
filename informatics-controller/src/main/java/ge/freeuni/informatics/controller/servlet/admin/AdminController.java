@@ -1,9 +1,9 @@
 package ge.freeuni.informatics.controller.servlet.admin;
 
 import ge.freeuni.informatics.common.dto.WorkerDTO;
-import ge.freeuni.informatics.common.exception.ExceptionType;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.controller.model.*;
+import ge.freeuni.informatics.controller.servlet.ServletUtils;
 import ge.freeuni.informatics.server.annotation.AdminRestricted;
 import ge.freeuni.informatics.server.annotation.WorkerRestricted;
 import ge.freeuni.informatics.server.user.IUserManager;
@@ -33,7 +33,7 @@ public class AdminController {
 
     @PostMapping("/workers/{workerId}/heartbeat")
     @WorkerRestricted
-    public ResponseEntity<Void> heartbeat(@PathVariable String workerId, @RequestBody(required = false) HeartbeatRequest request) {
+    public ResponseEntity<Void> heartbeat(@PathVariable String workerId, @RequestBody(required = false) HeartbeatRequest request) throws InformaticsServerException {
         try {
             Long jobsProcessed = request != null ? request.getJobsProcessed() : null;
             Boolean isWorking = request != null && request.getWorking() != null ? request.getWorking() : false;
@@ -47,7 +47,7 @@ public class AdminController {
 
     @DeleteMapping("/workers/{workerId}")
     @AdminRestricted
-    public ResponseEntity<InformaticsResponse> deleteWorkerInstance(@PathVariable String workerId) {
+    public ResponseEntity<InformaticsResponse> deleteWorkerInstance(@PathVariable String workerId) throws InformaticsServerException {
         try {
             workerManager.deleteWorkerInstance(workerId);
             log.info("Worker instance deleted: {}", workerId);
@@ -63,7 +63,7 @@ public class AdminController {
 
     @PostMapping("/workers")
     @AdminRestricted
-    public ResponseEntity<AddWorkersResponse> addWorkerInstances(@RequestBody AddWorkersRequest request) {
+    public ResponseEntity<AddWorkersResponse> addWorkerInstances(@RequestBody AddWorkersRequest request) throws InformaticsServerException {
         try {
             if (request.getCount() == null || request.getCount() <= 0) {
                 return ResponseEntity.badRequest().body(new AddWorkersResponse("invalidCount", null));
@@ -82,7 +82,7 @@ public class AdminController {
 
     @DeleteMapping("/workers")
     @AdminRestricted
-    public ResponseEntity<InformaticsResponse> stopAllWorkers() {
+    public ResponseEntity<InformaticsResponse> stopAllWorkers() throws InformaticsServerException {
         try {
             workerManager.stopAllWorkers();
             log.info("All worker instances stopped");
@@ -95,7 +95,7 @@ public class AdminController {
 
     @GetMapping("/workers")
     @AdminRestricted
-    public ResponseEntity<WorkersResponse> getWorkers() {
+    public ResponseEntity<WorkersResponse> getWorkers() throws InformaticsServerException {
         try {
             List<WorkerDTO> workers = workerManager.getAllWorkers();
             return ResponseEntity.ok(new WorkersResponse(workers));
@@ -103,6 +103,13 @@ public class AdminController {
             log.error("Error getting workers list", ex);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new WorkersResponse("internalError"));
         }
+    }
+
+    @ExceptionHandler(InformaticsServerException.class)
+    public ResponseEntity<InformaticsResponse> handleInformaticsServerException(InformaticsServerException ex) {
+        return ResponseEntity
+                .status(ServletUtils.getResponseCode(ex))
+                .body(new InformaticsResponse(ex.getCode()));
     }
 
 }

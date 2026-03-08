@@ -1,5 +1,8 @@
 package ge.freeuni.informatics.system.configuration;
 
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,12 +15,16 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRequestHandler;
 import org.springframework.security.web.csrf.XorCsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.web.filter.OncePerRequestFilter;
 
+import java.io.IOException;
 import java.util.Arrays;
 
 @EnableWebSecurity
@@ -93,10 +100,14 @@ public class SecurityConfiguration {
     @Order(2)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         CookieCsrfTokenRepository tokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        tokenRepository.setCookiePath("/");
+
         XorCsrfTokenRequestAttributeHandler delegate = new XorCsrfTokenRequestAttributeHandler();
         delegate.setCsrfRequestAttributeName("_csrf");
         CsrfTokenRequestHandler requestHandler = delegate::handle;
+
         http
+                .cors(cors -> {})
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers(antMatchers(GLOBAL_ADDRESSES)).permitAll()
                         .requestMatchers(antMatchers(GLOBAL_ROOM_CONTEST_ADDRESSES)).permitAll()
@@ -117,8 +128,13 @@ public class SecurityConfiguration {
                 .csrf((csrf) -> csrf
                         .csrfTokenRepository(tokenRepository)
                         .csrfTokenRequestHandler(requestHandler)
-                        .ignoringRequestMatchers(new AntPathRequestMatcher("/api/csrf"))
+                        .ignoringRequestMatchers(
+                                new AntPathRequestMatcher("/api/csrf"),
+                                new AntPathRequestMatcher("/api/admin/workers"),
+                                new AntPathRequestMatcher("/api/admin/workers/**")
+                        )
                 )
+                .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
                 .rememberMe(rememberMe -> rememberMe
                         .rememberMeServices(rememberMeServices())
                         .key(rememberMeKey)
@@ -133,6 +149,22 @@ public class SecurityConfiguration {
                         .deleteCookies("remember-me", "JSESSIONID")
                 );
         return http.build();
+    }
+
+    /**
+     * Eagerly loads the CSRF token on every request so the XSRF-TOKEN cookie
+     * is always present for the SPA frontend to read.
+     */
+    static class CsrfCookieFilter extends OncePerRequestFilter {
+        @Override
+        protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+                                        FilterChain filterChain) throws ServletException, IOException {
+            CsrfToken csrfToken = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
+            if (csrfToken != null) {
+                csrfToken.getToken();
+            }
+            filterChain.doFilter(request, response);
+        }
     }
 
     @Bean

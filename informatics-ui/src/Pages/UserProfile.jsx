@@ -115,11 +115,13 @@ export default function UserProfile() {
                     )}
 
                     {tabValue === 1 && resolvedTargetUsername && (
-                        <SubmissionsList
-                            getEndpoint={() => `/user/username/${resolvedTargetUsername}/submissions`}
-                            title=""
-                            autoRefresh={false}
-                        />
+                        <Box sx={{minWidth: 0, width: '100%'}}>
+                            <SubmissionsList
+                                getEndpoint={() => `/user/username/${resolvedTargetUsername}/submissions`}
+                                title=""
+                                autoRefresh={false}
+                            />
+                        </Box>
                     )}
 
                     {tabValue === 2 && isOwnProfile && (

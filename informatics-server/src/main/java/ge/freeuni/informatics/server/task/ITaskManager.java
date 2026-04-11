@@ -33,7 +33,7 @@ public interface ITaskManager {
 
     List<TestcaseDTO> getPublicTestcases(long taskId) throws InformaticsServerException;
 
-    void addStatement(long taskId, String statement, Language language);
+    void addStatement(long taskId, String statement, Language language) throws InformaticsServerException;
 
     AddTestcasesResult addTestcase(long taskId, byte[] inputContent, byte[] outputContent, String inputName, String outputName) throws InformaticsServerException;
 

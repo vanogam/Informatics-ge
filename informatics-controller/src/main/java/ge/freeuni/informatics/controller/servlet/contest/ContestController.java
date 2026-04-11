@@ -5,6 +5,7 @@ import ge.freeuni.informatics.common.dto.ContestantResultDTO;
 import ge.freeuni.informatics.common.dto.SubmissionDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.controller.model.*;
+import ge.freeuni.informatics.controller.servlet.ServletUtils;
 import ge.freeuni.informatics.server.contest.ContestService;
 import ge.freeuni.informatics.server.contest.IContestManager;
 import ge.freeuni.informatics.server.submission.ISubmissionManager;
@@ -12,7 +13,6 @@ import ge.freeuni.informatics.server.task.ITaskManager;
 import ge.freeuni.informatics.server.user.IUserManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -104,7 +104,8 @@ public class ContestController {
         try {
             return ResponseEntity.ok(new CreateContestResponse("SUCCESS", null, contestManager.createContest(contestRequest.getRoomId(), contestDTO)));
         } catch (InformaticsServerException ex) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new CreateContestResponse("FAIL", ex.getCode(), null));
+            return ResponseEntity.status(ServletUtils.getResponseCode(ex))
+                    .body(new CreateContestResponse("FAIL", ex.getCode(), null));
         }
     }
 
@@ -114,7 +115,8 @@ public class ContestController {
         try {
             return ResponseEntity.ok(new CreateContestResponse("SUCCESS", null, contestManager.modifyContest(contestId, contestDTO)));
         } catch (InformaticsServerException ex) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new CreateContestResponse("FAIL", ex.getCode(), null));
+            return ResponseEntity.status(ServletUtils.getResponseCode(ex))
+                    .body(new CreateContestResponse("FAIL", ex.getCode(), null));
         }
     }
 
@@ -143,33 +145,39 @@ public class ContestController {
     }
 
     @DeleteMapping("/contest/{contestId}")
-    public InformaticsResponse deleteContest(@PathVariable Long contestId) {
+    public ResponseEntity<InformaticsResponse> deleteContest(@PathVariable Long contestId) {
         try {
             contestManager.deleteContest(contestId);
         } catch (InformaticsServerException ex) {
-            return new InformaticsResponse(ex.getCode());
+            return ResponseEntity
+                    .status(ServletUtils.getResponseCode(ex))
+                    .body(new InformaticsResponse(ex.getCode()));
         }
-        return new InformaticsResponse(null);
+        return ResponseEntity.ok(new InformaticsResponse(null));
     }
 
     @PostMapping("/contest/{contestId}/register")
-    public InformaticsResponse register(@PathVariable Long contestId) {
+    public ResponseEntity<InformaticsResponse> register(@PathVariable Long contestId) {
         try {
             contestManager.registerUser(contestId);
         } catch (InformaticsServerException ex) {
-            return new InformaticsResponse(ex.getCode());
+            return ResponseEntity
+                    .status(ServletUtils.getResponseCode(ex))
+                    .body(new InformaticsResponse(ex.getCode()));
         }
-        return new InformaticsResponse(null);
+        return ResponseEntity.ok(new InformaticsResponse(null));
     }
 
     @PostMapping("/contest/{contestId}/unregister")
-    public InformaticsResponse unregister(@PathVariable String contestId) {
+    public ResponseEntity<InformaticsResponse> unregister(@PathVariable String contestId) {
         try {
             contestManager.unregisterUser(Long.parseLong(contestId));
         } catch (InformaticsServerException ex) {
-            return new InformaticsResponse(ex.getCode());
+            return ResponseEntity
+                    .status(ServletUtils.getResponseCode(ex))
+                    .body(new InformaticsResponse(ex.getCode()));
         }
-        return new InformaticsResponse(null);
+        return ResponseEntity.ok(new InformaticsResponse(null));
     }
 
     @GetMapping("/contest/{contestId}/standings")

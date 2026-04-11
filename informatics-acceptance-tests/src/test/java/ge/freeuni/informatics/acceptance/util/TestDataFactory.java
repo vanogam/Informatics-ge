@@ -13,9 +13,12 @@ import ge.freeuni.informatics.repository.contest.ContestJpaRepository;
 import ge.freeuni.informatics.repository.contestroom.ContestRoomJpaRepository;
 import ge.freeuni.informatics.repository.task.TaskRepository;
 import ge.freeuni.informatics.repository.task.TestcaseRepository;
+import ge.freeuni.informatics.repository.user.PasswordRecoveryJpaRepository;
 import ge.freeuni.informatics.repository.user.UserJpaRepository;
+import ge.freeuni.informatics.common.model.user.RecoverPassword;
 import ge.freeuni.informatics.utils.UserUtils;
 import jakarta.persistence.EntityManager;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
@@ -41,6 +44,9 @@ public class TestDataFactory {
 
     @Autowired
     private TestcaseRepository testcaseRepository;
+
+    @Autowired
+    private PasswordRecoveryJpaRepository passwordRecoveryRepository;
 
     @Autowired
     private ApplicationEventPublisher eventPublisher;
@@ -79,8 +85,8 @@ public class TestDataFactory {
         user.setEmail(username + "@test.com");
         user.setFirstName("Test");
         user.setLastName("User" + (++userCounter));
-        user.setPasswordSalt(UserUtils.getSalt());
-        user.setPassword(UserUtils.getHash(password, user.getPasswordSalt()));
+        user.setPasswordSalt("");
+        user.setPassword(new BCryptPasswordEncoder().encode(password));
         user.setRole(role.name());
         user.setVersion(1);
         user.setRegistrationTime(new Date());
@@ -329,6 +335,37 @@ public class TestDataFactory {
 
     public record SubmissionRequest(Long contestId, Long taskId, CodeLanguage language, String code) {}
 
+    /**
+     * Creates a user with the legacy SHA-256 password hash (pre-bcrypt migration).
+     */
+    @Transactional
+    public User createLegacyUser(String username, String password, UserRole role) {
+        User user = new User();
+        user.setUsername(username);
+        user.setEmail(username + "@test.com");
+        user.setFirstName("Test");
+        user.setLastName("User" + (++userCounter));
+        user.setPasswordSalt(UserUtils.getSalt());
+        user.setPassword(UserUtils.getHash(password, user.getPasswordSalt()));
+        user.setRole(role.name());
+        user.setVersion(1);
+        user.setRegistrationTime(new Date());
+        return userRepository.save(user);
+    }
+
+    /**
+     * Creates a password recovery record directly in the DB (bypasses email sending).
+     */
+    @Transactional
+    public RecoverPassword createPasswordRecoveryLink(User user, String link) {
+        RecoverPassword recovery = new RecoverPassword();
+        recovery.setUserId(user.getId());
+        recovery.setLink(link);
+        recovery.setUsed(false);
+        recovery.setCreateTime(new Date());
+        return passwordRecoveryRepository.save(recovery);
+    }
+
     @Transactional
     public void cleanup() {
         try {
@@ -361,6 +398,7 @@ public class TestDataFactory {
             taskRepository.deleteAllInBatch();
             contestRepository.deleteAllInBatch();
             contestRoomRepository.deleteAllInBatch();
+            passwordRecoveryRepository.deleteAllInBatch();
             userRepository.deleteAllInBatch();
             
             // Final flush

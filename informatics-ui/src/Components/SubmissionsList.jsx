@@ -42,15 +42,14 @@ export default function SubmissionsList({getEndpoint, title, autoRefresh = true}
         
         fetchSubmissions()
 
-        if (!autoRefresh) {
-            return
+        if (autoRefresh) {
+            const interval = setInterval(fetchSubmissions, 5000)
+            return () => {
+                clearInterval(interval)
+            }
         }
-
-        const interval = setInterval(fetchSubmissions, 5000)
-
-        return () => {
-            clearInterval(interval)
-        }
+        
+        return;
     }, [getEndpoint, axiosInstance, autoRefresh])
 
     const highlightWithLineNumbers = (input, grammar, language) =>
@@ -79,62 +78,76 @@ export default function SubmissionsList({getEndpoint, title, autoRefresh = true}
     
     return (
         <>
-            <Typography
-                sx={{color: '#452c54', fontWeight: 'bold'}}
-                align="center"
-                variant="h6"
-                mb="1rem"
-                mt="1rem"
-            >
-                {title}
-            </Typography>
-            <TableContainer
-                component={Paper}
-                sx={{maxWidth: '80%', marginInline: 'auto'}}
-            >
-                <Table sx={{minWidth: 650}} aria-label="simple table">
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>ამოცანა</TableCell>
-                            <TableCell align="right">მომხარებელი</TableCell>
-                            <TableCell align="right">გაშვების დრო</TableCell>
-                            <TableCell align="right">ენა</TableCell>
-                            <TableCell align="right">ქულა</TableCell>
-                            <TableCell align="right">სტატუსი</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {submissions.map((submission) => (
-                            <TableRow
-                                onClick={() => {
-                                    setSelectedSubmission(null)
-                                    loadSubmission(submission.id)
-                                    setPopUp(true)
-                                }}
-                                key={submission.id}
-                                sx={{
-                                    '&:last-child td, &:last-child th': {border: 0},
-                                    cursor: 'pointer',
-                                    '&:hover': {backgroundColor: '#eee'},
-                                }}
-                            >
-                                <TableCell component="th" scope="row">
-                                    {submission.taskName}
-                                </TableCell>
-                                <TableCell align="right">{submission.username}</TableCell>
-                                <TableCell align="right">{submission.submissionTime}</TableCell>
-                                <TableCell align="right">{submission.language}</TableCell>
-                                <TableCell align="right">
-                                    {submission.score}
-                                </TableCell>
-                                <TableCell align="right">
-                                    {getMessage('ka', `SUBMISSION_STATUS_${submission.status}`, submission.currentTest)}
-                                </TableCell>
+            {title ? (
+                <Typography
+                    sx={{color: '#452c54', fontWeight: 'bold'}}
+                    align="center"
+                    variant="h6"
+                    mb="1rem"
+                    mt="1rem"
+                >
+                    {title}
+                </Typography>
+            ) : null}
+            <Box sx={{width: '100%', minWidth: 0, boxSizing: 'border-box'}}>
+                <TableContainer
+                    component={Paper}
+                    sx={{width: '100%', overflowX: 'visible'}}
+                >
+                    <Table
+                        sx={{width: '100%', tableLayout: 'fixed'}}
+                        aria-label="simple table"
+                    >
+                        <TableHead>
+                            <TableRow>
+                                <TableCell sx={{wordBreak: 'break-word'}}>ამოცანა</TableCell>
+                                <TableCell align="right" sx={{wordBreak: 'break-word', width: '12%'}}>მომხარებელი</TableCell>
+                                <TableCell align="right" sx={{wordBreak: 'break-word', width: '14%'}}>გაშვების დრო</TableCell>
+                                <TableCell align="right" sx={{wordBreak: 'break-word', width: '8%'}}>ენა</TableCell>
+                                <TableCell align="right" sx={{wordBreak: 'break-word', width: '7%'}}>ქულა</TableCell>
+                                <TableCell align="right" sx={{wordBreak: 'break-word', width: '28%'}}>სტატუსი</TableCell>
                             </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </TableContainer>
+                        </TableHead>
+
+                        <TableBody>
+                            {submissions.map((submission) => (
+                                <TableRow
+                                    onClick={() => {
+                                        setSelectedSubmission(null)
+                                        loadSubmission(submission.id)
+                                        setPopUp(true)
+                                    }}
+                                    key={submission.id}
+                                    sx={{
+                                        '&:last-child td, &:last-child th': {border: 0},
+                                        cursor: 'pointer',
+                                        '&:hover': {backgroundColor: '#eee'},
+                                    }}
+                                >
+                                    <TableCell component="th" scope="row" sx={{wordBreak: 'break-word'}}>
+                                        {submission.taskName}
+                                    </TableCell>
+                                    <TableCell align="right" sx={{wordBreak: 'break-word'}}>
+                                        {submission.username}
+                                    </TableCell>
+                                    <TableCell align="right" sx={{wordBreak: 'break-word'}}>
+                                        {submission.submissionTime}
+                                    </TableCell>
+                                    <TableCell align="right" sx={{wordBreak: 'break-word'}}>
+                                        {submission.language}
+                                    </TableCell>
+                                    <TableCell align="right" sx={{wordBreak: 'break-word'}}>
+                                        {submission.score}
+                                    </TableCell>
+                                    <TableCell align="right" sx={{wordBreak: 'break-word'}}>
+                                        {getMessage('ka', `SUBMISSION_STATUS_${submission.status}`, submission.currentTest)}
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            </Box>
             <Modal open={popUp} onClose={() => setPopUp(false)}>
                 {!selectedSubmission ? (
                     <Box

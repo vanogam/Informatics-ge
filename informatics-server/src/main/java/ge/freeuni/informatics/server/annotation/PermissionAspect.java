@@ -48,7 +48,7 @@ public class PermissionAspect {
         Contest contest = task.getContest();
         ContestRoom room = roomJpaRepository.getReferenceById(contest.getRoomId());
 
-        if (!room.isOpen() && !room.isTeacher(userId)) {
+        if (!room.isOpen() && !isTeacherOrAdmin(userId, room)) {
             throw InformaticsServerException.PERMISSION_DENIED;
         }
     }
@@ -59,7 +59,18 @@ public class PermissionAspect {
         Contest contest = contestJpaRepository.getReferenceById(contestId);
         ContestRoom room = roomJpaRepository.getReferenceById(contest.getRoomId());
 
-        if (!room.isOpen() && !room.isTeacher(userId)) {
+        if (!room.isOpen() && !isTeacherOrAdmin(userId, room)) {
+            throw InformaticsServerException.PERMISSION_DENIED;
+        }
+    }
+
+    @Before("@annotation(contestTeacherRestricted) && args(contestId,..)")
+    public void contestTeacherRestricted(ContestTeacherRestricted contestTeacherRestricted, Long contestId) throws InformaticsServerException {
+        Long userId = userManager.getAuthenticatedUser().id();
+        Contest contest = contestJpaRepository.getReferenceById(contestId);
+        ContestRoom room = roomJpaRepository.getReferenceById(contest.getRoomId());
+
+        if (!room.isOpen() && !isTeacherOrAdmin(userId, room)) {
             throw InformaticsServerException.PERMISSION_DENIED;
         }
     }
@@ -104,9 +115,17 @@ public class PermissionAspect {
         Long userId = userManager.getAuthenticatedUser().id();
         ContestRoom room = roomJpaRepository.getReferenceById(roomId);
 
-        if (!room.isOpen() && !room.isTeacher(userId)) {
+        if (!room.isOpen() && !isTeacherOrAdmin(userId, room)) {
             throw InformaticsServerException.PERMISSION_DENIED;
         }
+    }
+
+    private boolean isTeacherOrAdmin(Long userId, ContestRoom room) throws InformaticsServerException {
+        if (room.isTeacher(userId)) {
+            return true;
+        }
+        String role = userManager.getAuthenticatedUser().role();
+        return role != null && role.contains("ADMIN");
     }
 
     @Before("@annotation(postAuthorRestricted) && args(postDTO,..)")

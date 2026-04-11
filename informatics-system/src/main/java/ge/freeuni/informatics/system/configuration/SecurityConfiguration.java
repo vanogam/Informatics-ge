@@ -23,6 +23,8 @@ import org.springframework.security.web.csrf.XorCsrfTokenRequestAttributeHandler
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -30,6 +32,8 @@ import java.util.Arrays;
 @EnableWebSecurity
 @Configuration
 public class SecurityConfiguration {
+    private static final Logger log = LoggerFactory.getLogger(SecurityConfiguration.class);
+
     private static final String[] GLOBAL_ADDRESSES = {"/",
             "/api/login",
             "/api/room/1/posts",
@@ -37,6 +41,7 @@ public class SecurityConfiguration {
             "/api/register",
             "/api/contests",
             "/api/csrf",
+            "/api/languages",
             "/api/custom-test",
             "/api/custom-test/*",
             "/error",
@@ -115,12 +120,14 @@ public class SecurityConfiguration {
                 )
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) -> {
-                                    System.out.println("Unauthorized access attempt: " + request.getRequestURI());
+                                    log.warn("Unauthorized access attempt: uri={}, exception={}",
+                                            request.getRequestURI(), authException.toString(), authException);
                                     response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
                                 }
                         )
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
-                                    System.out.println("Access denied: " + request.getRequestURI());
+                                    log.warn("Access denied: uri={}, exception={}",
+                                            request.getRequestURI(), accessDeniedException.toString(), accessDeniedException);
                                     response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden");
                                 }
                         )

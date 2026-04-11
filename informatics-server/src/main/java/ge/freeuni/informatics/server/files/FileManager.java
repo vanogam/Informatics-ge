@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Date;
 
@@ -92,20 +93,27 @@ public class FileManager {
 
     @MemberTaskRestricted
     public byte[] getFileForStatement(long taskId, String filename) throws IOException, InformaticsServerException {
-        String statementDir = statementDirectory.replace(":taskId", String.valueOf(taskId));
-        String filePath = statementDir + "/" + filename;
-        if (!Files.exists(Paths.get(filePath))) {
+        Path baseDir = Paths.get(statementDirectory.replace(":taskId", String.valueOf(taskId))).normalize().toAbsolutePath();
+        Path resolved = baseDir.resolve(filename).normalize().toAbsolutePath();
+        if (!resolved.startsWith(baseDir)) {
+            throw InformaticsServerException.PERMISSION_DENIED;
+        }
+        if (!Files.exists(resolved)) {
             throw new InformaticsServerException("fileNotFound");
         }
-        return Files.readAllBytes(Paths.get(filePath));
+        return Files.readAllBytes(resolved);
     }
 
     @RoomMemberRestricted
     public byte[] getFileForPost(long roomId, int postId, String filename) throws IOException, InformaticsServerException {
-        String filePath = postDirectory + "/" + postId + "/" + filename;
-        if (!Files.exists(Paths.get(filePath))) {
+        Path baseDir = Paths.get(postDirectory + "/" + postId).normalize().toAbsolutePath();
+        Path resolved = baseDir.resolve(filename).normalize().toAbsolutePath();
+        if (!resolved.startsWith(baseDir)) {
+            throw InformaticsServerException.PERMISSION_DENIED;
+        }
+        if (!Files.exists(resolved)) {
             throw new InformaticsServerException("fileNotFound");
         }
-        return Files.readAllBytes(Paths.get(filePath));
+        return Files.readAllBytes(resolved);
     }
 }

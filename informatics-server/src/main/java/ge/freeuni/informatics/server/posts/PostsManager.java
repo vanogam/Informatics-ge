@@ -170,15 +170,16 @@ public class PostsManager implements IPostsManager {
     public void deleteComment(long commentId) throws InformaticsServerException {
         try {
             PostComment comment = commentRepository.getReferenceById(commentId);
-            if (!comment.getAuthorId().equals(userManager.getAuthenticatedUser().id()) &&
-                postRepository.getReferenceById(comment.getPostId()).getAuthor().getId().equals(userManager.getAuthenticatedUser().id())
-            ) {
+            Long currentUserId = userManager.getAuthenticatedUser().id();
+            Long postAuthorId = postRepository.getReferenceById(comment.getPostId()).getAuthor().getId();
+            // According to permission matrix, only teacher/post author can delete comments.
+            if (!postAuthorId.equals(currentUserId)) {
                 log.error("User {} is not the author of comment {}", userManager.getAuthenticatedUser().id(), commentId);
                 throw InformaticsServerException.PERMISSION_DENIED;
             }
             commentRepository.deleteAllByParentId(commentId);
             commentRepository.deleteById(commentId);
-        } catch (Exception e) {
+        } catch (EntityNotFoundException e) {
             log.error("Comment with id {} not found", commentId, e);
             throw InformaticsServerException.COMMENT_NOT_FOUND;
         }

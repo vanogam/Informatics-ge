@@ -9,6 +9,7 @@ import ge.freeuni.informatics.common.model.contest.ContestStatus;
 import ge.freeuni.informatics.common.model.contestroom.ContestRoom;
 import ge.freeuni.informatics.common.model.submission.Submission;
 import ge.freeuni.informatics.common.model.submission.SubmissionStatus;
+import ge.freeuni.informatics.repository.contestroom.ContestRoomJpaRepository;
 import ge.freeuni.informatics.common.model.task.Task;
 import ge.freeuni.informatics.common.model.task.Testcase;
 import ge.freeuni.informatics.common.model.user.ProblemAttemptStatus;
@@ -67,6 +68,8 @@ public class SubmissionManager implements ISubmissionManager {
 
     private final SolvedProblemJpaRepository solvedProblemRepository;
 
+    private final ContestRoomJpaRepository contestRoomRepository;
+
     @Autowired
     public SubmissionManager(SubmissionJpaRepository submissionRepository,
                              IUserManager userManager,
@@ -76,7 +79,8 @@ public class SubmissionManager implements ISubmissionManager {
                              IJudgeIntegration judgeIntegration,
                              TestcaseRepository testcaseRepository,
                              TaskManager taskManager,
-                             SolvedProblemJpaRepository solvedProblemRepository) {
+                             SolvedProblemJpaRepository solvedProblemRepository,
+                             ContestRoomJpaRepository contestRoomRepository) {
         this.submissionRepository = submissionRepository;
         this.userManager = userManager;
         this.contestRepository = contestRepository;
@@ -86,11 +90,26 @@ public class SubmissionManager implements ISubmissionManager {
         this.testcaseRepository = testcaseRepository;
         this.taskManager = taskManager;
         this.solvedProblemRepository = solvedProblemRepository;
+        this.contestRoomRepository = contestRoomRepository;
     }
 
     @Override
     public SubmissionDTO loadFullSubmission(long id) throws InformaticsServerException {
         Submission submission = submissionRepository.getReferenceById(id);
+
+        long currentUserId = userManager.getAuthenticatedUser().id();
+        Contest contest = submission.getContest();
+        if (contest.getStatus() == ContestStatus.LIVE) {
+            if (submission.getUser().getId() != currentUserId) {
+                throw InformaticsServerException.PERMISSION_DENIED;
+            }
+        } else {
+            ContestRoom room = contestRoomRepository.getReferenceById(contest.getRoomId());
+            if (!room.isMember(currentUserId)) {
+                throw InformaticsServerException.PERMISSION_DENIED;
+            }
+        }
+
         try {
             String code = Files.readString(Path.of(submissionDirectory.replace(":taskId", String.valueOf(submission.getTask().getId())) + "/" + submission.getFileName()));
             List<SubmissionTestResultDTO> testResults = submission.getSubmissionTestResults()
@@ -159,10 +178,10 @@ public class SubmissionManager implements ISubmissionManager {
         Task task = taskRepository.getReferenceById(submissionDTO.taskId());
         Contest contest = task.getContest();
         if (contest.getStatus() != ContestStatus.LIVE && !contest.isUpsolving()) {
-            throw new InformaticsServerException("contestNotLive");
+            throw InformaticsServerException.CONTEST_NOT_LIVE;
         }
         if (contest.getStatus() == ContestStatus.LIVE && contest.getParticipants().stream().noneMatch(u -> u.getId() == userId)) {
-            throw new InformaticsServerException("notRegistered");
+            throw InformaticsServerException.NOT_REGISTERED;
         }
         submission.setRoomId(contest.getRoomId());
         submission.setStatus(SubmissionStatus.IN_QUEUE);

@@ -7,6 +7,7 @@ import ge.freeuni.informatics.common.model.CodeLanguage;
 import ge.freeuni.informatics.common.model.user.ProblemAttemptStatus;
 import ge.freeuni.informatics.common.model.user.User;
 import ge.freeuni.informatics.controller.model.*;
+import ge.freeuni.informatics.controller.servlet.ServletUtils;
 import ge.freeuni.informatics.server.files.FileManager;
 import ge.freeuni.informatics.server.submission.ISubmissionManager;
 import ge.freeuni.informatics.server.user.IUserManager;
@@ -74,7 +75,7 @@ public class SubmissionController {
             return ResponseEntity.ok(response);
         } catch (InformaticsServerException e) {
             response.setMessage(e.getCode());
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.status(ServletUtils.getResponseCode(e)).body(response);
         }
     }
 

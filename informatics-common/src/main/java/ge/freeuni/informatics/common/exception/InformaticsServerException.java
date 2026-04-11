@@ -9,7 +9,18 @@ public class InformaticsServerException extends Exception {
     // General exceptions
     public static final InformaticsServerException UNEXPECTED_ERROR = new InformaticsServerException("unexpectedException", ExceptionType.UNEXPECTED_ERROR);
     public static final InformaticsServerException UNAUTHORIZED = new InformaticsServerException("unauthorized", ExceptionType.UNAUTHORIZED);
+    public static final InformaticsServerException NOT_LOGGED_IN = new InformaticsServerException("notLoggedIn", ExceptionType.UNAUTHORIZED);
     public static final InformaticsServerException PERMISSION_DENIED = new InformaticsServerException("permissionDenied", ExceptionType.PERMISSION_DENIED);
+    public static final InformaticsServerException NOT_REGISTERED = new InformaticsServerException("notRegistered", ExceptionType.PERMISSION_DENIED);
+
+    // User account and password exceptions
+    public static final InformaticsServerException USERNAME_ALREADY_EXISTS = new InformaticsServerException("usernameAlreadyExists", ExceptionType.VALIDATION_ERROR);
+    public static final InformaticsServerException INVALID_USERNAME = new InformaticsServerException("invalidUsername", ExceptionType.VALIDATION_ERROR);
+    public static final InformaticsServerException INVALID_RECOVERY_LINK = new InformaticsServerException("invalidLink", ExceptionType.VALIDATION_ERROR);
+    public static final InformaticsServerException RECOVERY_LINK_ALREADY_USED = new InformaticsServerException("linkAlreadyUsed", ExceptionType.VALIDATION_ERROR);
+    public static final InformaticsServerException RECOVERY_REQUEST_TOO_OLD = new InformaticsServerException("recoveryRequestTooOld", ExceptionType.VALIDATION_ERROR);
+    public static final InformaticsServerException USER_NOT_FOUND = new InformaticsServerException("userNotFound", ExceptionType.NOT_FOUND);
+    public static final InformaticsServerException INCORRECT_PASSWORD = new InformaticsServerException("incorrectPassword", ExceptionType.VALIDATION_ERROR);
 
     // Room related exceptions
     public static final InformaticsServerException ROOM_MISMATCH = new InformaticsServerException("roomMismatch", ExceptionType.VALIDATION_ERROR);
@@ -33,6 +44,8 @@ public class InformaticsServerException extends Exception {
     public static final InformaticsServerException CONTEST_NAME_REQUIRED = new InformaticsServerException("contestNameRequired", ExceptionType.VALIDATION_ERROR);
     public static final InformaticsServerException CONTEST_ROOM_ID_MISMATCH = new InformaticsServerException("roomIdMismatch", ExceptionType.VALIDATION_ERROR);
     public static final InformaticsServerException CONTEST_ID_MISMATCH = new InformaticsServerException("contestIdMismatch", ExceptionType.VALIDATION_ERROR);
+    public static final InformaticsServerException CONTEST_NOT_FOUND = new InformaticsServerException("contestNotFound", ExceptionType.NOT_FOUND);
+    public static final InformaticsServerException CONTEST_NOT_LIVE = new InformaticsServerException("contestNotLive", ExceptionType.VALIDATION_ERROR);
 
     public InformaticsServerException(String code, ExceptionType exceptionType) {
         super();

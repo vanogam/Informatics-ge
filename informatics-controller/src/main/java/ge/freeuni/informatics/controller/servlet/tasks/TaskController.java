@@ -102,14 +102,18 @@ public class TaskController {
             return ResponseEntity.ok(taskManager.addTask(request.contestId(), taskDTO));
         } catch (InformaticsServerException ex) {
             log.error("Error while saving the task", ex);
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.status(ServletUtils.getResponseCode(ex)).build();
         }
     }
 
     @PostMapping("/task/{taskId}/statement")
     ResponseEntity<Void> uploadStatement(@PathVariable Long taskId, @RequestBody AddStatementRequest request) {
-        taskManager.addStatement(taskId, request.statement(), request.language());
-        return ResponseEntity.ok().build();
+        try {
+            taskManager.addStatement(taskId, request.statement(), request.language());
+            return ResponseEntity.ok().build();
+        } catch (InformaticsServerException ex) {
+            return ResponseEntity.status(ServletUtils.getResponseCode(ex)).build();
+        }
     }
 
     @GetMapping(value = "/task/{taskId}/statement/{language}")
@@ -135,7 +139,7 @@ public class TaskController {
             return ResponseEntity.ok().build();
         } catch (InformaticsServerException ex) {
             log.error("Error while updating task order", ex);
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.status(ServletUtils.getResponseCode(ex)).build();
         }
     }
 }

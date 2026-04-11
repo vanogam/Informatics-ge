@@ -65,18 +65,26 @@ export default function Login() {
 						top: '50%',
 						left: '50%',
 						transform: 'translate(-50%, -50%)',
-						width: '350px',
+						width: 'min(100% - 32px, 400px)',
+						maxWidth: 400,
 						bgcolor: 'white',
-						border: `2px solid ;`,
+						border: '2px solid #3c324e',
 						borderRadius: '0.5rem',
 						boxShadow: 24,
-						p: 4,
+						p: 3,
 					}}
 				>
 					<Box
 						component="form"
+						onSubmit={(e) => {
+							e.preventDefault()
+							handleLoginSubmit()
+						}}
 						sx={{
-							'& .MuiTextField-root': { m: 1, width: '25ch' },
+							display: 'flex',
+							flexDirection: 'column',
+							gap: 2,
+							width: '100%',
 						}}
 						noValidate
 						autoComplete="off"
@@ -87,6 +95,8 @@ export default function Login() {
 							type="username"
 							autoComplete="current-nickname"
 							inputRef={username}
+							fullWidth
+							size="small"
 						/>
 
 						<TextField
@@ -95,6 +105,8 @@ export default function Login() {
 							type="password"
 							autoComplete="current-password"
 							inputRef={password}
+							fullWidth
+							size="small"
 						/>
 						<FormControlLabel
 							control={
@@ -102,23 +114,31 @@ export default function Login() {
 									checked={rememberMe}
 									onChange={(e) => setRememberMe(e.target.checked)}
 									color="primary"
+									size="small"
 								/>
 							}
 							label="დამახსოვრება"
-							sx={{ marginLeft: '5px', marginTop: '10px' }}
+							sx={{ m: 0, alignSelf: 'flex-start', userSelect: 'none' }}
 						/>
+
 						<Button
-							sx={{ background: '#3c324e' , marginLeft: '5%', marginBottom: '15%', marginTop: '10px'}}
-							onClick={() => handleLoginSubmit()}
+							type="submit"
+							fullWidth
 							variant="contained"
 							color="success"
+							sx={{
+								mt: 0.5,
+								py: 1,
+								backgroundColor: '#3c324e',
+								'&:hover': { backgroundColor: '#2d253c' },
+							}}
 						>
 							შესვლა
 						</Button>
 
 						{credentialsError && (
 							<Button
-								sx={{ color: 'red' }}
+								sx={{ color: 'red', alignSelf: 'center' }}
 								component={NavLink}
 								onClick={handlePassError}
 								to="/reset"

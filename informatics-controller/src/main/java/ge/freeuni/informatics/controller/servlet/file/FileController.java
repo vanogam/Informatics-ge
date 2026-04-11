@@ -2,6 +2,7 @@ package ge.freeuni.informatics.controller.servlet.file;
 
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.controller.model.ImageUploadResponse;
+import ge.freeuni.informatics.controller.servlet.ServletUtils;
 import ge.freeuni.informatics.server.files.FileManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,7 +32,9 @@ public class FileController {
         } catch (IOException e) {
             return ResponseEntity.badRequest().body(new ImageUploadResponse(true, "uploadError"));
         } catch (InformaticsServerException e) {
-            return ResponseEntity.badRequest().body(new ImageUploadResponse(true, e.getMessage()));
+            return ResponseEntity
+                    .status(ServletUtils.getResponseCode(e))
+                    .body(new ImageUploadResponse(true, e.getCode()));
         }
     }
 

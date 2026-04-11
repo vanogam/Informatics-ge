@@ -414,7 +414,7 @@ public class ContestAcceptanceTest extends BaseAcceptanceTest {
                 .when()
                 .post("/submit")
                 .then()
-                .statusCode(400);
+                .statusCode(403);
     }
 
     @Test

@@ -4,6 +4,7 @@ import ge.freeuni.informatics.common.dto.PostCommentDTO;
 import ge.freeuni.informatics.common.dto.PostDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.controller.model.*;
+import ge.freeuni.informatics.controller.servlet.ServletUtils;
 import ge.freeuni.informatics.server.files.FileManager;
 import ge.freeuni.informatics.server.posts.IPostsManager;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,17 +66,21 @@ public class PostController {
         try {
             return ResponseEntity.ok(new AddPostResponse(null, postsManager.addPostDraft(roomId, postDTO)));
         } catch (InformaticsServerException ex) {
-            return ResponseEntity.internalServerError().body(null);
+            return ResponseEntity
+                    .status(ServletUtils.getResponseCode(ex))
+                    .body(new AddPostResponse(ex.getCode(), null));
         }
     }
 
     @PutMapping(value = "/post/{postId}")
-    ResponseEntity<Void> savePost(@PathVariable Long postId, @RequestBody PostDTO postDTO) {
+    ResponseEntity<InformaticsResponse> savePost(@PathVariable Long postId, @RequestBody PostDTO postDTO) {
         try {
             postsManager.savePost(postDTO);
-            return ResponseEntity.ok().build();
+            return ResponseEntity.ok(new InformaticsResponse(null));
         } catch (InformaticsServerException ex) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity
+                    .status(ServletUtils.getResponseCode(ex))
+                    .body(new InformaticsResponse(ex.getCode()));
         }
     }
 
@@ -87,7 +92,9 @@ public class PostController {
         try {
             return ResponseEntity.ok(new ImageUploadResponse(fileManager.saveFileForPost(postId, file.getBytes())));
         } catch (InformaticsServerException ex) {
-            return ResponseEntity.badRequest().body(new ImageUploadResponse(true, ex.getCode()));
+            return ResponseEntity
+                    .status(ServletUtils.getResponseCode(ex))
+                    .body(new ImageUploadResponse(true, ex.getCode()));
         } catch (IOException e) {
             return ResponseEntity.internalServerError().body(new ImageUploadResponse(true, "fileUploadError"));
         }
@@ -112,7 +119,7 @@ public class PostController {
             postsManager.deletePost(postId);
             return ResponseEntity.ok().build();
         } catch (InformaticsServerException ex) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.status(ServletUtils.getResponseCode(ex)).build();
         }
     }
 
@@ -132,7 +139,7 @@ public class PostController {
             postsManager.deleteComment(commentId);
             return ResponseEntity.ok().build();
         } catch (InformaticsServerException ex) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.status(ServletUtils.getResponseCode(ex)).build();
         }
     }
 

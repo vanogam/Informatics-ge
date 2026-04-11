@@ -228,12 +228,12 @@ class TaskControllerTest {
         );
 
         when(taskManager.addTask(eq(1L), any(TaskDTO.class)))
-                .thenThrow(new InformaticsServerException("contestNotFound"));
+                .thenThrow(InformaticsServerException.CONTEST_NOT_FOUND);
 
         mockMvc.perform(post("/api/task")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isNotFound());
     }
 
     @Test

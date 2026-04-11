@@ -94,7 +94,7 @@ public class TaskManager implements ITaskManager {
         try {
             contest = contestRepository.getReferenceById(contestId);
         } catch (Exception ex) {
-            throw new InformaticsServerException("contestNotFound");
+            throw InformaticsServerException.CONTEST_NOT_FOUND;
         }
         return contest.getTasks().stream().map(Task::getTitle).toList();
     }
@@ -183,7 +183,7 @@ public class TaskManager implements ITaskManager {
             contest = contestRepository.getReferenceById(contestId);
         } catch (EntityNotFoundException ex) {
             log.error("Contest with id {} not found", contestId, ex);
-            throw new InformaticsServerException("contestNotFound");
+            throw InformaticsServerException.CONTEST_NOT_FOUND;
         }
         Task task = TaskDTO.fromDTO(taskDTO);
         if (task.getId() != null) {
@@ -240,7 +240,7 @@ public class TaskManager implements ITaskManager {
 
     @Override
     @TeacherTaskRestricted
-    public void addStatement(long taskId, String statement, Language language) {
+    public void addStatement(long taskId, String statement, Language language) throws InformaticsServerException {
         Task task = taskRepository.getReferenceById(taskId);
         task.getStatements().put(language, statement);
         taskRepository.save(task);

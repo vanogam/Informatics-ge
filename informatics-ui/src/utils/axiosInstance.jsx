@@ -7,6 +7,22 @@ import Cookies from 'js-cookie';
 
 export const AxiosContext = createContext(null)
 
+/** Coalesces concurrent CSRF bootstrap calls (e.g. parallel POSTs before any GET). */
+function createCsrfBootstrap(axiosInstance) {
+    let inflight = null
+    return async () => {
+        if (!inflight) {
+            inflight = axiosInstance
+                .get('/csrf')
+                .then((r) => r.data)
+                .finally(() => {
+                    inflight = null
+                })
+        }
+        return inflight
+    }
+}
+
 export const AxiosInstanceProvider = (props) => {
     const authContext = useContext(AuthContext)
 
@@ -18,12 +34,22 @@ export const AxiosInstanceProvider = (props) => {
             },
         );
 
-        axiosInstance.interceptors.request.use((config) => {
-            const token = Cookies.get('XSRF-TOKEN');
-            if (token) {
-                config.headers['X-XSRF-TOKEN'] = token;
+        const ensureCsrfToken = createCsrfBootstrap(axiosInstance)
+
+        axiosInstance.interceptors.request.use(async (config) => {
+            const method = (config.method || 'get').toLowerCase()
+            const safeMethod = ['get', 'head', 'options', 'trace'].includes(method)
+            if (safeMethod) {
+                return config
             }
-            return config;
+            let token = Cookies.get('XSRF-TOKEN')
+            if (!token) {
+                token = await ensureCsrfToken()
+            }
+            if (token) {
+                config.headers['X-XSRF-TOKEN'] = token
+            }
+            return config
         });
 
         axiosInstance.interceptors.response.use((response) => {

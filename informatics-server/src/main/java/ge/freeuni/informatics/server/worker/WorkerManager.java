@@ -15,6 +15,7 @@ import ge.freeuni.informatics.repository.user.UserJpaRepository;
 import ge.freeuni.informatics.repository.worker.WorkerRepository;
 import ge.freeuni.informatics.utils.UserUtils;
 import jakarta.annotation.PostConstruct;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -131,9 +132,8 @@ public class WorkerManager implements IWorkerManager {
                 log.info("Worker user already exists: {}", workerUsername);
             }
             
-            // Update password from config (for both new and existing users)
-            workerUser.setPasswordSalt(UserUtils.getSalt());
-            workerUser.setPassword(UserUtils.getHash(workerPassword, workerUser.getPasswordSalt()));
+            workerUser.setPasswordSalt("");
+            workerUser.setPassword(new BCryptPasswordEncoder().encode(workerPassword));
             userRepository.save(workerUser);
             log.info("Worker user password set from configuration");
         } catch (Exception e) {

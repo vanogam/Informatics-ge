@@ -10,6 +10,7 @@ import ge.freeuni.informatics.common.model.contest.ContestantResult;
 import ge.freeuni.informatics.common.model.contestroom.ContestRoom;
 import ge.freeuni.informatics.common.model.task.Task;
 import ge.freeuni.informatics.common.model.user.User;
+import ge.freeuni.informatics.server.annotation.ContestTeacherRestricted;
 import ge.freeuni.informatics.repository.contest.ContestJpaRepository;
 import ge.freeuni.informatics.server.annotation.MemberTaskRestricted;
 import ge.freeuni.informatics.server.annotation.RoomTeacherRestricted;
@@ -140,12 +141,9 @@ public class ContestManager implements IContestManager {
     }
 
     @Override
+    @ContestTeacherRestricted
     public void deleteContest(long contestId) throws InformaticsServerException {
         Contest contest = contestRepository.getReferenceById(contestId);
-        ContestRoom room = contestRoomManager.getRoom(contest.getRoomId());
-        if (!room.isMember(userManager.getAuthenticatedUser().id())) {
-            throw InformaticsServerException.PERMISSION_DENIED;
-        }
         List<Task> tasks = contest.getTasks();
         for (Task task : tasks) {
             taskManager.removeTask(task.getId(), contestId);

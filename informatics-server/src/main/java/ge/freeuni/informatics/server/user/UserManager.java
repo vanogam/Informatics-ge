@@ -18,6 +18,7 @@ import jakarta.persistence.NoResultException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.util.Calendar;
@@ -25,6 +26,8 @@ import java.util.Date;
 
 @Component
 public class UserManager implements IUserManager {
+
+    private static final BCryptPasswordEncoder BCRYPT = new BCryptPasswordEncoder();
 
     @Value("${ge.freeuni.informatics.server.user.passwordRecoveryValidityMinutes}")
     private String passwordRecoveryValidityMinutes;
@@ -77,15 +80,15 @@ public class UserManager implements IUserManager {
     public void createUser(UserDTO userDTO, String password) throws InformaticsServerException {
         User user = UserDTO.fromDTO(userDTO);
         user.setId(null);
-        user.setPasswordSalt(UserUtils.getSalt());
-        user.setPassword(UserUtils.getHash(password, user.getPasswordSalt()));
+        user.setPasswordSalt("");
+        user.setPassword(BCRYPT.encode(password));
         user.setVersion(1);
         user.setRole(UserRole.STUDENT.name());
         user.setRegistrationTime(new Date());
         try {
             userRepository.save(user);
         } catch (Exception e) {
-            throw new InformaticsServerException("usernameAlreadyExists");
+            throw InformaticsServerException.USERNAME_ALREADY_EXISTS;
         }
     }
 
@@ -95,14 +98,30 @@ public class UserManager implements IUserManager {
         if (user == null) {
             return null;
         }
-        String hash = UserUtils.getHash(password, user.getPasswordSalt());
-        if (hash.equals(user.getPassword())) {
+
+        boolean authenticated;
+        if (isBcryptHash(user.getPassword())) {
+            authenticated = BCRYPT.matches(password, user.getPassword());
+        } else {
+            String legacyHash = UserUtils.getHash(password, user.getPasswordSalt());
+            authenticated = legacyHash.equals(user.getPassword());
+            if (authenticated) {
+                user.setPassword(BCRYPT.encode(password));
+                user.setPasswordSalt("");
+            }
+        }
+
+        if (authenticated) {
             user.setLastLogin(new Date());
             userRepository.save(user);
             return user;
         }
 
         return null;
+    }
+
+    private static boolean isBcryptHash(String hash) {
+        return hash != null && hash.startsWith("$2");
     }
 
     @Override
@@ -120,7 +139,7 @@ public class UserManager implements IUserManager {
     public UserDTO getAuthenticatedUser() throws InformaticsServerException {
         Object principalObject = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (!(principalObject instanceof InformaticsPrincipal principal)) {
-            throw new InformaticsServerException("notLoggedIn");
+            throw InformaticsServerException.NOT_LOGGED_IN;
         }
         return UserDTO.toDTO(principal.getUser());
     }
@@ -133,7 +152,7 @@ public class UserManager implements IUserManager {
             user = userRepository.getFirstByUsername(username);
             recoverPassword.setUserId(user.getId());
         } catch (NoResultException ex) {
-            throw new InformaticsServerException("invalidUsername");
+            throw InformaticsServerException.INVALID_USERNAME;
         }
         recoverPassword.setCreateTime(new Date());
         recoverPassword.setLink(FileUtils.getRandomFileName(30));
@@ -153,17 +172,17 @@ public class UserManager implements IUserManager {
         try {
             recoverPassword = recoveryJpaRepository.getFirstByLink(link);
         } catch (NoResultException ex) {
-            throw new InformaticsServerException("invalidLink");
+            throw InformaticsServerException.INVALID_RECOVERY_LINK;
         }
         if (recoverPassword.isUsed()) {
-            throw new InformaticsServerException("linkAlreadyUsed");
+            throw InformaticsServerException.RECOVERY_LINK_ALREADY_USED;
         }
         Date createTime = recoverPassword.getCreateTime();
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(createTime);
         calendar.add(Calendar.MINUTE, Integer.parseInt(passwordRecoveryValidityMinutes));
         if (calendar.getTime().before(new Date())) {
-            throw new InformaticsServerException("recoveryRequestTooOld");
+            throw InformaticsServerException.RECOVERY_REQUEST_TOO_OLD;
         }
         return recoverPassword;
     }
@@ -172,8 +191,8 @@ public class UserManager implements IUserManager {
     public void recoverPassword(String link, String newPassword) throws InformaticsServerException {
         RecoverPassword recoverPassword = verifyRecoveryQuery(link);
         User user = userRepository.getReferenceById(recoverPassword.getUserId());
-        user.setPasswordSalt(UserUtils.getSalt());
-        user.setPassword(UserUtils.getHash(newPassword, user.getPasswordSalt()));
+        user.setPasswordSalt("");
+        user.setPassword(BCRYPT.encode(newPassword));
         userRepository.save(user);
         recoverPassword.setUsed(true);
         recoveryJpaRepository.save(recoverPassword);
@@ -204,7 +223,7 @@ public class UserManager implements IUserManager {
     public UserProfileDTO getUserProfileByUsername(String username) throws InformaticsServerException {
         User user = userRepository.getFirstByUsername(username);
         if (user == null) {
-            throw new InformaticsServerException("userNotFound");
+            throw InformaticsServerException.USER_NOT_FOUND;
         }
         long solvedProblemsCount = solvedProblemRepository.countByUserIdAndStatus(user.getId(), ProblemAttemptStatus.SOLVED);
         return new UserProfileDTO(
@@ -221,16 +240,22 @@ public class UserManager implements IUserManager {
         User user = userRepository.getFirstByUsername(currentUser.username());
         
         if (user == null) {
-            throw new InformaticsServerException("userNotFound");
+            throw InformaticsServerException.USER_NOT_FOUND;
         }
         
-        String oldHash = UserUtils.getHash(oldPassword, user.getPasswordSalt());
-        if (!oldHash.equals(user.getPassword())) {
-            throw new InformaticsServerException("incorrectPassword");
+        boolean oldPasswordValid;
+        if (isBcryptHash(user.getPassword())) {
+            oldPasswordValid = BCRYPT.matches(oldPassword, user.getPassword());
+        } else {
+            String oldHash = UserUtils.getHash(oldPassword, user.getPasswordSalt());
+            oldPasswordValid = oldHash.equals(user.getPassword());
+        }
+        if (!oldPasswordValid) {
+            throw InformaticsServerException.INCORRECT_PASSWORD;
         }
         
-        user.setPasswordSalt(UserUtils.getSalt());
-        user.setPassword(UserUtils.getHash(newPassword, user.getPasswordSalt()));
+        user.setPasswordSalt("");
+        user.setPassword(BCRYPT.encode(newPassword));
         userRepository.save(user);
     }
 }

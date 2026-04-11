@@ -284,7 +284,7 @@ class TestcaseControllerTest {
         mockMvc.perform(put("/api/task/1/testcases/test01/public")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value(InformaticsServerException.TEST_NOT_FOUND.getCode()));
 
         verify(log).error(eq("Error during setting public testcases"), any(InformaticsServerException.class));
@@ -307,7 +307,7 @@ class TestcaseControllerTest {
                 .when(taskManager).removeTestCase(eq(1L), eq("test01"));
 
         mockMvc.perform(delete("/api/task/1/testcase/test01"))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value(InformaticsServerException.TEST_NOT_FOUND.getCode()));
 
         verify(log).error(eq("Error during deleting testcase"), any(InformaticsServerException.class));

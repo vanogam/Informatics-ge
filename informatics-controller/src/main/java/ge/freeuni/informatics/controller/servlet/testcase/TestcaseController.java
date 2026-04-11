@@ -89,7 +89,9 @@ public class TestcaseController {
             taskManager.setPublicTestcase(taskId, testKey, request.status());
         } catch (InformaticsServerException ex) {
             log.error("Error during setting public testcases", ex);
-            return ResponseEntity.badRequest().body(new InformaticsResponse(ex.getCode()));
+            return ResponseEntity
+                    .status(ServletUtils.getResponseCode(ex))
+                    .body(new InformaticsResponse(ex.getCode()));
         }
         return ResponseEntity.ok().build();
     }
@@ -100,7 +102,9 @@ public class TestcaseController {
             taskManager.removeTestCase(taskId, testKey);
         } catch (InformaticsServerException ex) {
             log.error("Error during deleting testcase", ex);
-            return ResponseEntity.badRequest().body(new InformaticsResponse(ex.getCode()));
+            return ResponseEntity
+                    .status(ServletUtils.getResponseCode(ex))
+                    .body(new InformaticsResponse(ex.getCode()));
         }
         return ResponseEntity.ok(new InformaticsResponse(null));
     }
@@ -111,7 +115,9 @@ public class TestcaseController {
             taskManager.removeTestcases(taskId, request.testKeys());
         } catch (InformaticsServerException ex) {
             log.error("Error during deleting testcases", ex);
-            return ResponseEntity.badRequest().body(new InformaticsResponse(ex.getCode()));
+            return ResponseEntity
+                    .status(ServletUtils.getResponseCode(ex))
+                    .body(new InformaticsResponse(ex.getCode()));
         }
         return ResponseEntity.ok(new InformaticsResponse(null));
     }

@@ -90,4 +90,32 @@ public enum TaskScoreType {
     public Float evaluate(List<SubmissionTestResult> testResults, String scoreParameter) {
         return evaluator.apply(testResults, scoreParameter);
     }
+
+    public Float computeMaxScore(String parameter, int testcaseCount) {
+        if (parameter == null) return null;
+        parameter = parameter.trim();
+        if (this == SUM) {
+            if (parameter.charAt(0) == '[') {
+                String[] parts = parameter.substring(1, parameter.length() - 1).split(",");
+                float sum = 0;
+                for (String part : parts) sum += Float.parseFloat(part.trim());
+                return sum;
+            } else {
+                return Float.parseFloat(parameter) * testcaseCount;
+            }
+        } else if (this == GROUP_MIN) {
+            if (parameter.charAt(0) == '[') {
+                String s = parameter.substring(1, parameter.length() - 1).replaceAll("\\s+", "");
+                String[] groups = s.split("\\],\\[");
+                float sum = 0;
+                for (String group : groups) {
+                    String stripped = group.replaceAll("^\\[|\\]$", "");
+                    String multiplierStr = stripped.split(",")[0];
+                    sum += Float.parseFloat(multiplierStr);
+                }
+                return sum;
+            }
+        }
+        return null;
+    }
 }

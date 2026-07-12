@@ -6,6 +6,7 @@ import ge.freeuni.informatics.common.model.contest.Contest;
 import ge.freeuni.informatics.common.model.contestroom.ContestRoom;
 import ge.freeuni.informatics.common.model.post.Post;
 import ge.freeuni.informatics.common.model.task.Task;
+import ge.freeuni.informatics.common.model.user.UserRole;
 import ge.freeuni.informatics.repository.contest.ContestJpaRepository;
 import ge.freeuni.informatics.repository.contestroom.ContestRoomJpaRepository;
 import ge.freeuni.informatics.repository.post.PostJpaRepository;
@@ -124,8 +125,8 @@ public class PermissionAspect {
         if (room.isTeacher(userId)) {
             return true;
         }
-        String role = userManager.getAuthenticatedUser().role();
-        return role != null && role.contains("ADMIN");
+        String roles = userManager.getAuthenticatedUser().role();
+        return UserRole.hasRole(roles, UserRole.ADMIN);
     }
 
     @Before("@annotation(postAuthorRestricted) && args(postDTO,..)")
@@ -170,8 +171,8 @@ public class PermissionAspect {
             throw InformaticsServerException.UNAUTHORIZED;
         }
         
-        String role = userManager.getAuthenticatedUser().role();
-        if (role == null || !role.contains("WORKER")) {
+        String roles = userManager.getAuthenticatedUser().role();
+        if (!UserRole.hasRole(roles, UserRole.WORKER)) {
             log.warn("User {} attempted to access worker-restricted method without WORKER role", userManager.getAuthenticatedUser().username());
             throw InformaticsServerException.PERMISSION_DENIED;
         }
@@ -184,8 +185,8 @@ public class PermissionAspect {
             throw InformaticsServerException.UNAUTHORIZED;
         }
 
-        String role = userManager.getAuthenticatedUser().role();
-        if (role == null || !role.contains("ADMIN")) {
+        String roles = userManager.getAuthenticatedUser().role();
+        if (!UserRole.hasRole(roles, UserRole.ADMIN)) {
             log.warn("User {} attempted to access admin-restricted method without ADMIN role",
                     userManager.getAuthenticatedUser().username());
             throw InformaticsServerException.PERMISSION_DENIED;

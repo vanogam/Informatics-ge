@@ -11,19 +11,17 @@ public class SubmissionTestResult {
      */
     private Float score;
 
-    @Column(length = 512)
     private String testKey;
 
     /**
-     * First symbols of contestant output for the test case.
+     * First 1000 symbols of contestant output for the test case.
      */
-    @Column(length = 4000)
     private String outcome;
 
     /**
-     * Compiler message.
+     * Compilers message.
      */
-    @Column(length = 4000)
+    @Column(length = 1000)
     private String message;
 
     /**

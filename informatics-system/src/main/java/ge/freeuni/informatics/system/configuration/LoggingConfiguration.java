@@ -12,8 +12,8 @@ public class LoggingConfiguration {
         CommonsRequestLoggingFilter filter
                 = new CommonsRequestLoggingFilter();
         filter.setIncludeQueryString(true);
-        filter.setIncludePayload(true);
-        filter.setMaxPayloadLength(10000);
+        // Never log raw bodies: login/register/changed-password JSON contains secrets.
+        filter.setIncludePayload(false);
         filter.setIncludeHeaders(false);
         filter.setAfterMessagePrefix("Inbound request: ");
         return filter;

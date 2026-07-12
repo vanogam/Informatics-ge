@@ -1,0 +1,27 @@
+[Unit]
+Description=Informatics UI Service
+After=docker.service informatics-core.service
+Requires=docker.service
+
+[Service]
+User=informatics
+Group=informatics
+Restart=always
+EnvironmentFile=/home/informatics/app/config/.env
+
+ExecStartPre=-/usr/bin/docker rm -f ui
+
+ExecStart=/usr/bin/docker run \
+  --name ui \
+  -p 80:80 \
+  -p 443:443 \
+  -v ${INFORMATICS_HOME_DIR}/certs:/etc/nginx/certs:ro \
+  -v ${INFORMATICS_HOME_DIR}/logs/ui:/var/log/nginx \
+  --network informatics \
+  --network-alias ui \
+  ghcr.io/vanogam/informatics/ui:${VERSION}
+
+ExecStop=/usr/bin/docker stop ui
+
+[Install]
+WantedBy=multi-user.target

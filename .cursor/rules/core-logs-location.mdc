@@ -1,0 +1,11 @@
+---
+description: Inspect core backend logs at informatics.log under prod logs core directory
+alwaysApply: true
+---
+
+# Core logs location
+
+- Core (backend) logs live under `/home/informatics/prod/logs/core/`.
+- You can inspect logs at **`/home/informatics/prod/logs/core/informatics.log`** (primary tail-friendly file).
+- Rotated files may appear as `informatics-YYYY-MM-DD.log` in the same directory; use those when investigating a specific date.
+

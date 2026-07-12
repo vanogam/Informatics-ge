@@ -44,11 +44,10 @@ public class JudgeIntegration implements IJudgeIntegration{
 
     private static final ConcurrentHashMap<Long, Object> submissionLocks = new ConcurrentHashMap<>();
 
-    private static final int COMPILATION_MESSAGE_MAX_LENGTH = 4000;
-    private static final int TEST_RESULT_MESSAGE_MAX_LENGTH = 4000;
-    private static final int TEST_RESULT_OUTCOME_MAX_LENGTH = 4000;
-    private static final int TEST_RESULT_KEY_MAX_LENGTH = 512;
-    private static final String TRUNCATION_SUFFIX = "... [truncated]";
+    private static final int COMPILATION_MESSAGE_MAX_LENGTH = 1000;
+    private static final int TEST_RESULT_MESSAGE_MAX_LENGTH = 1000;
+    private static final int TEST_RESULT_OUTCOME_MAX_LENGTH = 1000;
+    private static final String TRUNCATION_SUFFIX = "...";
 
     private String truncateToLength(String value, int maxLength) {
         if (value == null) {
@@ -234,7 +233,7 @@ public class JudgeIntegration implements IJudgeIntegration{
 
     private SubmissionTestResult createTestResult(KafkaCallback callback) {
         SubmissionTestResult testResult = new SubmissionTestResult();
-        testResult.setTestKey(truncateToLength(callback.testcaseKey(), TEST_RESULT_KEY_MAX_LENGTH));
+        testResult.setTestKey(callback.testcaseKey());
         testResult.setTestStatus(callback.status());
         testResult.setMessage(truncateToLength(callback.message(), TEST_RESULT_MESSAGE_MAX_LENGTH));
         testResult.setOutcome(truncateToLength(callback.outcome(), TEST_RESULT_OUTCOME_MAX_LENGTH));

@@ -97,6 +97,9 @@ export const AxiosInstanceProvider = (props) => {
                     case 400:
                         toast.error(getMessage('ka', error.response.data.message))
                         break;
+                    case 413:
+                        toast.error(getMessage('ka', 'uploadFileSizeExceeded'));
+                        break;
                 }
             }
             return Promise.reject(error);

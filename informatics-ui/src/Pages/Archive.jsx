@@ -37,7 +37,7 @@ function handleContestResponse(response, setProblems){
 		const contestName = task.contestName
 		const score = task.score
 		const taskItem = {
-			id: taskId, 
+			id: taskId,
 			name: taskName,
 			contestId: contestId,
 			contestName: contestName,

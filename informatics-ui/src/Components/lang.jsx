@@ -39,6 +39,7 @@ const langDictionary = {
 		'unexpectedException': 'გაუთვალისწინებელი შეცდომა',
 		'insufficientPrivileges': 'ამ ქმედების განხორციელების უფლება არ გაქვთ!',
 		'pleaseLogin': 'გთხოვთ, გაიაროთ ავტორიზაცია',
+		'uploadFileSizeExceeded': 'ატვირთული ფაილის ზომა ლიმიტს აჭარბებს',
 		'missingRequiredFields': 'გთხოვთ, შეავსოთ აუცილებელი ველები',
 		'startDateAndDurationError': 'დაწყების თარიღი და ხანგრძლივობიდან ერთ-ერთი არ შეიძლება იყოს ცარიელი(დატოვეთ ორივე ცარიელი საარქივო კონტესტის შექმნის შემთხვევაში)',
 

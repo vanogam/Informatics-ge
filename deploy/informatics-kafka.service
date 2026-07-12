@@ -1,0 +1,32 @@
+[Unit]
+Description=Informatics Kafka Service
+After=docker.service
+Requires=docker.service
+
+[Service]
+User=informatics
+Group=informatics
+Restart=always
+EnvironmentFile=/home/informatics/app/config/.env
+
+ExecStartPre=-/usr/bin/docker rm -f kafka
+
+ExecStart=/usr/bin/docker run \
+  --name kafka \
+  -e KAFKA_LISTENERS=CONTROLLER://localhost:9091,HOST://0.0.0.0:9093,DOCKER://0.0.0.0:9092 \
+  -e KAFKA_ADVERTISED_LISTENERS=HOST://localhost:9093,DOCKER://kafka:9092 \
+  -e KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,DOCKER:PLAINTEXT,HOST:PLAINTEXT \
+  -e KAFKA_NODE_ID=1 \
+  -e KAFKA_PROCESS_ROLES=broker,controller \
+  -e KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER \
+  -e KAFKA_CONTROLLER_QUORUM_VOTERS=1@localhost:9091 \
+  -e KAFKA_INTER_BROKER_LISTENER_NAME=DOCKER \
+  -e KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1 \
+  --network informatics \
+  --network-alias kafka \
+  apache/kafka:latest
+
+ExecStop=/usr/bin/docker stop kafka
+
+[Install]
+WantedBy=multi-user.target

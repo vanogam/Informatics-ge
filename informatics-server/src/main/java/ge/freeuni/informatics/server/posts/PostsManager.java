@@ -172,7 +172,7 @@ public class PostsManager implements IPostsManager {
             PostComment comment = commentRepository.getReferenceById(commentId);
             Long currentUserId = userManager.getAuthenticatedUser().id();
             Long postAuthorId = postRepository.getReferenceById(comment.getPostId()).getAuthor().getId();
-            // According to permission matrix, only teacher/post author can delete comments.
+            // Only teacher and post author can delete comments.
             if (!postAuthorId.equals(currentUserId)) {
                 log.error("User {} is not the author of comment {}", userManager.getAuthenticatedUser().id(), commentId);
                 throw InformaticsServerException.PERMISSION_DENIED;

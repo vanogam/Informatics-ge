@@ -1,0 +1,35 @@
+[Unit]
+Description=Informatics Core Service
+After=docker.service informatics-db.service informatics-kafka.service
+Requires=docker.service
+
+[Service]
+User=informatics
+Group=informatics
+Restart=always
+EnvironmentFile=/home/informatics/app/config/.env
+
+ExecStartPre=-/usr/bin/docker rm -f core
+
+ExecStart=/usr/bin/docker run \
+  --name core \
+  -p 8000:8080 \
+  -v ${INFORMATICS_HOME_DIR}/files:/files \
+  -v ${INFORMATICS_HOME_DIR}/logs/core:/logs \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v ${INFORMATICS_HOME_DIR}/config:/opt/app/external-config:ro \
+  -e SPRING_PROFILES_ACTIVE=prod \
+  -e SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/informatics \
+  -e SPRING_DATASOURCE_USERNAME=${DB_USER} \
+  -e SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD} \
+  -e SPRING_REDIS_HOST=redis \
+  -e INFORMATICS_HOME_DIR=${INFORMATICS_HOME_DIR} \
+  -e SPRING_CONFIG_ADDITIONAL_LOCATION=optional:file:/opt/app/external-config/application.properties \
+  --network informatics \
+  --network-alias core \
+  ghcr.io/vanogam/informatics/core:${VERSION}
+
+ExecStop=/usr/bin/docker stop core
+
+[Install]
+WantedBy=multi-user.target

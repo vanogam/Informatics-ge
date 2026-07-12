@@ -36,7 +36,6 @@ public class Testcase {
         this.id = id;
     }
 
-    @Column(length = 512)
     public String getKey() {
         return key;
     }
@@ -53,7 +52,7 @@ public class Testcase {
         this.taskId = taskId;
     }
 
-    @Column(length = 2048)
+    @Column(length = 512)
     public String getInputFileAddress() {
         return inputFileAddress;
     }
@@ -62,7 +61,7 @@ public class Testcase {
         this.inputFileAddress = inputFileAddress;
     }
 
-    @Column(length = 2048)
+    @Column(length = 512)
     public String getOutputFileAddress() {
         return OutputFileAddress;
     }

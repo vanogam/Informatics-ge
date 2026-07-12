@@ -125,7 +125,8 @@ public class TaskManager implements ITaskManager {
                         score = taskResult.getScore();
                     }
                 }
-                result.add(new TaskInfo(taskDTO, score, contestName));
+                Float maxScore = computeMaxScore(task);
+                result.add(new TaskInfo(taskDTO, score, maxScore, contestName));
             }
         }
         return result;
@@ -165,13 +166,25 @@ public class TaskManager implements ITaskManager {
                     .filter(res -> res.getContestantId() == currentUser.id())
                     .findFirst()
                     .orElse(null);
+            Float maxScore = computeMaxScore(task);
             if (contestantResult == null || contestantResult.getTaskResults() == null || !contestantResult.getTaskResults().containsKey(task.getCode())) {
-                result.add(new TaskInfo(taskDTO, null));
+                result.add(new TaskInfo(taskDTO, null, maxScore));
             } else {
-                result.add(new TaskInfo(taskDTO, contestantResult.getTaskResults().get(task.getCode()).getScore()));
+                result.add(new TaskInfo(taskDTO, contestantResult.getTaskResults().get(task.getCode()).getScore(), maxScore));
             }
         }
         return result;
+    }
+
+    private Float computeMaxScore(Task task) {
+        if (task.getTaskScoreType() == null || task.getTaskScoreParameter() == null) return null;
+        try {
+            int testcaseCount = task.getTestcases() != null ? task.getTestcases().size() : 0;
+            return task.getTaskScoreType().computeMaxScore(task.getTaskScoreParameter(), testcaseCount);
+        } catch (Exception e) {
+            log.warn("Failed to compute max score for task {}: {}", task.getId(), e.getMessage());
+            return null;
+        }
     }
 
     @Override

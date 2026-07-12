@@ -1,0 +1,29 @@
+[Unit]
+Description=Informatics PostgreSQL Container
+After=docker.service
+Requires=docker.service
+
+[Service]
+User=informatics
+Group=informatics
+Restart=always
+EnvironmentFile=/home/informatics/app/config/.env
+
+ExecStartPre=-/usr/bin/docker rm -f db
+
+ExecStart=/usr/bin/docker run \
+  --name db \
+  -p 5432:5432 \
+  -v ${INFORMATICS_HOME_DIR}/data_pg:/var/lib/postgresql \
+  -e POSTGRES_DB=${DB_NAME} \
+  -e POSTGRES_USER=${DB_USER} \
+  -e POSTGRES_PASSWORD=${DB_PASSWORD} \
+  --network informatics \
+  --network-alias db \
+  postgres:latest
+
+ExecStop=/usr/bin/docker stop db
+
+[Install]
+WantedBy=multi-user.target
+

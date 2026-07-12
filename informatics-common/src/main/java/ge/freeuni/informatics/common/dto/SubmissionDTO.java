@@ -3,6 +3,7 @@ package ge.freeuni.informatics.common.dto;
 
 import ge.freeuni.informatics.common.model.submission.Submission;
 import ge.freeuni.informatics.common.model.submission.SubmissionStatus;
+import ge.freeuni.informatics.common.model.task.Task;
 
 import java.util.Date;
 import java.util.List;
@@ -13,6 +14,7 @@ public record SubmissionDTO(
     SubmissionStatus status,
     Integer currentTest,
     Float score,
+    Float maxScore,
     long taskId,
     long contestId,
     String taskName,
@@ -39,6 +41,7 @@ public record SubmissionDTO(
                 null,
                 null,
                 null,
+                null,
                 taskId,
                 contestId,
                 null,
@@ -62,6 +65,7 @@ public record SubmissionDTO(
             submission.getStatus(),
             submission.getCurrentTest(),
             submission.getScore(),
+            computeMaxScore(submission.getTask()),
             submission.getTask().getId(),
             submission.getContest().getId(),
             submission.getTask().getTitle(),
@@ -84,6 +88,7 @@ public record SubmissionDTO(
             submission.getStatus(),
             submission.getCurrentTest(),
             submission.getScore(),
+            computeMaxScore(submission.getTask()),
             submission.getTask().getId(),
             submission.getContest().getId(),
             submission.getTask().getTitle(),
@@ -110,5 +115,15 @@ public record SubmissionDTO(
         submission.setCurrentTest(submissionDTO.currentTest());
         submission.setFileName(submissionDTO.fileName());
         return submission;
+    }
+
+    private static Float computeMaxScore(Task task) {
+        if (task == null || task.getTaskScoreType() == null || task.getTaskScoreParameter() == null) return null;
+        try {
+            int testcaseCount = task.getTestcases() != null ? task.getTestcases().size() : 0;
+            return task.getTaskScoreType().computeMaxScore(task.getTaskScoreParameter(), testcaseCount);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

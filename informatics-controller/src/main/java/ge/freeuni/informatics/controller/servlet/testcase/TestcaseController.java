@@ -6,10 +6,13 @@ import ge.freeuni.informatics.controller.servlet.ServletUtils;
 import ge.freeuni.informatics.server.task.ITaskManager;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -25,10 +28,24 @@ public class TestcaseController {
     @Autowired
     ITaskManager taskManager;
 
+    @Value("${ge.freeuni.informatics.maxTestcasesZipMb}")
+    int maxTestcasesZipMb;
+
+    @Value("${ge.freeuni.informatics.maxSingleTestcaseFileMb}")
+    int maxSingleTestcaseFileMb;
+
     @PostMapping("/task/{taskId}/testcases")
     ResponseEntity<AddTestcasesResponse> addTestcases(@RequestParam Long taskId, @ModelAttribute AddTestcasesRequest request) {
+        MultipartFile zip = request.getFile();
+        long maxZipBytes = maxTestcasesZipMb * 1024L * 1024L;
+        if (zip == null || zip.isEmpty()) {
+            return ResponseEntity.badRequest().body(new AddTestcasesResponse("fileUploadError"));
+        }
+        if (zip.getSize() > maxZipBytes) {
+            return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).build();
+        }
         try {
-            return ResponseEntity.ok(new AddTestcasesResponse(taskManager.addTestcases(taskId, request.getFile().getBytes())));
+            return ResponseEntity.ok(new AddTestcasesResponse(taskManager.addTestcases(taskId, zip.getBytes())));
         } catch (InformaticsServerException e) {
             return ResponseEntity.status(ServletUtils.getResponseCode(e))
                     .body(new AddTestcasesResponse(e.getCode()));
@@ -70,9 +87,18 @@ public class TestcaseController {
 
     @PostMapping("/task/{taskId}/testcase")
     ResponseEntity<AddTestcasesResponse> addSingleTestcase(@PathVariable Long taskId, @ModelAttribute AddSingleTestcaseRequest request) {
+        MultipartFile in = request.getInputFile();
+        MultipartFile out = request.getOutputFile();
+        long maxPartBytes = maxSingleTestcaseFileMb * 1024L * 1024L;
+        if (in == null || out == null || in.isEmpty() || out.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        if (in.getSize() > maxPartBytes || out.getSize() > maxPartBytes) {
+            return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).build();
+        }
         try {
-            return ResponseEntity.ok(new AddTestcasesResponse(taskManager.addTestcase(taskId, request.getInputFile().getBytes(), request.getOutputFile().getBytes(),
-                    request.getInputFile().getOriginalFilename(), request.getOutputFile().getOriginalFilename()
+            return ResponseEntity.ok(new AddTestcasesResponse(taskManager.addTestcase(taskId, in.getBytes(), out.getBytes(),
+                    in.getOriginalFilename(), out.getOriginalFilename()
             )));
         } catch (InformaticsServerException ex) {
             return ResponseEntity.status(ServletUtils.getResponseCode(ex)).build();

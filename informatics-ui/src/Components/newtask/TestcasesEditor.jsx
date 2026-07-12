@@ -6,6 +6,9 @@ import {AxiosContext} from "../../utils/axiosInstance";
 import {toast} from "react-toastify";
 import {useConfirmDialog} from "../../utils/ConfirmDialogContext";
 
+/** Must stay aligned with ge.freeuni.informatics.maxTestcasesZipMb on the server (default 100). */
+const MAX_TESTCASES_ZIP_BYTES = 100 * 1024 * 1024;
+
 export default function TestcasesEditor({taskId, loadTask, testcases, setTestcases, changePublic}) {
     const [inputFile, setInputFile] = useState(null);
     const [outputFile, setOutputFile] = useState(null);
@@ -113,6 +116,10 @@ export default function TestcasesEditor({taskId, loadTask, testcases, setTestcas
     }
 
     const handleAddMultipleTestcases = () => {
+        if (multipleTestcasesFile.size > MAX_TESTCASES_ZIP_BYTES) {
+            toast.error(getMessage('ka', 'uploadFileSizeExceeded'));
+            return;
+        }
         axiosInstance.post(
             `/task/${taskId}/testcases`,
             getMultipleTestcasesPostData(),

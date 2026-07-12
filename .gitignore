@@ -43,6 +43,8 @@ hs_err_pid*
 # misc
 .DS_Store
 .env
+.bash-env
+deploy/.bash-env
 .env.local
 .env.development.local
 .env.test.local

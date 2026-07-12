@@ -1,0 +1,46 @@
+# Copy to .bash-env in this directory (or repo root) and fill in values.
+# .bash-env is gitignored.
+
+# --- GitHub Container Registry ---
+# If GHCR_TOKEN is set, GHCR_USER is required and the script logs in locally and on the remote.
+# If GHCR_TOKEN is empty, run `docker login ghcr.io` locally and on the server; the deploy script will not log in for you.
+GHCR_USER=
+GHCR_TOKEN=
+# Registry prefix — images are pushed as ${GHCR_IMAGE_PREFIX}/core:${VERSION}, /ui:, /worker:
+GHCR_IMAGE_PREFIX=ghcr.io/YOUR_GITHUB_USERNAME/informatics
+
+# Tag applied to all custom images (must match VERSION on server .env).
+VERSION=
+
+# --- SSH ---
+SSH_HOST=
+SSH_USER=
+# Path to private key matching the pubkey installed on server
+SSH_KEY=
+# SSH_PORT=22
+
+# --- Remote layout ---
+# Top-level app directory on the remote host.
+REMOTE_APP_DIR=/home/informatics/app
+# Directory holding the .env file read by systemd EnvironmentFile= (defaults to $REMOTE_APP_DIR/config).
+REMOTE_CONFIG_DIR=/home/informatics/app/config
+# Local .env file to upload to REMOTE_CONFIG_DIR/.env on every deploy.
+# Leave empty if you manage .env on the server manually.
+LOCAL_ENV_FILE=
+
+# Space-separated systemd service names to restart after image pull.
+REMOTE_SERVICES="informatics-core informatics-ui"
+
+# FULL_DEPLOY=1 — same as CLI -F (--full-deploy). CLI wins if FULL_DEPLOY=0 here and you pass -F.
+FULL_DEPLOY=0
+# Local directory to zip and rsync to REMOTE_APP_DIR when FULL_DEPLOY=1.
+FULL_DEPLOY_LOCAL_ROOT=/home/informatics/prod
+# Where to store timestamped backups of REMOTE_APP_DIR before each full deploy (defaults to sibling 'backups/' dir).
+# REMOTE_BACKUP_DIR=/home/informatics/backups
+
+# Maven/Docker: run a full Maven build before deploy when BUILD_IMAGES=1 (recommended).
+# SKIP_WORKER_BUILD=1 avoids worker image if worker JAR is not built yet.
+BUILD_IMAGES=1
+SKIP_UI_BUILD=0
+SKIP_WORKER_BUILD=0
+SKIP_PUSH=0

@@ -17,6 +17,8 @@ import {Button} from '@mui/material'
 import {useEffect} from 'react';
 import {AxiosContext} from '../utils/axiosInstance'
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import "../styles/markdown.css";
 import remarkMath from "remark-math";
 import rehypeMathjax from "rehype-mathjax";
 import getMessage from "../Components/lang";
@@ -130,13 +132,22 @@ export default function Problem() {
             .catch(_ => {})
 
     }, [problem_id])
-    const statementTitle = !!statement.statement 
-        ? (taskOrder ? `${taskOrder}. ${statement.statement.title}` : statement.statement.title)
+    // Built from the parts that exist, so a missing title cannot render as "1. null".
+    const statementTitle = !!statement.statement
+        ? [taskOrder ? `${taskOrder}.` : '', statement.statement.title || '']
+            .filter(Boolean).join(' ').trim()
         : '';
-    const statementText = !!statement.statement ? `**${statementTitle}**` + '\n\n'
-        + statement.statement.statement + '\n\n' +
-        `**${getMessage('ka', 'inputContent')}:**\n\n${statement.statement.inputInfo}\n\n` +
-        `**${getMessage('ka', 'outputContent')}:**\n\n${statement.statement.outputInfo}\n\n` : '';
+    // A section is only rendered when it has content: an empty field would otherwise leave a
+    // heading with nothing under it, and a null one would print the word "null".
+    const section = (label, body) => body && body.trim()
+        ? `**${getMessage('ka', label)}:**\n\n${body.trim()}\n\n`
+        : '';
+    const statementText = !!statement.statement
+        ? (statementTitle ? `**${statementTitle}**\n\n` : '')
+        + (statement.statement.statement ? `${statement.statement.statement}\n\n` : '')
+        + section('inputContent', statement.statement.inputInfo)
+        + section('outputContent', statement.statement.outputInfo)
+        : '';
     return (
         <Box>
             <ContestNavigationBar />
@@ -146,12 +157,14 @@ export default function Problem() {
                 marginLeft: '10%'
             }}>
             <Box sx={{marginLeft: '2%', marginTop: '5%', width: '60%'}}>
-                <ReactMarkdown
-                    children={statementText}
-                    remarkPlugins={[remarkMath]}
-                    rehypePlugins={[rehypeMathjax]}
-                    urlTransform={url => `/api/task/${problem_id}/image/${url}`}
-                />
+                <div className="markdown-body">
+                    <ReactMarkdown
+                        children={statementText}
+                        remarkPlugins={[remarkMath, remarkGfm]}
+                        rehypePlugins={[rehypeMathjax]}
+                        urlTransform={url => `/api/task/${problem_id}/image/${url}`}
+                    />
+                </div>
                 {statement.publicTestcases && statement.publicTestcases.length > 0 && (
                     <TableContainer component={Paper} sx={{ marginTop: 2, maxWidth: 600 }}>
                         <Table>

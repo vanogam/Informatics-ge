@@ -4,6 +4,7 @@ import Paper from "@mui/material/Paper";
 import {useState} from "react";
 import getMessage from "../Components/lang";
 import {worstColor} from "../styles/testResultColors";
+import {roundScore} from "../utils/subtasks";
 
 /**
  * One subtask in a submission's results: a header shaped like a test row, wrapping its tests.
@@ -18,7 +19,7 @@ const SubmissionSubtask = ({index, points, testcases, children}) => {
 
     const scores = testcases.map(t => (typeof t.score === 'number' ? t.score : 0));
     const minScore = scores.length > 0 ? Math.min(...scores) : 0;
-    const earned = Math.round(minScore * points * 100) / 100;
+    const earned = roundScore(minScore * points);
     const maxTime = testcases.reduce((acc, t) => Math.max(acc, t.time || 0), 0);
     const maxMemory = testcases.reduce((acc, t) => Math.max(acc, t.memory || 0), 0);
 

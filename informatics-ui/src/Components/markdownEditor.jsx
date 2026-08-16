@@ -1,5 +1,7 @@
 import React, {useContext, useEffect, useState} from "react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import "../styles/markdown.css";
 import remarkMath from "remark-math";
 import rehypeMathjax from "rehype-mathjax";
 import rehypeRaw from "rehype-raw";
@@ -36,7 +38,15 @@ const MarkdownEditor = ({
         loadEndpoint && loadData()
     }, [])
 
-    const handlePaste = async (e, onChange) => {
+    /**
+     * Appends pasted images and video embeds to the field.
+     *
+     * <p>Takes the field's current text and hands onChange a plain string, the same as typing
+     * does. Passing a setState-style updater instead only works for callers that happen to
+     * forward it to setState; a caller that merges into an object - as the statement editor does
+     * - stores the function itself and the field's text disappears.
+     */
+    const handlePaste = async (e, onChange, currentValue) => {
         const items = e.clipboardData.items;
         for (const item of items) {
             if (item.type.startsWith("image/")) {
@@ -49,7 +59,7 @@ const MarkdownEditor = ({
 
                     if (response.status === 200) {
                         const imageMarkdown = `![Image](${imageUrl})\n`;
-                        onChange((prev) => prev + imageMarkdown);
+                        onChange((currentValue || "") + imageMarkdown);
                     } else {
                         console.error("Image upload failed:", response.statusText);
                     }
@@ -62,7 +72,7 @@ const MarkdownEditor = ({
                 if (match) {
                     const videoId = match[2] || match[3];
                     const embeddedVideoMarkdown = `<iframe width="560" height="315" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>\n`;
-                    onChange((prev) => prev + embeddedVideoMarkdown);
+                    onChange((currentValue || "") + embeddedVideoMarkdown);
                     e.preventDefault();
                 }
             }
@@ -108,7 +118,7 @@ const MarkdownEditor = ({
                             placeholder={getMessage('ka', 'markdownPlaceholder')}
                             value={entry.value}
                             onChange={e => entry.onChange(e.target.value)}
-                            onPaste={e => handlePaste(e, entry.onChange)}
+                            onPaste={e => handlePaste(e, entry.onChange, entry.value)}
                         />
                     </>))
                 }
@@ -121,12 +131,14 @@ const MarkdownEditor = ({
                                 <p key={entry.label}
                                    style={{display: "block", marginBottom: "10px", fontWeight: "bold"}}>{entry.label}</p>
                                 }
-                                <ReactMarkdown
-                                    children={entry.value}
-                                    remarkPlugins={[remarkMath]}
-                                    rehypePlugins={[rehypeMathjax, rehypeRaw]}
-                                    urlTransform={imageDownloadFunc}
-                                />
+                                <div className="markdown-body">
+                                    <ReactMarkdown
+                                        children={entry.value}
+                                        remarkPlugins={[remarkMath, remarkGfm]}
+                                        rehypePlugins={[rehypeMathjax, rehypeRaw]}
+                                        urlTransform={imageDownloadFunc}
+                                    />
+                                </div>
                             </>
                         ))}
                     </div>

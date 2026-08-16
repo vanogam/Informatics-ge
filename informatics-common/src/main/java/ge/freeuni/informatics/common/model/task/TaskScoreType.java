@@ -23,14 +23,14 @@ public enum TaskScoreType {
             }
             float sum = 0;
             for (int i = 0; i < parts.length; i++) {
-                sum += Float.parseFloat(parts[i].trim()) * testResults.get(i).getScore();
+                sum += roundScore(Float.parseFloat(parts[i].trim()) * testResults.get(i).getScore());
             }
             return sum;
         } else {
             float sum = 0;
             float multiplier = Float.parseFloat(s);
             for (SubmissionTestResult testResult : testResults) {
-                sum += testResult.getScore() * multiplier;
+                sum += roundScore(testResult.getScore() * multiplier);
             }
             return sum;
         }
@@ -72,7 +72,7 @@ public enum TaskScoreType {
                 }
                 groupScores.add(minScore);
                 groupScores.add(minScore * multiplier);
-                sum += minScore * multiplier;
+                sum += roundScore(minScore * multiplier);
             }
         } else {
             LoggerFactory.getLogger(TaskScoreType.class).error("Invalid score format for GROUP_MIN type: expected format [[m1, t1(, p1...)], [m2, t2(, p2...)], ...]");
@@ -80,6 +80,20 @@ public enum TaskScoreType {
         }
         return sum;
     });
+
+
+    /**
+     * Rounds one scoring unit - a subtask's award, or a single test's contribution - to two
+     * decimals.
+     *
+     * <p>Applied to each addend rather than only to the total, because a statement names the
+     * value of a subtask: a subtask worth 13 should contribute exactly 13, not 13.000002. It
+     * also keeps the figures consistent for contestants, since the per-subtask scores shown in
+     * a submission are rounded the same way and must add up to the total beside them.
+     */
+    public static float roundScore(float score) {
+        return Math.round(score * 100f) / 100f;
+    }
 
     private BiFunction<List<SubmissionTestResult>, String, Float> evaluator;
 

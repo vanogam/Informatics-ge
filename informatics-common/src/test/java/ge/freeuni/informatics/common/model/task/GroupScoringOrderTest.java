@@ -65,6 +65,50 @@ public class GroupScoringOrderTest {
         assertEquals(60f, TaskScoreType.GROUP_MIN.evaluate(sorted(results(4)), PARAM));
     }
 
+    /**
+     * A statement names what a subtask is worth, so each award is rounded as it is made. The
+     * contestant sees those per-subtask figures, and they have to add up to the total shown
+     * beside them.
+     */
+    @Test
+    void subtaskAwardsAreRoundedAndSumToTheTotal() {
+        // subtask 3 partial at the manager's 13/25 tier, everything else solved
+        List<SubmissionTestResult> all = new ArrayList<>();
+        for (int[] g : GROUPS) {
+            for (int i = 0; i < g[1]; i++) {
+                SubmissionTestResult r = new SubmissionTestResult();
+                r.setTestKey(g[0] + "-" + String.format("%02d", i + 1));
+                r.setScore(g[0] == 3 ? 13f / 25f : 1f);
+                all.add(r);
+            }
+        }
+        float total = TaskScoreType.GROUP_MIN.evaluate(sorted(all), PARAM);
+
+        // 0 + 5 + 10 + 13 + 60, with the partial subtask landing on exactly 13
+        assertEquals(88f, total);
+        assertEquals(13f, TaskScoreType.roundScore(13f / 25f * 25f));
+    }
+
+    @Test
+    void roundsEachAwardRatherThanOnlyTheTotal() {
+        // three subtasks of 33.333 each: rounding per award gives 99.99, not a tidied 100
+        List<SubmissionTestResult> results = new ArrayList<>();
+        for (int i = 0; i < 3; i++) {
+            SubmissionTestResult r = new SubmissionTestResult();
+            r.setTestKey("0-0" + (i + 1));
+            r.setScore(1f);
+            results.add(r);
+        }
+        float sumOfAwards = TaskScoreType.GROUP_MIN.evaluate(results, "[33.33,1],[33.33,1],[33.33,1]");
+
+        // Each award is exactly 33.33 rather than a tidied 100 overall...
+        assertEquals(33.33f, TaskScoreType.roundScore(33.33f));
+        // ...but summing rounded floats still drifts, which is why the total is rounded again
+        // where it is stored (JudgeIntegration.finalizeSubmission).
+        assertEquals(99.990005f, sumOfAwards);
+        assertEquals(99.99f, TaskScoreType.roundScore(sumOfAwards));
+    }
+
     @Test
     void sortsEmbeddedNumbersNumerically() {
         List<String> keys = new ArrayList<>(List.of("1-10", "1-2", "10", "2", "1-1"));

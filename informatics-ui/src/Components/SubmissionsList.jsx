@@ -17,7 +17,7 @@ import {AxiosContext} from '../utils/axiosInstance'
 import getMessage from "./lang";
 import SubmissionTestResult from "../Pages/SubmissionTestResult";
 import SubmissionSubtask from "../Pages/SubmissionSubtask";
-import {groupTestcases} from "../utils/subtasks";
+import {groupTestcases, roundScore} from "../utils/subtasks";
 
 export default function SubmissionsList({getEndpoint, title, autoRefresh = true}) {
     const [submissions, setSubmissions] = useState([])
@@ -100,7 +100,9 @@ export default function SubmissionsList({getEndpoint, title, autoRefresh = true}
                                points={group.score}
                                testcases={group.testcases}>
                 {group.testcases.map((testcase) => (
-                    <SubmissionTestResult key={testcase.testKey} testcase={testcase} />
+                    <SubmissionTestResult key={testcase.testKey}
+                                          testcase={testcase}
+                                          subtaskPoints={group.score} />
                 ))}
             </SubmissionSubtask>
         ));
@@ -167,7 +169,7 @@ export default function SubmissionsList({getEndpoint, title, autoRefresh = true}
                                         {submission.language}
                                     </TableCell>
                                     <TableCell align="right" sx={{wordBreak: 'break-word'}}>
-                                        {submission.score}
+                                        {roundScore(submission.score)}
                                     </TableCell>
                                     <TableCell align="right" sx={{wordBreak: 'break-word'}}>
                                         {getMessage('ka', `SUBMISSION_STATUS_${submission.status}`, submission.currentTest)}

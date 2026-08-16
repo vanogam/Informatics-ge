@@ -108,6 +108,24 @@ public class JudgeRecoveryTest {
                 .writeValueAsString(callback));
     }
 
+    // ---- score rounding ----
+
+    @Test
+    void roundsScoresToTwoDecimals() {
+        assertEquals(62f, JudgeIntegration.roundScore(62.002f));
+        assertEquals(62f, JudgeIntegration.roundScore(61.998f));
+        assertEquals(61.99f, JudgeIntegration.roundScore(61.9949f));
+        assertEquals(62.01f, JudgeIntegration.roundScore(62.005f));
+    }
+
+    @Test
+    void roundingLeavesLegitimateFractionsAlone() {
+        assertEquals(13.5f, JudgeIntegration.roundScore(13.5f));
+        assertEquals(0.25f, JudgeIntegration.roundScore(0.25f));
+        assertEquals(0f, JudgeIntegration.roundScore(0f));
+        assertEquals(100f, JudgeIntegration.roundScore(100f));
+    }
+
     // ---- 1. self-healing listener ----
 
     @Test

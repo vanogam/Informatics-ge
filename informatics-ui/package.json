@@ -24,6 +24,7 @@
     "react-toastify": "^9.0.8",
     "rehype-mathjax": "^7.1.0",
     "rehype-raw": "^7.0.0",
+    "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
     "url": "^0.11.4",
     "web-vitals": "^2.1.4"

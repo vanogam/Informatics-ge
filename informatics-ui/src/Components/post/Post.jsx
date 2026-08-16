@@ -1,6 +1,8 @@
 import React, {useContext, useEffect, useState} from 'react';
 import {AxiosContext} from '../../utils/axiosInstance';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import "../../styles/markdown.css";
 import {Button, Box, Typography} from '@mui/material';
 import {CommentsSection} from "./CommentSection";
 import {AuthContext} from "../../store/authentication";
@@ -51,12 +53,14 @@ export default function Post({id}) {
                 {post.authorName}
             </Typography>
             <Box sx={{marginTop: '20px'}}>
-                <ReactMarkdown
-                    children={post.content}
-                    remarkPlugins={[remarkMath]}
-                    rehypePlugins={[rehypeMathjax]}
-                    urlTransform={imageDownloadFunc}
-                />
+                <div className="markdown-body">
+                    <ReactMarkdown
+                        children={post.content}
+                        remarkPlugins={[remarkMath, remarkGfm]}
+                        rehypePlugins={[rehypeMathjax]}
+                        urlTransform={imageDownloadFunc}
+                    />
+                </div>
             </Box>
             {post.commentCount > 0 && (
                 <Box sx={{marginTop: '40px'}}>

@@ -94,3 +94,17 @@ export function groupTestcases(testcases, taskScoreType, taskScoreParameter, key
         }),
     };
 }
+
+/**
+ * Rounds a score to two decimals for display.
+ *
+ * Scores are sums of per-test fractions times subtask multipliers, so floating point leaves
+ * values like 61.998 where 62 was meant. Newly judged submissions are already rounded server
+ * side; this also tidies rows stored before that.
+ */
+export function roundScore(score) {
+    if (typeof score !== 'number' || Number.isNaN(score)) {
+        return score;
+    }
+    return Math.round(score * 100) / 100;
+}

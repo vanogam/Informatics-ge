@@ -3,9 +3,15 @@ import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import {useState} from "react";
 import getMessage from "../Components/lang";
-import {testColor} from "../styles/testResultColors";
+import {testColor, testSeverity} from "../styles/testResultColors";
+import {roundScore} from "../utils/subtasks";
 
-const SubmissionTestResult = ({testcase}) => {
+/**
+ * @param subtaskPoints what the enclosing subtask is worth, so a partial score reads in the
+ *        statement's own units - "13 / 25" rather than the raw "0.52 / 1" fraction. Absent for
+ *        tasks without subtasks, where the test has no point value of its own.
+ */
+const SubmissionTestResult = ({testcase, subtaskPoints}) => {
     const [expanded, setExpanded] = useState(false);
     return (<Paper
         elevation={4}
@@ -30,6 +36,14 @@ const SubmissionTestResult = ({testcase}) => {
                     {testcase.testStatus}
                 </span>
             </Typography>
+
+            {testSeverity(testcase) === 'partial' && (
+                <Typography sx={{fontSize: '15px'}}>
+                    <span style={{fontWeight: 700}}>
+                        {roundScore(testcase.score * (subtaskPoints ?? 1))}
+                    </span> / {subtaskPoints ?? 1}
+                </Typography>
+            )}
 
             <Typography sx={{fontSize: '15px'}}>
                 დრო:{' '}

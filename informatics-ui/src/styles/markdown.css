@@ -1,0 +1,59 @@
+/*
+ * Styling for rendered markdown - task statements, their editor preview, and posts.
+ *
+ * react-markdown emits plain HTML elements with no classes and dropped its className prop in
+ * v9, so each render site wraps its output in .markdown-body and the elements are styled by tag
+ * from here. Keeping it in one file is what stops the editor preview and the contestant's view
+ * from drifting apart.
+ */
+
+.markdown-body blockquote {
+    background-color: #f5f5f5;
+    border-left: 4px solid #c7c2cf;
+    border-radius: 0 4px 4px 0;
+    margin: 1rem 0;
+    padding: 0.6rem 1rem;
+    color: #3a3a3a;
+}
+
+/* Blockquote contents are paragraphs; their own margins would double the padding. */
+.markdown-body blockquote > :first-child {
+    margin-top: 0;
+}
+
+.markdown-body blockquote > :last-child {
+    margin-bottom: 0;
+}
+/*
+ * Figures are authored at whatever size the source PDF used, which is routinely wider than the
+ * statement column. max-width scales those down to fit while height:auto keeps the aspect ratio;
+ * a smaller image keeps its own size, since max-width never stretches anything up.
+ */
+.markdown-body img {
+    max-width: 100%;
+    height: auto;
+}
+
+/*
+ * Tables come from remark-gfm and arrive as bare elements with no borders, which reads as
+ * misaligned text rather than a table. Subtask/constraint tables are the common case in
+ * statements, so cells wrap rather than scroll - the constraints column is prose.
+ */
+.markdown-body table {
+    border-collapse: collapse;
+    max-width: 100%;
+    margin: 1rem 0;
+}
+
+.markdown-body th,
+.markdown-body td {
+    border: 1px solid #ddd;
+    padding: 0.4rem 0.7rem;
+    text-align: left;
+    vertical-align: top;
+}
+
+.markdown-body th {
+    background-color: #f5f5f5;
+    font-weight: 700;
+}

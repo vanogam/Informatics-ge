@@ -9,6 +9,7 @@ import ge.freeuni.informatics.common.model.submission.Submission;
 import ge.freeuni.informatics.common.model.submission.SubmissionStatus;
 import ge.freeuni.informatics.common.model.submission.SubmissionTestResult;
 import ge.freeuni.informatics.common.model.task.Task;
+import ge.freeuni.informatics.common.model.task.TaskScoreType;
 import ge.freeuni.informatics.common.model.task.TestKeys;
 import ge.freeuni.informatics.common.model.task.Testcase;
 import ge.freeuni.informatics.judgeintegration.model.KafkaCallback;
@@ -386,6 +387,15 @@ public class JudgeIntegration implements IJudgeIntegration{
         addSubmission(submission.getTask(), submission);
     }
 
+
+    /**
+     * Rounds the total. Each subtask has already been rounded as it was awarded (see
+     * {@link TaskScoreType#roundScore}); this clears any residue from summing those.
+     */
+    static float roundScore(float score) {
+        return TaskScoreType.roundScore(score);
+    }
+
     private SubmissionTestResult createTestResult(KafkaCallback callback) {
         SubmissionTestResult testResult = new SubmissionTestResult();
         testResult.setTestKey(callback.testcaseKey());
@@ -438,7 +448,7 @@ public class JudgeIntegration implements IJudgeIntegration{
             log.error("Error evaluating task score for submission: {}", submission.getId(), e);
             submission.setStatus(SubmissionStatus.SYSTEM_ERROR);
         }
-        submission.setScore(finalScore);
+        submission.setScore(roundScore(finalScore));
         submissionRepository.save(submission);
         testCompletionMap.remove(submission.getId());
         submissionLocks.remove(submission.getId());

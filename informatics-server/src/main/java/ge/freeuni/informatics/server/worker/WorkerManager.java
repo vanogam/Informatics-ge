@@ -2,6 +2,7 @@ package ge.freeuni.informatics.server.worker;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.model.*;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
@@ -51,6 +52,13 @@ public class WorkerManager implements IWorkerManager {
 
     @Value("${ge.freeuni.informatics.worker.dockerNetwork:informatics_dev}")
     private String workerDockerNetwork;
+
+    /**
+     * Image the worker runs submissions in. Passed through so a worker and its sandbox stay
+     * on the version they were released together with.
+     */
+    @Value("${ge.freeuni.informatics.worker.sandboxImage:sandbox:latest}")
+    private String sandboxImage;
 
     @Value("${ge.freeuni.informatics.worker.filesPath:/home/informatics/dev/files}")
     private String workerFilesPath;
@@ -254,6 +262,23 @@ public class WorkerManager implements IWorkerManager {
         return WorkerDTO.toDTO(worker, uptimeSeconds);
     }
 
+    /**
+     * Fails with an actionable message when the configured image is absent. A missing image
+     * otherwise surfaces as a bare Docker 404, which says nothing about which setting is wrong.
+     */
+    private void requireImage(String image, String property, String environmentVariable) {
+        try {
+            dockerClient.inspectImageCmd(image).exec();
+        } catch (NotFoundException e) {
+            String message = "Docker image '" + image + "' not found on this host. "
+                    + "It is configured by " + property + " (tag comes from " + environmentVariable
+                    + ", which is set from VERSION in .env). Build it, or set "
+                    + environmentVariable + " to a tag that exists.";
+            log.error(message);
+            throw new IllegalStateException(message, e);
+        }
+    }
+
     private String startWorkerContainer(String workerId) {
         if (dockerClient == null) {
             log.warn("Docker client not available. Skipping container creation for worker: {}", workerId);
@@ -290,6 +315,7 @@ public class WorkerManager implements IWorkerManager {
             envVars.put("SERVER_URL", serverUrl);
             envVars.put("WORKER_USERNAME", workerUsername);
             envVars.put("WORKER_PASSWORD", workerPassword);
+            envVars.put("SANDBOX_IMAGE", sandboxImage);
 
             List<String> envList = envVars.entrySet().stream()
                     .map(e -> e.getKey() + "=" + e.getValue())
@@ -304,6 +330,9 @@ public class WorkerManager implements IWorkerManager {
             HostConfig hostConfig = HostConfig.newHostConfig()
                     .withBinds(binds)
                     .withNetworkMode(workerDockerNetwork);
+
+            requireImage(workerDockerImage, "ge.freeuni.informatics.worker.dockerImage",
+                    "INFORMATICS_VERSION");
 
             CreateContainerResponse container = dockerClient.createContainerCmd(workerDockerImage)
                     .withName(containerName)

@@ -7,6 +7,8 @@ services:
     ports:
       - "8080:8080"
     environment:
+      # Tag the core uses when it starts worker containers.
+      INFORMATICS_VERSION: ${VERSION:-latest}
       SPRING_PROFILES_ACTIVE: prod
       SPRING_DATASOURCE_URL: jdbc:postgresql://informatics-db:5432/informatics
       SPRING_DATASOURCE_USERNAME: ${DB_USER}

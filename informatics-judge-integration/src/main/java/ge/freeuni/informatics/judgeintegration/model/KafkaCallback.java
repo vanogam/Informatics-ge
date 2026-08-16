@@ -9,7 +9,7 @@ public record KafkaCallback(
         @JsonProperty("messageType") CallbackType messageType,
         @JsonProperty("testcaseKey") String testcaseKey,
         @JsonProperty("message") String message,
-        @JsonProperty("score") Long score,
+        @JsonProperty("score") Double score,
         @JsonProperty("status") TestStatus status,
         @JsonProperty("exitCode") Integer exitCode,
         @JsonProperty("timeMillis") Long timeMillis,

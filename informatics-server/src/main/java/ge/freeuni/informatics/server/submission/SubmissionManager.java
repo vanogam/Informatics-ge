@@ -11,6 +11,7 @@ import ge.freeuni.informatics.common.model.submission.Submission;
 import ge.freeuni.informatics.common.model.submission.SubmissionStatus;
 import ge.freeuni.informatics.repository.contestroom.ContestRoomJpaRepository;
 import ge.freeuni.informatics.common.model.task.Task;
+import ge.freeuni.informatics.common.model.task.TestKeys;
 import ge.freeuni.informatics.common.model.task.Testcase;
 import ge.freeuni.informatics.common.model.user.ProblemAttemptStatus;
 import ge.freeuni.informatics.judgeintegration.IJudgeIntegration;
@@ -118,7 +119,7 @@ public class SubmissionManager implements ISubmissionManager {
                         Testcase tc = testcaseRepository.findFirstByTaskIdAndKey(submission.getTask().getId(), result.getTestKey());
                         return SubmissionTestResultDTO.toDto(result, tc.getInputSnippet(), tc.getOutputSnippet());
                     })
-                    .sorted(Comparator.comparing(SubmissionTestResultDTO::testKey))
+                    .sorted(Comparator.comparing(SubmissionTestResultDTO::testKey, TestKeys.NATURAL_ORDER))
                     .toList();
             return SubmissionDTO.toDTOFull(submission, code, testResults);
         } catch (Exception e) {

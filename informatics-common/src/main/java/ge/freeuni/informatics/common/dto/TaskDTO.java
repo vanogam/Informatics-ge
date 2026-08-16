@@ -21,6 +21,7 @@ public record TaskDTO(
         Integer timeLimitMillis,
         Integer memoryLimitMB,
         CheckerType checkerType,
+        Integer numProcesses,
         String inputTemplate,
         String outputTemplate,
         Map<Language, String> statements,
@@ -37,6 +38,7 @@ public record TaskDTO(
         task.setId(taskDTO.id());
         task.setCode(taskDTO.code());
         task.setCheckerType(taskDTO.checkerType());
+        task.setNumProcesses(taskDTO.numProcesses());
         task.setInputTemplate(taskDTO.inputTemplate());
         task.setOutputTemplate(taskDTO.outputTemplate());
         task.setMemoryLimitMB(taskDTO.memoryLimitMB());
@@ -68,6 +70,7 @@ public record TaskDTO(
                 task.getTimeLimitMillis(),
                 task.getMemoryLimitMB(),
                 task.getCheckerType(),
+                task.getNumProcesses(),
                 task.getInputTemplate(),
                 task.getOutputTemplate(),
                 task.getStatements(),

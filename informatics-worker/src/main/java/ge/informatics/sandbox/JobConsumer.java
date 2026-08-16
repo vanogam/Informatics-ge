@@ -1,8 +1,10 @@
 package ge.informatics.sandbox;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ge.informatics.sandbox.kafka.CallbackProducer;
 import ge.informatics.sandbox.model.*;
+import org.apache.kafka.clients.consumer.CommitFailedException;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -22,6 +24,11 @@ import static ge.informatics.sandbox.Utils.compressFile;
 
 public class JobConsumer {
     private static final Logger log = LoggerFactory.getLogger(JobConsumer.class);
+    /**
+     * Task subdirectories the sandbox needs. Graders are compiled into the submission and the
+     * manager judges it, so both have to be present before compilation, not just before testing.
+     */
+    private static final String TASK_DIR_FILTER = "|tests|custom-tests|graders|manager|checker)$";
     private final KafkaConsumer<String, String> consumer;
     private final Sandbox sandbox;
     private final HeartbeatSender heartbeatSender;
@@ -34,6 +41,16 @@ public class JobConsumer {
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        // One test per poll. The default of 500 lets a single batch run for many minutes, which
+        // blows past max.poll.interval.ms: Kafka then evicts this consumer, hands its partitions
+        // to another worker - which replays the same submission - and fails the commit here.
+        props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 1);
+        // Generous headroom for one slow test, so eviction needs a genuine hang rather than a
+        // merely large task.
+        props.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, 900000);
+        // Offsets are committed explicitly once a job is done; auto-commit could acknowledge a
+        // record that was never processed.
+        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
 
         consumer = new KafkaConsumer<>(props);
         sandbox = new Sandbox(id);
@@ -74,7 +91,10 @@ public class JobConsumer {
                 for (ConsumerRecord<String, String> record : records) {
                     Task task;
                     try {
-                        ObjectMapper objectMapper = new ObjectMapper();
+                        // Tolerate unknown fields so a core deployed ahead of its workers does
+                        // not fill the topic with messages no worker can read.
+                        ObjectMapper objectMapper = new ObjectMapper()
+                                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
                         task = objectMapper.readValue(record.value(), Task.class);
                     } catch (Exception e) {
                         log.error("Error reading task json from message {}", record.value(), e);
@@ -109,11 +129,13 @@ public class JobConsumer {
                         }
                     }
                 }
-                consumer.commitSync();
                 try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ignored) {
-                    return;
+                    consumer.commitSync();
+                } catch (CommitFailedException e) {
+                    // Evicted from the group mid-batch. The work is already done; another
+                    // consumer may redo it, but killing this worker helps nobody.
+                    log.error("Offset commit failed, continuing. This worker was likely evicted "
+                            + "from the consumer group because a job outran max.poll.interval.ms", e);
                 }
             }
         } finally {
@@ -135,6 +157,8 @@ public class JobConsumer {
                     .withSubmissionId(Long.parseLong(task.submissionId()))
                     .withMessageType(CallbackType.COMPILATION_STARTED)
                     .build());
+            // Graders are linked into the submission, so the task files must be in place first.
+            syncTaskFiles(task);
             CompilationResult result = sandbox.compile(task, new File(Config.get("fileStorageDirectory.url") + "/" + task.taskId() + "/submissions/" + task.submissionName()));
             sendCallback(new TestResult.Builder()
                     .withSubmissionId(Long.parseLong(task.submissionId()))
@@ -142,29 +166,49 @@ public class JobConsumer {
                     .withMessage(result.getErrorMessage())
                     .build());
         } else if (task.stage() == Stage.TESTING) {
-            String testsPath = Config.get("fileStorageDirectory.url") + "/" + task.taskId();
-            if (!sandbox.fileExists("/sandbox/tasks/" + task.taskId())) {
-                sandbox.uploadTar(compressFile(new File(testsPath), task.taskId(), "^("+ task.taskId() +"|tests|custom-tests)$"), "/sandbox/tasks/");
-            } else {
-                String lastUpdateText = sandbox.readFile("/sandbox/tasks/" + task.taskId() + "/lastUpdate.txt");
-                long lastUpdate = 0;
-                if (lastUpdateText != null && !lastUpdateText.isEmpty()) {
-                    lastUpdate = Long.parseLong(lastUpdateText);
-                }
-                Path lastUpdatePath = new File(testsPath + "/lastUpdate").toPath();
-                long currentUpdate = 0;
-                if (Files.exists(lastUpdatePath)) {
-                    currentUpdate = Long.parseLong(Files.readString(lastUpdatePath));
-                }
-                if (currentUpdate > lastUpdate) {
-                    log.info("Task {} has been updated, re-uploading files", task.taskId());
-                    sandbox.uploadTar(compressFile(new File(testsPath), task.taskId(), "^("+ task.taskId() +"|tests|custom-tests)$"), "/sandbox/tasks/");
-                } else {
-                    log.info("Task {} has not been updated, skipping upload", task.taskId());
-                }
-            }
+            syncTaskFiles(task);
             TestResult result = sandbox.execute(task);
             sendCallback(result);
+        }
+    }
+
+    /**
+     * Copies the task's tests, graders and manager into the sandbox, skipping the upload when
+     * the sandbox already holds the current version.
+     */
+    private void syncTaskFiles(Task task) throws IOException, InterruptedException {
+        String taskPath = Config.get("fileStorageDirectory.url") + "/" + task.taskId();
+        String filter = "^(" + task.taskId() + TASK_DIR_FILTER;
+
+        if (!sandbox.fileExists("/sandbox/tasks/" + task.taskId())) {
+            sandbox.uploadTar(compressFile(new File(taskPath), task.taskId(), filter), "/sandbox/tasks/");
+            return;
+        }
+        long lastUpdate = parseTimestamp(sandbox.readFile("/sandbox/tasks/" + task.taskId() + "/lastUpdate"));
+        Path lastUpdatePath = new File(taskPath + "/lastUpdate").toPath();
+        long currentUpdate = 0;
+        if (Files.exists(lastUpdatePath)) {
+            currentUpdate = parseTimestamp(Files.readString(lastUpdatePath));
+        }
+        if (currentUpdate > lastUpdate) {
+            log.info("Task {} has been updated, re-uploading files", task.taskId());
+            // Replace rather than merge, so deleted graders and tests actually go away.
+            sandbox.clearTaskDirectory(task.taskId());
+            sandbox.uploadTar(compressFile(new File(taskPath), task.taskId(), filter), "/sandbox/tasks/");
+        } else {
+            log.info("Task {} has not been updated, skipping upload", task.taskId());
+        }
+    }
+
+    private long parseTimestamp(String text) {
+        if (text == null || text.isBlank()) {
+            return 0;
+        }
+        try {
+            return Long.parseLong(text.trim());
+        } catch (NumberFormatException e) {
+            log.warn("Unreadable lastUpdate marker '{}', treating the task as stale", text);
+            return 0;
         }
     }
 
@@ -184,16 +228,20 @@ public class JobConsumer {
         }
         JobConsumer consumer = new JobConsumer("kafka:9092", "worker", System.getenv("APP_ID"), serverUrl);
 
+        // Runs on any JVM exit, including an unhandled exception - so it must not claim a signal
+        // was received, and must not double-close what listenToSubmissionTopic already closed.
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            log.info("Shutdown signal received. Terminating...");
+            log.info("JVM shutting down, stopping worker...");
             consumer.running = false;
-            try {
-                consumer.sandbox.close();
-                consumer.consumer.close();
-
-            } catch (Exception ignored) {
-            }
         }));
-        consumer.listenToSubmissionTopic();
+
+        try {
+            consumer.listenToSubmissionTopic();
+        } catch (Exception e) {
+            // Otherwise the worker dies with only the shutdown hook's message in the log, which
+            // reads as a clean stop rather than the crash it actually is.
+            log.error("Worker stopped because the consumer loop failed", e);
+            throw e;
+        }
     }
 }

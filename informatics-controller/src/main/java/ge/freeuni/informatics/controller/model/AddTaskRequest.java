@@ -19,6 +19,7 @@ public record AddTaskRequest(
         Integer timeLimitMillis,
         Integer memoryLimitMB,
         CheckerType checkerType,
+        Integer numProcesses,
         String inputTemplate,
         String outputTemplate
 ) {}

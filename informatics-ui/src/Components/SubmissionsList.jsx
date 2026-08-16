@@ -16,6 +16,8 @@ import {useEffect} from 'react'
 import {AxiosContext} from '../utils/axiosInstance'
 import getMessage from "./lang";
 import SubmissionTestResult from "../Pages/SubmissionTestResult";
+import SubmissionSubtask from "../Pages/SubmissionSubtask";
+import {groupTestcases} from "../utils/subtasks";
 
 export default function SubmissionsList({getEndpoint, title, autoRefresh = true}) {
     const [submissions, setSubmissions] = useState([])
@@ -76,6 +78,34 @@ export default function SubmissionsList({getEndpoint, title, autoRefresh = true}
                status === 'CORRECT'
     }
     
+
+    /**
+     * Wraps tests in their subtasks when the task is scored that way, and falls back to a plain
+     * list otherwise - including when the score parameter no longer matches the number of tests,
+     * where a grouping would misrepresent how the submission was actually scored.
+     */
+    const renderResults = (submission) => {
+        const results = submission?.results || [];
+        const {grouped, groups} = groupTestcases(
+            results, submission?.taskScoreType, submission?.taskScoreParameter, (t) => t.testKey);
+
+        if (!grouped) {
+            return results.map((testcase) => (
+                <SubmissionTestResult key={testcase.testKey} testcase={testcase} />
+            ));
+        }
+        return groups.map((group, index) => (
+            <SubmissionSubtask key={`subtask-${index}`}
+                               index={index}
+                               points={group.score}
+                               testcases={group.testcases}>
+                {group.testcases.map((testcase) => (
+                    <SubmissionTestResult key={testcase.testKey} testcase={testcase} />
+                ))}
+            </SubmissionSubtask>
+        ));
+    };
+
     return (
         <>
             {title ? (
@@ -213,9 +243,7 @@ export default function SubmissionsList({getEndpoint, title, autoRefresh = true}
                                 <Typography align="center" variant="h6" mb="1rem">
                                     {getMessage('ka', 'tests')}
                                 </Typography>
-                                {selectedSubmission?.results?.map((testcase) => (
-                                    <SubmissionTestResult key={testcase.testKey} testcase={testcase} />
-                                ))}
+                                {renderResults(selectedSubmission)}
                             </Paper>
                         ) : (
                             <Paper elevation={4} sx={{padding: '1rem'}}>

@@ -4,6 +4,7 @@ package ge.freeuni.informatics.common.dto;
 import ge.freeuni.informatics.common.model.submission.Submission;
 import ge.freeuni.informatics.common.model.submission.SubmissionStatus;
 import ge.freeuni.informatics.common.model.task.Task;
+import ge.freeuni.informatics.common.model.task.TaskScoreType;
 
 import java.util.Date;
 import java.util.List;
@@ -26,6 +27,12 @@ public record SubmissionDTO(
     Long time,
     Integer memory,
     String compilationMessage,
+    /**
+     * Scoring shape of the task, so the results view can group tests under their subtasks
+     * exactly as GROUP_MIN scores them.
+     */
+    TaskScoreType taskScoreType,
+    String taskScoreParameter,
     List<SubmissionTestResultDTO> results
 ) {
     public SubmissionDTO(
@@ -53,6 +60,8 @@ public record SubmissionDTO(
                 null,
                 null,
                 null,
+                null,
+                null,
                 null
         );
 
@@ -77,6 +86,8 @@ public record SubmissionDTO(
             submission.getTime(),
             submission.getMemory(),
             submission.getCompilationMessage(),
+            submission.getTask().getTaskScoreType(),
+            submission.getTask().getTaskScoreParameter(),
             null
         );
     }
@@ -100,6 +111,8 @@ public record SubmissionDTO(
             submission.getTime(),
             submission.getMemory(),
             submission.getCompilationMessage(),
+            submission.getTask().getTaskScoreType(),
+            submission.getTask().getTaskScoreParameter(),
             results
         );
     }

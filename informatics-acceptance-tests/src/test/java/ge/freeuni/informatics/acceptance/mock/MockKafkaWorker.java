@@ -204,7 +204,7 @@ public class MockKafkaWorker {
                     CallbackType.TEST_COMPLETED,
                     testcaseKey,
                     message,
-                    (long) (score * 100), // Convert to percentage for callback
+                    score, // fraction in [0, 1], as the real worker reports it
                     status,
                     0, // exit code
                     timeMs, // time in ms

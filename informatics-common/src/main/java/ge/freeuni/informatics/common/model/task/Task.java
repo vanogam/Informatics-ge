@@ -48,6 +48,13 @@ public class Task {
     CheckerType checkerType;
 
     /**
+     * Number of solution processes the manager drives. Only meaningful for
+     * {@link TaskType#COMMUNICATION}; currently only 1 is supported.
+     */
+    @Column(name = "numprocesses")
+    Integer numProcesses;
+
+    /**
      * Used to parse and number test case file names.
      */
     String inputTemplate;
@@ -156,6 +163,14 @@ public class Task {
 
     public void setCheckerType(CheckerType checkerType) {
         this.checkerType = checkerType;
+    }
+
+    public Integer getNumProcesses() {
+        return numProcesses;
+    }
+
+    public void setNumProcesses(Integer numProcesses) {
+        this.numProcesses = numProcesses;
     }
 
     public String getInputTemplate() {

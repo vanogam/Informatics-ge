@@ -17,6 +17,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
       SPRING_REDIS_HOST: redis
       INFORMATICS_HOME_DIR: ${INFORMATICS_HOME_DIR:-/home/informatics/dev}
+      # Tag the core uses when it starts worker containers.
+      INFORMATICS_VERSION: ${DEV_VERSION:-${VERSION:-latest}}
       SPRING_CONFIG_ADDITIONAL_LOCATION: optional:file:/opt/app/external-config/application.properties
     networks:
       informatics_dev:

@@ -31,6 +31,8 @@ public class InformaticsServerException extends Exception {
 
     // Task/tests related exceptions
     public static final InformaticsServerException TASK_NOT_FOUND = new InformaticsServerException("taskNotFound", ExceptionType.NOT_FOUND);
+    public static final InformaticsServerException TASK_CODE_ALREADY_EXISTS = new InformaticsServerException("taskCodeAlreadyExists", ExceptionType.CONFLICT);
+    public static final InformaticsServerException INVALID_TASK_CODE = new InformaticsServerException("invalidTaskCode", ExceptionType.VALIDATION_ERROR);
     public static final InformaticsServerException TASK_NOT_IN_CONTEST = new InformaticsServerException("taskNotInContest", ExceptionType.VALIDATION_ERROR);
     public static final InformaticsServerException TEST_NOT_FOUND = new InformaticsServerException("testNotFound", ExceptionType.NOT_FOUND);
     public static final InformaticsServerException INVALID_TEST_KEY = new InformaticsServerException("invalidTestKey", ExceptionType.VALIDATION_ERROR);

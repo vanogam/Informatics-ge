@@ -6,6 +6,7 @@ import {toast} from 'react-toastify'
 import {useNavigate, useParams} from 'react-router-dom'
 import StatementEditor from "./StatementEditor";
 import TestcasesEditor from "./TestcasesEditor";
+import GradersEditor from "./GradersEditor";
 
 export default function NewTaskCard() {
     const navigate = useNavigate();
@@ -16,6 +17,7 @@ export default function NewTaskCard() {
     const [title, setTitle] = useState('');
     const [contestId, setContestId] = useState(contest_id);
     const [taskType, setTaskType] = useState('BATCH');
+    const [numProcesses, setNumProcesses] = useState(1);
     const [evaluatorType, setEvaluatorType] = useState('TOKEN');
     const [taskScoreType, setTaskScoreType] = useState('SUM');
     const [taskScoreParameter, setTaskScoreParameter] = useState('');
@@ -39,8 +41,10 @@ export default function NewTaskCard() {
 
     const axiosInstance = useContext(AxiosContext)
     const taskScoreTypes = ['SUM', 'GROUP_MIN']
-    const evaluatorTypes = ['TOKEN', 'DOUBLE_E6', 'DOUBLE_E9', 'LINES', 'YES_NO', 'CUSTOM']
-    const taskTypes = ['BATCH']
+    const evaluatorTypes = ['TOKEN', 'DOUBLE_E6', 'DOUBLE_E9', 'LINES', 'YES_NO', 'CUSTOM', 'MANAGER']
+    const taskTypes = ['BATCH', 'COMMUNICATION']
+    // Communication tasks are judged by their manager; no other evaluator applies.
+    const isCommunication = taskType === 'COMMUNICATION'
     useEffect(() => {
         if (taskId) {
             loadTask()
@@ -73,6 +77,7 @@ export default function NewTaskCard() {
             setCode(task.code);
             setContestId(task.contestId);
             setTaskType(task.taskType);
+            setNumProcesses(task.numProcesses || 1);
             setTaskScoreType(task.taskScoreType);
             setTaskScoreParameter(task.taskScoreParameter);
             setTimeLimitMillis(task.timeLimitMillis);
@@ -120,9 +125,13 @@ export default function NewTaskCard() {
             title: title.toString(),
             taskType: taskType.toString(),
             taskScoreType: taskScoreType.toString(),
-            taskScoreParameter: parseFloat(taskScoreParameter),
+            // Sent as text: the server field is a String and every format except a bare
+            // multiplier - "[1,2]" for SUM, "[0,1],[5,9]" for GROUP_MIN - is NaN to parseFloat,
+            // which serialises to null and silently clears the field.
+            taskScoreParameter: taskScoreParameter?.toString().trim() ?? '',
             timeLimitMillis: parseInt(timeLimitMillis),
-            checkerType: evaluatorType.toString(),
+            checkerType: isCommunication ? 'MANAGER' : evaluatorType.toString(),
+            numProcesses: isCommunication ? parseInt(numProcesses) || 1 : null,
             memoryLimitMB: parseInt(memoryLimitMB),
             inputTemplate: inputTemplate.toString(),
             outputTemplate: outputTemplate.toString(),
@@ -258,10 +267,11 @@ export default function NewTaskCard() {
                     <TextField
                         select
                         label={getMessage('ka', 'evaluatorType')}
-                        value={evaluatorType}
+                        value={isCommunication ? 'MANAGER' : evaluatorType}
                         onChange={(e) => setEvaluatorType(e.target.value)}
                         variant='outlined'
                         size='small'
+                        disabled={isCommunication}
                         sx={{minWidth: 'max-content'}}
                     >
                         {evaluatorTypes.map((option) => (
@@ -270,6 +280,15 @@ export default function NewTaskCard() {
                             </MenuItem>
                         ))}
                     </TextField>
+                    {isCommunication && (
+                        <TextField
+                            label={getMessage('ka', 'numProcesses')}
+                            value={numProcesses}
+                            onChange={(e) => setNumProcesses(e.target.value)}
+                            variant='outlined'
+                            size='small'
+                        />
+                    )}
                     <TextField
                         label={getMessage('ka', 'timeLimitMillis')}
                         value={timeLimitMillis}
@@ -319,11 +338,16 @@ export default function NewTaskCard() {
                         error={!fieldValidations.outputTemplate}
                     />
                 </Stack>
+                <GradersEditor taskId={taskId}
+                               isCommunication={isCommunication}
+                               isCustomChecker={!isCommunication && evaluatorType === 'CUSTOM'}/>
                 <TestcasesEditor taskId={taskId}
                                  loadTask={loadTask}
                                  testcases={testcases}
                                  setTestcases={setTestcases}
-                                 changePublic={changePublic}/>
+                                 changePublic={changePublic}
+                                 taskScoreType={taskScoreType}
+                                 taskScoreParameter={taskScoreParameter}/>
                 <Button
                     fullWidth
                     variant='contained'

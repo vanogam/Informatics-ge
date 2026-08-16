@@ -63,6 +63,13 @@ load_env_file() {
   source "$f"
 }
 
+# The repo .env is the single local source of truth for VERSION, so the tag does not have to
+# be repeated per config file. .bash-env is loaded afterwards and may still override it.
+if [[ -f "${REPO_ROOT}/.env" ]]; then
+  # shellcheck disable=SC1091
+  set -a; source "${REPO_ROOT}/.env"; set +a
+fi
+
 if [[ -n "${BASH_ENV_FILE:-}" ]]; then
   load_env_file "$BASH_ENV_FILE"
 elif [[ -f "${DEPLOY_ROOT}/.bash-env" ]]; then
@@ -167,7 +174,12 @@ build_images() {
     docker build -t "informatics/ui:${VERSION}" -f informatics-ui/Dockerfile ./informatics-ui
   fi
   if [[ "$SKIP_WORKER_BUILD" != "1" ]]; then
-    docker build -t "informatics/worker:${VERSION}" -f informatics-worker/Dockerfile ./informatics-worker
+    docker build -t "informatics/worker:${VERSION}" -t "informatics/worker:latest" \
+      -f informatics-worker/Dockerfile ./informatics-worker
+    # Workers launch submissions inside this image; without it every job fails with
+    # "No such image: sandbox:latest".
+    docker build -t "informatics/sandbox:${VERSION}" \
+      -f informatics-worker/src/main/docker/sandbox.Dockerfile ./informatics-worker
   fi
 }
 
@@ -178,6 +190,7 @@ push_ghcr() {
   fi
   if [[ "$SKIP_WORKER_BUILD" != "1" ]]; then
     tag_and_push "$GHCR_IMAGE_PREFIX" worker
+    tag_and_push "$GHCR_IMAGE_PREFIX" sandbox
   fi
 }
 
@@ -198,6 +211,12 @@ remote_pull() {
   fi
   if [[ "$SKIP_WORKER_BUILD" != "1" ]]; then
     "${ssh_base[@]}" docker pull "${gh}/worker:${v}"
+    # The core spawns workers by the local name (worker.dockerImage), not the GHCR one.
+    "${ssh_base[@]}" docker tag "${gh}/worker:${v}" "informatics/worker:${v}"
+    "${ssh_base[@]}" docker tag "${gh}/worker:${v}" "informatics/worker:latest"
+    "${ssh_base[@]}" docker pull "${gh}/sandbox:${v}"
+    # Sandbox.init looks the image up by the bare name, so give it that name on the host.
+    "${ssh_base[@]}" docker tag "${gh}/sandbox:${v}" sandbox:latest
   fi
 }
 
@@ -293,6 +312,9 @@ for svc in "${services[@]}"; do
   container="${svc#informatics-}"
   docker rm -f "$container" 2>/dev/null || true
 done
+# Unit files may have changed (e.g. new -e flags); without this systemd keeps the old ones.
+echo "Reloading systemd units..."
+systemctl daemon-reload
 for svc in "${services[@]}"; do
   echo "Starting $svc..."
   systemctl start "$svc"

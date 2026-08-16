@@ -9,6 +9,7 @@ import ge.freeuni.informatics.common.model.submission.Submission;
 import ge.freeuni.informatics.common.model.submission.SubmissionStatus;
 import ge.freeuni.informatics.common.model.submission.SubmissionTestResult;
 import ge.freeuni.informatics.common.model.task.Task;
+import ge.freeuni.informatics.common.model.task.TestKeys;
 import ge.freeuni.informatics.common.model.task.Testcase;
 import ge.freeuni.informatics.judgeintegration.model.KafkaCallback;
 import ge.freeuni.informatics.judgeintegration.model.KafkaTask;
@@ -16,7 +17,10 @@ import ge.freeuni.informatics.judgeintegration.model.Stage;
 import ge.freeuni.informatics.repository.submission.SubmissionJpaRepository;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.EventListener;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,6 +53,23 @@ public class JudgeIntegration implements IJudgeIntegration{
     private static final int TEST_RESULT_OUTCOME_MAX_LENGTH = 1000;
     private static final String TRUNCATION_SUFFIX = "...";
 
+    /**
+     * Statuses that mean judging has not reached a conclusion. A submission left in one of these
+     * across a restart has no in-memory tracking left and would otherwise sit there forever.
+     */
+    private static final List<SubmissionStatus> IN_FLIGHT_STATUSES = List.of(
+            SubmissionStatus.IN_QUEUE, SubmissionStatus.COMPILING, SubmissionStatus.RUNNING);
+
+    /**
+     * Beyond this age an in-flight submission is failed rather than re-judged, so a long-forgotten
+     * submission cannot silently re-score a finished contest.
+     */
+    @Value("${ge.freeuni.informatics.judge.recovery.maxAgeHours:24}")
+    private long recoveryMaxAgeHours;
+
+    @Value("${ge.freeuni.informatics.judge.recovery.enabled:true}")
+    private boolean recoveryEnabled;
+
     private String truncateToLength(String value, int maxLength) {
         if (value == null) {
             return null;
@@ -76,6 +97,8 @@ public class JudgeIntegration implements IJudgeIntegration{
                 null,
                 null,
                 task.getCheckerType(),
+                task.getTaskType(),
+                numProcesses(task),
                 Stage.COMPILATION
         );
         submissionLocks.put(submission.getId(), new Object());
@@ -106,6 +129,8 @@ public class JudgeIntegration implements IJudgeIntegration{
                 null,
                 null,
                 task.getCheckerType(),
+                task.getTaskType(),
+                numProcesses(task),
                 Stage.COMPILATION
         );
         ObjectMapper objectMapper = new ObjectMapper();
@@ -120,8 +145,17 @@ public class JudgeIntegration implements IJudgeIntegration{
     }
 
     private void sendTestMessages(Task task, Submission submission) throws InformaticsServerException {
+        sendTestMessages(task, submission, null);
+    }
+
+    /**
+     * @param only test keys to publish, or null for every test of the task
+     */
+    private void sendTestMessages(Task task, Submission submission, Set<String> only)
+            throws InformaticsServerException {
         List<Testcase> testcases = task.getTestcases().stream()
                 .sorted(Comparator.comparing(Testcase::getKey))
+                .filter(tc -> only == null || only.contains(tc.getKey()))
                 .toList();
         for (Testcase testcase : testcases) {
             KafkaTask kafkaTask = new KafkaTask(
@@ -136,22 +170,24 @@ public class JudgeIntegration implements IJudgeIntegration{
                     testcase.getInputFileAddress().substring(testcase.getInputFileAddress().lastIndexOf("/") + 1),
                     testcase.getOutputFileAddress().substring(testcase.getOutputFileAddress().lastIndexOf("/") + 1),
                     task.getCheckerType(),
+                    task.getTaskType(),
+                    numProcesses(task),
                     Stage.TESTING
             );
             ObjectMapper objectMapper = new ObjectMapper();
             try {
                 String message = objectMapper.writeValueAsString(kafkaTask);
                 log.debug("Kafka message: {}", message);
-                kafkaProducerService.sendMessage("submission-topic", message);
+                kafkaProducerService.sendMessage("submission-topic",
+                        submission.getId() + ":" + testcase.getKey(), message);
                 log.info("Sent submission to Kafka: {}", submission.getId());
             } catch (IOException e) {
                 log.error("Failed to serialize KafkaTask: {}", e.getMessage());
                 throw new InformaticsServerException("serializationError", e);
             }
         }
-        testCompletionMap.put(submission.getId(), new TreeMap<>());
-        for (int i = 0; i < task.getTestcases().size(); i++) {
-            testCompletionMap.get(submission.getId()).put(task.getTestcases().get(i).getKey(), i);
+        if (only == null) {
+            testCompletionMap.put(submission.getId(), outstandingTests(submission));
         }
     }
 
@@ -171,9 +207,11 @@ public class JudgeIntegration implements IJudgeIntegration{
                 return;
             }
             if (!submissionLocks.containsKey(submission.getId())) {
-                log.warn("No lock found for submission: {}", submission.getId());
-                // TODO: Add restart handling
-                return;
+                // Tracking lives in memory and is lost on restart. Rebuild it from the database
+                // rather than dropping the result the worker just spent time producing.
+                if (!restoreTracking(submission)) {
+                    return;
+                }
             }
             synchronized (submissionLocks.get(submission.getId())) {
                 switch (callback.messageType()) {
@@ -231,6 +269,123 @@ public class JudgeIntegration implements IJudgeIntegration{
         }
     }
 
+    private int numProcesses(Task task) {
+        return task.getNumProcesses() == null ? 1 : task.getNumProcesses();
+    }
+
+
+    /**
+     * Recreates the in-memory tracking for a submission whose judging predates a restart.
+     *
+     * @return false when the submission is already finished, so the callback should be ignored
+     */
+    private boolean restoreTracking(Submission submission) {
+        if (!IN_FLIGHT_STATUSES.contains(submission.getStatus())) {
+            log.debug("Ignoring callback for already finished submission {}", submission.getId());
+            return false;
+        }
+        submissionLocks.putIfAbsent(submission.getId(), new Object());
+        testCompletionMap.put(submission.getId(), outstandingTests(submission));
+        log.info("Restored tracking for submission {} after restart, {} test(s) outstanding",
+                submission.getId(), testCompletionMap.get(submission.getId()).size());
+        return true;
+    }
+
+    /**
+     * Tests that still owe a result: every testcase of the task minus those already recorded.
+     * Judging progress is therefore derivable from the database and never has to be persisted
+     * separately. Values are the index used to report which test is currently running.
+     */
+    private TreeMap<String, Integer> outstandingTests(Submission submission) {
+        TreeMap<String, Integer> outstanding = new TreeMap<>();
+        Task task = submission.getTask();
+        if (task == null || task.getTestcases() == null) {
+            return outstanding;
+        }
+        Set<String> completed = new HashSet<>();
+        if (submission.getSubmissionTestResults() != null) {
+            submission.getSubmissionTestResults().stream()
+                    .map(SubmissionTestResult::getTestKey)
+                    .forEach(completed::add);
+        }
+        List<Testcase> ordered = task.getTestcases().stream()
+                .sorted(Comparator.comparing(Testcase::getKey))
+                .toList();
+        for (int i = 0; i < ordered.size(); i++) {
+            String key = ordered.get(i).getKey();
+            if (!completed.contains(key)) {
+                outstanding.put(key, i);
+            }
+        }
+        return outstanding;
+    }
+
+    /**
+     * Re-drives submissions that were mid-judgement when the application last stopped. Without
+     * this they keep their in-flight status forever: the worker's callbacks are long gone and
+     * nothing else ever revisits the row.
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    @Transactional
+    public void recoverInFlightSubmissions() {
+        if (!recoveryEnabled) {
+            log.info("Submission recovery disabled, skipping");
+            return;
+        }
+        List<Submission> inFlight = submissionRepository.getAllByStatusIn(IN_FLIGHT_STATUSES);
+        if (inFlight.isEmpty()) {
+            return;
+        }
+        log.info("Found {} in-flight submission(s) to recover", inFlight.size());
+        long cutoff = System.currentTimeMillis() - recoveryMaxAgeHours * 3600_000L;
+
+        for (Submission submission : inFlight) {
+            try {
+                recoverSubmission(submission, cutoff);
+            } catch (Exception e) {
+                log.error("Failed to recover submission {}", submission.getId(), e);
+            }
+        }
+    }
+
+    private void recoverSubmission(Submission submission, long cutoff) throws InformaticsServerException {
+        Date submittedAt = submission.getSubmissionTime();
+        if (submittedAt != null && submittedAt.getTime() < cutoff) {
+            log.warn("Submission {} is older than {}h, failing it instead of re-judging",
+                    submission.getId(), recoveryMaxAgeHours);
+            submission.setStatus(SubmissionStatus.SYSTEM_ERROR);
+            submission.setCompilationMessage("Judging was interrupted and could not be resumed");
+            submission.setScore(0f);
+            submissionRepository.save(submission);
+            return;
+        }
+
+        TreeMap<String, Integer> outstanding = outstandingTests(submission);
+        submissionLocks.putIfAbsent(submission.getId(), new Object());
+
+        if (submission.getStatus() == SubmissionStatus.RUNNING && !outstanding.isEmpty()) {
+            // It compiled, so only the tests that never reported back need re-running.
+            log.info("Resuming submission {}: re-queueing {} outstanding test(s)",
+                    submission.getId(), outstanding.size());
+            testCompletionMap.put(submission.getId(), outstanding);
+            sendTestMessages(submission.getTask(), submission, outstanding.keySet());
+            return;
+        }
+        if (submission.getStatus() == SubmissionStatus.RUNNING) {
+            // Every test reported; it just never got finalised.
+            log.info("Finalising submission {}: all tests already have results", submission.getId());
+            testCompletionMap.put(submission.getId(), outstanding);
+            finalizeSubmission(submission, submission.getCompilationMessage());
+            return;
+        }
+        // Never got past compilation - start the whole job again.
+        log.info("Re-queueing submission {} from compilation", submission.getId());
+        submission.setStatus(SubmissionStatus.IN_QUEUE);
+        submission.setSubmissionTestResults(new ArrayList<>());
+        submissionRepository.save(submission);
+        addSubmission(submission.getTask(), submission);
+    }
+
     private SubmissionTestResult createTestResult(KafkaCallback callback) {
         SubmissionTestResult testResult = new SubmissionTestResult();
         testResult.setTestKey(callback.testcaseKey());
@@ -238,13 +393,8 @@ public class JudgeIntegration implements IJudgeIntegration{
         testResult.setMessage(truncateToLength(callback.message(), TEST_RESULT_MESSAGE_MAX_LENGTH));
         testResult.setOutcome(truncateToLength(callback.outcome(), TEST_RESULT_OUTCOME_MAX_LENGTH));
         
-        // Normalize score to 0.0-1.0 (Float). Worker sends 0-1 scale; legacy may send 0-100.
-        if (callback.score() != null) {
-            long s = callback.score();
-            testResult.setScore(s <= 1 ? (float) s : s / 100.0f);
-        } else {
-            testResult.setScore(0.0f);
-        }
+        // The worker always reports a fraction in [0, 1]; partial scores must survive intact.
+        testResult.setScore(callback.score() == null ? 0.0f : callback.score().floatValue());
         
         // Convert time and memory from Long to Integer
         if (callback.timeMillis() != null) {
@@ -258,9 +408,13 @@ public class JudgeIntegration implements IJudgeIntegration{
     }
 
     private void finalizeSubmission(Submission submission, KafkaCallback callback) {
+        finalizeSubmission(submission, callback == null ? null : callback.message());
+    }
+
+    private void finalizeSubmission(Submission submission, String message) {
         if (submission.getStatus() == SubmissionStatus.COMPILATION_ERROR) {
             submission.setScore(0f);
-            submission.setCompilationMessage(truncateToLength(callback.message(), COMPILATION_MESSAGE_MAX_LENGTH));
+            submission.setCompilationMessage(truncateToLength(message, COMPILATION_MESSAGE_MAX_LENGTH));
         } else {
             float finalScore = submission.getSubmissionTestResults().stream().map(SubmissionTestResult::getScore).reduce(0f, (sum, result) -> sum + result);
             if (finalScore == 0f) {
@@ -273,6 +427,11 @@ public class JudgeIntegration implements IJudgeIntegration{
         }
         float finalScore = 0f;
         try {
+            // GROUP_MIN slices this list positionally, and results arrive in whatever order the
+            // workers finish - which, now that tests are spread across partitions, is arbitrary.
+            // Sorting here is what aligns each slice with the subtask it was configured for.
+            submission.getSubmissionTestResults()
+                    .sort(Comparator.comparing(SubmissionTestResult::getTestKey, TestKeys.NATURAL_ORDER));
             finalScore = submission.getTask().getTaskScoreType().evaluate(submission.getSubmissionTestResults(),
                     submission.getTask().getTaskScoreParameter());
         } catch (Exception e) {

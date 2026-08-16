@@ -210,8 +210,10 @@ public class TaskManager implements ITaskManager {
             if (task.getOrder() == null) {
                 task.setOrder(existingTask.getOrder());
             }
+            task.setCode(resolveCode(taskDTO.code(), existingTask));
         } else {
-            task.setCode(FileUtils.getRandomFileName(10));
+            // Keep the code the teacher chose; only invent one when the field was left empty.
+            task.setCode(resolveCode(taskDTO.code(), null));
             int taskCount = contest.getTasks() != null ? contest.getTasks().size() : 0;
             task.setOrder(taskCount + 1);
         }
@@ -222,6 +224,35 @@ public class TaskManager implements ITaskManager {
             contestRepository.save(contest);
         }
         return TaskDTO.toDTO(task);
+    }
+
+
+    /**
+     * Settles a task's code: the one the teacher typed when they gave one, otherwise a generated
+     * fallback. The code is a human-facing identifier - it keys standings and names downloaded
+     * archives - so it has to be unique and safe to put in a file name.
+     *
+     * @param existingTask the task being edited, or null when creating a new one
+     */
+    private String resolveCode(String requested, Task existingTask) throws InformaticsServerException {
+        String code = requested == null ? "" : requested.trim();
+        if (code.isEmpty()) {
+            return existingTask != null ? existingTask.getCode() : FileUtils.getRandomFileName(10);
+        }
+        boolean unchanged = existingTask != null && code.equals(existingTask.getCode());
+        // Generated codes are base64 and can contain characters the charset rule rejects.
+        // Only validate a code the teacher is actually setting, so an existing task stays editable.
+        if (!unchanged && (code.length() > 64 || !code.matches("[A-Za-z0-9_\\-]+"))) {
+            throw InformaticsServerException.INVALID_TASK_CODE;
+        }
+        if (unchanged) {
+            return code;
+        }
+        Task clash = taskRepository.findFirstByCode(code).orElse(null);
+        if (clash != null && (existingTask == null || !clash.getId().equals(existingTask.getId()))) {
+            throw InformaticsServerException.TASK_CODE_ALREADY_EXISTS;
+        }
+        return code;
     }
 
     @Override
@@ -393,18 +424,6 @@ public class TaskManager implements ITaskManager {
         }
         testcase.setPublicTestcase(publicTestcase);
         testcaseRepository.save(testcase);
-    }
-
-    @Override
-    @TeacherTaskRestricted
-    public void addManager(long taskId, byte[] manager) {
-
-    }
-
-    @Override
-    @TeacherTaskRestricted
-    public void removeManager(long taskId, String managerName) {
-
     }
 
     @Override

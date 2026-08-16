@@ -19,6 +19,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 
 import java.util.Calendar;
@@ -27,7 +33,17 @@ import java.util.Date;
 @Component
 public class UserManager implements IUserManager {
 
+    private static final Logger log = LoggerFactory.getLogger(UserManager.class);
+
+
+
     private static final BCryptPasswordEncoder BCRYPT = new BCryptPasswordEncoder();
+
+    /**
+     * How stale the recorded login time has to be before it is written again. Anything shorter
+     * turns every service-account heartbeat into a contended write for no useful precision.
+     */
+    private static final long LAST_LOGIN_WRITE_INTERVAL_MS = 60_000;
 
     @Value("${ge.freeuni.informatics.server.user.passwordRecoveryValidityMinutes}")
     private String passwordRecoveryValidityMinutes;
@@ -93,12 +109,24 @@ public class UserManager implements IUserManager {
     }
 
     @Override
+    /**
+     * Verifies credentials and records the login.
+     *
+     * <p>User rows carry a {@code @Version}, so two authentications of the same account at the
+     * same moment collide on the lastLogin write. Service accounts make that routine rather than
+     * rare: every worker heartbeats over Basic auth every 30 seconds as the same user. The write
+     * is therefore skipped when the recorded time is already fresh, and retried when it does
+     * race; a lost race must never cost a valid login.
+     */
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class,
+            maxAttempts = 3, backoff = @Backoff(delay = 25, multiplier = 2))
     public User authenticate(String username, String password) {
         User user = userRepository.getFirstByUsername(username);
         if (user == null) {
             return null;
         }
 
+        boolean migrated = false;
         boolean authenticated;
         if (isBcryptHash(user.getPassword())) {
             authenticated = BCRYPT.matches(password, user.getPassword());
@@ -108,16 +136,54 @@ public class UserManager implements IUserManager {
             if (authenticated) {
                 user.setPassword(BCRYPT.encode(password));
                 user.setPasswordSalt("");
+                migrated = true;
             }
         }
 
-        if (authenticated) {
-            user.setLastLogin(new Date());
-            userRepository.save(user);
-            return user;
+        if (!authenticated) {
+            return null;
         }
+        recordLogin(user, migrated);
+        return user;
+    }
 
-        return null;
+    /**
+     * Last resort once the retries are used up. The lastLogin write is bookkeeping and must not
+     * turn a valid credential into a failed login.
+     *
+     * <p>Credentials are checked again here rather than assuming the failed attempt got far
+     * enough to verify them, so this can never hand back an unauthenticated user.
+     */
+    @Recover
+    public User recoverFromLockContention(ObjectOptimisticLockingFailureException e,
+                                          String username, String password) {
+        log.warn("Could not record login for {} because of concurrent updates; "
+                + "authentication itself is unaffected", username);
+        User user = userRepository.getFirstByUsername(username);
+        if (user == null) {
+            return null;
+        }
+        if (isBcryptHash(user.getPassword())) {
+            return BCRYPT.matches(password, user.getPassword()) ? user : null;
+        }
+        return UserUtils.getHash(password, user.getPasswordSalt()).equals(user.getPassword())
+                ? user : null;
+    }
+
+    /**
+     * Persists the login, skipping the write when the stored timestamp is recent enough. A
+     * password just migrated to bcrypt always writes, since dropping it would leave the account
+     * on its legacy hash.
+     */
+    private void recordLogin(User user, boolean migrated) {
+        Date now = new Date();
+        boolean stale = user.getLastLogin() == null
+                || now.getTime() - user.getLastLogin().getTime() > LAST_LOGIN_WRITE_INTERVAL_MS;
+        if (!migrated && !stale) {
+            return;
+        }
+        user.setLastLogin(now);
+        userRepository.save(user);
     }
 
     private static boolean isBcryptHash(String hash) {

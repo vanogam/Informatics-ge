@@ -24,6 +24,7 @@ ExecStart=/usr/bin/docker run \
   -e SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD} \
   -e SPRING_REDIS_HOST=redis \
   -e INFORMATICS_HOME_DIR=${INFORMATICS_HOME_DIR} \
+  -e INFORMATICS_VERSION=${VERSION} \
   -e SPRING_CONFIG_ADDITIONAL_LOCATION=optional:file:/opt/app/external-config/application.properties \
   --network informatics \
   --network-alias core \

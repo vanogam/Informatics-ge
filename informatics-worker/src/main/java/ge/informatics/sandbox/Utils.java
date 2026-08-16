@@ -103,9 +103,25 @@ public class Utils {
      * @throws InterruptedException If the thread is interrupted while waiting for the command to complete.
      */
     public static CommandResult executeCommandSync(DockerClient client, String containerId, String command, long timeMillis, Integer memoryLimit) throws InterruptedException {
+        return executeGuarded(client, containerId, command, timeMillis, memoryLimit, timeMillis);
+    }
+
+    /**
+     * Runs a command under a memory ceiling and a wall-clock guard.
+     *
+     * @param awaitMillis  how long to wait for docker exec to return
+     * @param memoryLimit  ulimit -v ceiling in KB, or null for no limit
+     * @param guardMillis  wall-clock budget after which the command is killed. Kept separate
+     *                     from the verdict's time limit so a communication test can allow for
+     *                     the manager's share without failing the submission for it.
+     */
+    public static CommandResult executeGuarded(DockerClient client, String containerId, String command,
+                                               long awaitMillis, Integer memoryLimit, long guardMillis)
+            throws InterruptedException {
+        long timeMillis = awaitMillis;
         if (memoryLimit != null) {
             memoryLimit *= 2; // Increase memory limit to account for overhead
-            float timeLimit = (500f + timeMillis) / 1000f;
+            float timeLimit = (500f + guardMillis) / 1000f;
             command = "ulimit -v " + memoryLimit + " && timeout " + timeLimit + "s " + command;
         }
         ExecCreateCmdResponse execCreateCmdResponse = client.execCreateCmd(containerId)
@@ -141,8 +157,9 @@ public class Utils {
     }
 
     public static void changePermissions(DockerClient client, String containerId, String path, String owner, String permissions) throws InterruptedException {
-        executeCommandSync(client, containerId, "chown " + owner + ":" + owner + " " + path);
-        executeCommandSync(client, containerId, "chmod " + permissions + " " + path);
+        // One exec rather than two: every round trip to the daemon costs ~65ms.
+        executeCommandSync(client, containerId,
+                "chown " + owner + ":" + owner + " " + path + " && chmod " + permissions + " " + path);
     }
 
     public static String getExecProcessPid(DockerClient client, String containerId, String execCmd) throws Exception {

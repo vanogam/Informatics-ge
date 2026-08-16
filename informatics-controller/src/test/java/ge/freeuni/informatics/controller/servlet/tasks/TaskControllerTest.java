@@ -14,6 +14,7 @@ import ge.freeuni.informatics.server.task.ITaskManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -25,6 +26,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -80,6 +82,7 @@ class TaskControllerTest {
                 1000,
                 256,
                 CheckerType.TOKEN,
+                1,
                 "test*.in",
                 "test*.out",
                 new HashMap<>(),
@@ -182,6 +185,62 @@ class TaskControllerTest {
                 .andExpect(jsonPath("$.title").value("Test Task"));
     }
 
+    /**
+     * A GROUP_MIN parameter must reach the manager exactly as typed. Only a bare multiplier
+     * survives being treated as a number, so anything bracketed used to arrive as null and the
+     * field silently came back empty.
+     */
+    /**
+     * A failed save must return the error code in the body: the UI reads data.message to pick
+     * a translation, so a bodiless error renders as an empty toast and looks like a silent failure.
+     */
+    @Test
+    void testSaveTask_ReturnsErrorCodeInBody() throws Exception {
+        AddTaskRequest request = new AddTaskRequest(
+                null, 1, "ballmachine", "Ball Machine", TaskType.COMMUNICATION,
+                TaskScoreType.GROUP_MIN, "[0,1]", 3500, 2048, CheckerType.MANAGER, 1, "*.in", "*.out");
+        when(taskManager.addTask(eq(1L), any(TaskDTO.class)))
+                .thenThrow(InformaticsServerException.TASK_CODE_ALREADY_EXISTS);
+
+        mockMvc.perform(post("/api/task")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("taskCodeAlreadyExists"));
+    }
+
+    @Test
+    void testSaveTask_KeepsBracketedScoreParameter() throws Exception {
+        String parameter = "[0,1],[5,9],[10,11],[25,23],[60,30]";
+        AddTaskRequest request = new AddTaskRequest(
+                1L,
+                1,
+                "Ball Machine",
+                "ballmachine",
+                TaskType.COMMUNICATION,
+                TaskScoreType.GROUP_MIN,
+                parameter,
+                3500,
+                2048,
+                CheckerType.MANAGER,
+                1,
+                "*.in",
+                "*.out"
+        );
+        when(taskManager.addTask(eq(1L), any(TaskDTO.class))).thenReturn(testTaskDTO);
+
+        mockMvc.perform(post("/api/task")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<TaskDTO> saved = ArgumentCaptor.forClass(TaskDTO.class);
+        verify(taskManager).addTask(eq(1L), saved.capture());
+        assertEquals(parameter, saved.getValue().taskScoreParameter());
+        assertEquals(TaskType.COMMUNICATION, saved.getValue().taskType());
+        assertEquals(1, saved.getValue().numProcesses());
+    }
+
     @Test
     void testSaveTask_Success() throws Exception {
         AddTaskRequest request = new AddTaskRequest(
@@ -195,6 +254,7 @@ class TaskControllerTest {
                 1000,
                 256,
                 CheckerType.TOKEN,
+                1,
                 "test*.in",
                 "test*.out"
         );
@@ -223,6 +283,7 @@ class TaskControllerTest {
                 1000,
                 256,
                 CheckerType.TOKEN,
+                1,
                 "test*.in",
                 "test*.out"
         );

@@ -1,15 +1,17 @@
 import {Button, Paper, Stack, Tooltip, Typography} from "@mui/material";
 import {Delete, DeleteForever, Download, DownloadTwoTone} from "@mui/icons-material";
 import getMessage from "../lang";
-import {useContext, useState} from "react";
+import {useContext, useMemo, useState} from "react";
 import {AxiosContext} from "../../utils/axiosInstance";
 import {toast} from "react-toastify";
 import {useConfirmDialog} from "../../utils/ConfirmDialogContext";
+import {groupTestcases} from "../../utils/subtasks";
 
 /** Must stay aligned with ge.freeuni.informatics.maxTestcasesZipMb on the server (default 100). */
 const MAX_TESTCASES_ZIP_BYTES = 100 * 1024 * 1024;
 
-export default function TestcasesEditor({taskId, loadTask, testcases, setTestcases, changePublic}) {
+export default function TestcasesEditor({taskId, loadTask, testcases, setTestcases, changePublic,
+                                            taskScoreType, taskScoreParameter}) {
     const [inputFile, setInputFile] = useState(null);
     const [outputFile, setOutputFile] = useState(null);
     const [multipleTestcasesFile, setMultipleTestcasesFile] = useState(null);
@@ -146,17 +148,24 @@ export default function TestcasesEditor({taskId, loadTask, testcases, setTestcas
         return formData;
     }
 
-    const [expandedIndex, setExpandedIndex] = useState(null);
+    const [expandedKey, setExpandedKey] = useState(null);
 
-    const handleRowClick = (e, idx) => {
+    const handleRowClick = (e, key) => {
         if (
             e.target.tagName === "BUTTON" ||
             e.target.tagName === "INPUT" ||
             e.target.closest("button") ||
             e.target.closest("input")
         ) return;
-        setExpandedIndex(expandedIndex === idx ? null : idx);
+        setExpandedKey(expandedKey === key ? null : key);
     };
+
+    // The server returns testcases in database order; sort by key and split them into the
+    // subtasks the task is actually scored by, so the list matches how GROUP_MIN reads it.
+    const {grouped, groups} = useMemo(
+        () => groupTestcases(testcases, taskScoreType, taskScoreParameter),
+        [testcases, taskScoreType, taskScoreParameter]
+    );
 
     if (!!taskId) {
         return (<Stack gap="1rem">
@@ -213,10 +222,31 @@ export default function TestcasesEditor({taskId, loadTask, testcases, setTestcas
                 </Stack>
             </Stack>
             <Paper elevation={4} sx={{py: '1rem', marginBottom: '0.5rem'}} key={`testcases`}>
-                {testcases?.map((testcase, index) => (
-                    <Stack direction={"column"}>
-                        <Stack key={testcase.key}
-                               onClick={(e) => handleRowClick(e, index)}
+                {groups.map((group, groupIndex) => (
+                    <Stack direction="column" key={`group-${groupIndex}`}>
+                        {grouped && (
+                            <Stack direction="row"
+                                   justifyContent="space-between"
+                                   alignItems="center"
+                                   sx={{
+                                       px: '1rem',
+                                       py: '0.4rem',
+                                       mt: groupIndex === 0 ? 0 : '0.75rem',
+                                       backgroundColor: '#ede9f2',
+                                       borderLeft: '4px solid #3c324e',
+                                   }}>
+                                <Typography variant="body2" sx={{fontWeight: 700}}>
+                                    {getMessage('ka', 'subtask')} {groupIndex} &middot; {getMessage('ka', 'pointCount', group.score)}
+                                </Typography>
+                                <Typography variant="body2" color="textSecondary">
+                                    {getMessage('ka', 'testCount', group.testcases.length)}
+                                </Typography>
+                            </Stack>
+                        )}
+                        {group.testcases.map((testcase, index) => (
+                    <Stack direction={"column"} key={testcase.key}>
+                        <Stack
+                               onClick={(e) => handleRowClick(e, testcase.key)}
                                direction="row"
                                justifyContent="space-between"
                                alignItems="center"
@@ -244,7 +274,7 @@ export default function TestcasesEditor({taskId, loadTask, testcases, setTestcas
                             fontWeight: 700,
                             display: 'inline-block',
                             whiteSpace: 'nowrap'
-                        }}>#{index + 1} test:</span>
+                        }}>#{group.from + index + 1} test:</span>
                                 <span
                                     style={{
                                         width: '80%',
@@ -276,7 +306,7 @@ export default function TestcasesEditor({taskId, loadTask, testcases, setTestcas
                                 </Button>
                             </Stack>
                         </Stack>
-                        {expandedIndex === index && (
+                        {expandedKey === testcase.key && (
                             <Stack sx={{px: '2rem', py: '0.5rem', background: '#f9f9f9'}}>
                                 <Typography variant="body2" sx={{mb: 1}}>{getMessage('ka', 'input')}</Typography>
                                 <textarea
@@ -292,6 +322,8 @@ export default function TestcasesEditor({taskId, loadTask, testcases, setTestcas
                                 />
                             </Stack>
                         )}
+                    </Stack>
+                        ))}
                     </Stack>
                 ))}
                 <Button

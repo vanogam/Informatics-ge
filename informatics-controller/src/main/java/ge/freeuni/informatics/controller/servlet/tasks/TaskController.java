@@ -80,7 +80,7 @@ public class TaskController {
     }
 
     @PostMapping("/task")
-    ResponseEntity<TaskDTO> saveTask(@RequestBody AddTaskRequest request) {
+    ResponseEntity<?> saveTask(@RequestBody AddTaskRequest request) {
         TaskDTO taskDTO = new TaskDTO(
                 request.taskId(),
                 Long.valueOf(request.contestId()),
@@ -92,6 +92,7 @@ public class TaskController {
                 request.timeLimitMillis(),
                 request.memoryLimitMB(),
                 request.checkerType(),
+                request.numProcesses(),
                 request.inputTemplate(),
                 request.outputTemplate(),
                 new HashMap<>(),
@@ -102,7 +103,9 @@ public class TaskController {
             return ResponseEntity.ok(taskManager.addTask(request.contestId(), taskDTO));
         } catch (InformaticsServerException ex) {
             log.error("Error while saving the task", ex);
-            return ResponseEntity.status(ServletUtils.getResponseCode(ex)).build();
+            // The body carries the error code the UI translates; without it the toast is blank.
+            return ResponseEntity.status(ServletUtils.getResponseCode(ex))
+                    .body(new InformaticsResponse(ex.getCode()));
         }
     }
 

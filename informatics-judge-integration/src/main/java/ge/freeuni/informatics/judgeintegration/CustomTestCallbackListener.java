@@ -122,6 +122,8 @@ public class CustomTestCallbackListener {
                     run.getInputFile(),
                     run.getOutputFile(),
                     task.getCheckerType(),
+                    task.getTaskType(),
+                    task.getNumProcesses() == null ? 1 : task.getNumProcesses(),
                     Stage.TESTING
             );
             String msg = objectMapper.writeValueAsString(kafkaTask);

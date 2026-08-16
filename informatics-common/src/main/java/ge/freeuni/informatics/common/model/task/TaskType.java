@@ -1,7 +1,13 @@
 package ge.freeuni.informatics.common.model.task;
 
 public enum TaskType {
-    BATCH("Batch");
+    BATCH("Batch"),
+    /**
+     * IOI/CMS style communication task. The submission is linked against the task's grader
+     * sources and judged by the task's manager process, which it talks to over a FIFO pair.
+     * New constants must be appended - the ordinal is what is persisted.
+     */
+    COMMUNICATION("Communication");
 
     private String code;
 

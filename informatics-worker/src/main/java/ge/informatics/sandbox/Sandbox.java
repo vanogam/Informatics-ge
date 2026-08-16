@@ -5,6 +5,7 @@ import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.HostConfig;
+import ge.informatics.sandbox.executors.CommunicationExecutor;
 import ge.informatics.sandbox.executors.CppExecutor;
 import ge.informatics.sandbox.executors.Executor;
 import ge.informatics.sandbox.fileservice.FileService;
@@ -47,11 +48,14 @@ public class Sandbox implements AutoCloseable {
             String containerName = "Worker-" + id;
             handleExistingContainer(containerName);
             HostConfig hostConfig = HostConfig.newHostConfig()
-                    .withCpuCount(1L)
-                    .withMemory(1024L * 1024 * 1024)
+                    // CpuCount is a Windows-only field that the Linux engine ignores. Pinning the
+                    // container to a single core through the cgroup cpuset is what actually denies
+                    // the contestant parallelism, and it cannot be undone with sched_setaffinity.
+                    .withCpusetCpus(cpuSet())
+                    .withMemory(containerMemoryBytes())
                     .withNetworkMode("none");
 
-            CreateContainerResponse container = dockerClient.createContainerCmd("sandbox")
+            CreateContainerResponse container = dockerClient.createContainerCmd(sandboxImage())
                     .withHostConfig(hostConfig)
                     .withName(containerName)
                     .withCmd("sh", "/launch/launch.sh")
@@ -71,6 +75,52 @@ public class Sandbox implements AutoCloseable {
             }
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Image submissions are executed in. Configurable so a deployment can pull a versioned
+     * image and keep a worker matched to the sandbox it was released with, instead of every
+     * worker on the host racing for the same :latest tag.
+     */
+    private String sandboxImage() {
+        String configured = Config.get("sandbox.image");
+        return configured == null || configured.isBlank() ? "sandbox:latest" : configured.trim();
+    }
+
+    /**
+     * The core this worker's sandbox is pinned to. Workers are numbered from 1 through APP_ID,
+     * so each takes a distinct core and they do not contend with one another.
+     */
+    private String cpuSet() {
+        String configured = Config.get("sandbox.cpuset");
+        if (configured != null && !configured.isBlank()) {
+            return configured.trim();
+        }
+        int cores = Runtime.getRuntime().availableProcessors();
+        int index;
+        try {
+            index = Math.abs(Integer.parseInt(id.replaceAll("\\D", ""))) % cores;
+        } catch (NumberFormatException e) {
+            index = Math.abs(id.hashCode()) % cores;
+        }
+        return String.valueOf(index);
+    }
+
+    /**
+     * Ceiling for the whole container. It has to cover the submission's own limit plus the
+     * manager running beside it; the submission is still held to its own limit by ulimit.
+     */
+    private long containerMemoryBytes() {
+        String configured = Config.get("sandbox.memoryMB");
+        long megabytes = 1024;
+        if (configured != null && !configured.isBlank()) {
+            try {
+                megabytes = Long.parseLong(configured.trim());
+            } catch (NumberFormatException e) {
+                log.warn("Invalid sandbox.memoryMB value '{}', falling back to {} MB", configured, megabytes);
+            }
+        }
+        return megabytes * 1024 * 1024;
     }
 
     private void handleExistingContainer(String containerName) {
@@ -107,14 +157,40 @@ public class Sandbox implements AutoCloseable {
     }
 
     private void loadCheckers() throws IOException, InterruptedException {
+        loadTestlibHeader();
         for (Task.CheckerType checkerType : Task.CheckerType.values()) {
-            if (checkerType.getExecutable() != null) {
+            if (!checkerType.isTaskSupplied()) {
                 loadChecker(checkerType.getExecutable());
                 log.info("Checker {} loaded successfully", checkerType.getExecutable());
             } else {
-                log.warn("No executable found for checker type {}", checkerType);
+                log.debug("Checker type {} is supplied by the task, nothing to preload", checkerType);
             }
         }
+    }
+
+    /**
+     * Makes the bundled testlib header available to task-supplied managers and checkers, so a
+     * task only has to upload its own source. A copy shipped with the task still wins, because
+     * the task's own directory comes first on the include path.
+     */
+    private void loadTestlibHeader() throws IOException {
+        File header = uploadResourceToTemp("testlib.h");
+        dockerClient.copyArchiveToContainerCmd(containerId)
+                .withTarInputStream(compressFile(header, "testlib.h"))
+                .withRemotePath(ContainerPaths.BUILTIN_CHECKERS_DIR + "/")
+                .exec();
+        log.info("Bundled testlib header loaded into sandbox");
+    }
+
+    private File uploadResourceToTemp(String resourceName) throws IOException {
+        InputStream inputStream = Objects.requireNonNull(
+                getClass().getClassLoader().getResourceAsStream(resourceName),
+                "Missing bundled resource " + resourceName);
+        File file = File.createTempFile("sandbox-resource", ".tmp");
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            fos.write(inputStream.readAllBytes());
+        }
+        return file;
     }
     private void loadChecker(String name) throws IOException, InterruptedException {
         InputStream inputStream = Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream(name + ".cpp"));
@@ -171,6 +247,7 @@ public class Sandbox implements AutoCloseable {
         }
         try {
             prepareEnvironment(submission, executor);
+            loadGraders(task);
             log.info("Preparation done for submission: {}", task.submissionId());
         } catch (Exception e) {
             log.error("Error while setting up environment for submission {}",task.submissionId() ,e);
@@ -191,18 +268,43 @@ public class Sandbox implements AutoCloseable {
 
     public TestResult execute(Task task) {
         try {
-            Executor executor = task.language().getExecutor();
+            Executor executor = executorFor(task);
+            // Each step below is a handful of docker execs at ~65ms apiece, so when a test feels
+            // slow the breakdown says whether it is the submission or the scaffolding around it.
+            long start = System.currentTimeMillis();
             clearSubmissionDirectory();
+            long cleared = System.currentTimeMillis();
             loadChecker(task);
+            if (task.isCommunication()) {
+                prepareManager(task);
+            }
+            long evaluatorReady = System.currentTimeMillis();
             loadSubmission(task);
+            long submissionLoaded = System.currentTimeMillis();
             loadTest(task);
-            log.debug("Test {} loaded for submission", task.testId());
-            return executor.execute(dockerClient, containerId, task);
+            long testLoaded = System.currentTimeMillis();
+            TestResult result = executor.execute(dockerClient, containerId, task);
+            long finished = System.currentTimeMillis();
+
+            log.info("Test {} timing (ms): clear={} evaluator={} submission={} test={} run={} total={}",
+                    task.testId(), cleared - start, evaluatorReady - cleared,
+                    submissionLoaded - evaluatorReady, testLoaded - submissionLoaded,
+                    finished - testLoaded, finished - start);
+            return result;
         } catch (Exception e) {
-            log.error("Error while compiling submission {}",task.submissionId(), e);
+            log.error("Error while executing submission {}", task.submissionId(), e);
             throw new RuntimeException(e);
             // TODO: System error response
         }
+    }
+
+    /**
+     * Communication tasks are run by the manager rather than by the language executor; the
+     * language still decides how the binary is invoked.
+     */
+    private Executor executorFor(Task task) {
+        Executor languageExecutor = task.language().getExecutor();
+        return task.isCommunication() ? new CommunicationExecutor(languageExecutor) : languageExecutor;
     }
 
     public String retrieveOutcome() throws InterruptedException {
@@ -220,14 +322,113 @@ public class Sandbox implements AutoCloseable {
         log.info("Submission loaded for task {}", task.taskId());
     }
 
+    /**
+     * Puts the checker binary in place for one test. A custom checker is treated exactly like a
+     * built-in one: it is compiled once into /sandbox/checkers and copied in from there, so the
+     * only difference between the two is where the source came from.
+     */
     private void loadChecker(Task task) throws InterruptedException, IOException {
-        if (task.checkerType().getExecutable() == null) {
-            copyFile("/sandbox/tasks/" + task.taskId() + "/checker", task.taskId(),
-                    "/sandbox/checker/checker");
-        } else {
-            copyFile("/sandbox/checkers/" + task.checkerType().getExecutable(), "/sandbox/checker/checker");
-            changePermissions(dockerClient, containerId, "/sandbox/checker/checker", CHECKER_USER, "700");
+        if (task.isCommunication()) {
+            // Judged by the manager, which runs alongside the submission; no checker involved.
+            return;
         }
+        String executable = task.checkerType().isTaskSupplied()
+                ? prepareCustomChecker(task)
+                : ContainerPaths.BUILTIN_CHECKERS_DIR + "/" + task.checkerType().getExecutable();
+
+        copyFile(executable, ContainerPaths.checkerBinary());
+        changePermissions(dockerClient, containerId, ContainerPaths.checkerBinary(), CHECKER_USER, "700");
+    }
+
+    /**
+     * Compiles the task's own checker into /sandbox/checkers the first time it is needed, and
+     * reuses it until the task changes.
+     *
+     * @return path of the compiled checker, ready to be copied in like a built-in one
+     */
+    private String prepareCustomChecker(Task task) throws InterruptedException, IOException {
+        String executable = ContainerPaths.customChecker(task.taskId());
+        String stamp = taskVersion(task.taskId());
+        if (fileExists(executable) && stamp.equals(readFile(ContainerPaths.customCheckerStamp(task.taskId())))) {
+            log.debug("Custom checker for task {} already built from version {}", task.taskId(), stamp);
+            return executable;
+        }
+        buildTaskEvaluator(task, ContainerPaths.taskCheckerDir(task.taskId()), executable);
+        executeCommandSync(dockerClient, containerId,
+                "printf '%s' '" + stamp + "' > " + ContainerPaths.customCheckerStamp(task.taskId()));
+        log.info("Built custom checker for task {} at version {}", task.taskId(), stamp);
+        return executable;
+    }
+
+    /**
+     * Copies the task's grader sources next to the submission so the compiler can link them in.
+     * Does nothing for tasks that supply no graders.
+     */
+    private void loadGraders(Task task) throws InterruptedException {
+        String gradersDir = ContainerPaths.taskGradersDir(task.taskId());
+        if (!fileExists(gradersDir)) {
+            return;
+        }
+        CommandResult result = executeCommandSync(dockerClient, containerId,
+                "cp -r " + gradersDir + "/. " + ContainerPaths.SUBMISSION_DIR + "/");
+        if (result.getExitCode() != 0) {
+            throw new RuntimeException("Could not stage grader files: "
+                    + result.getStderr().toString(StandardCharsets.UTF_8));
+        }
+        changePermissions(dockerClient, containerId, ContainerPaths.SUBMISSION_DIR + "/*",
+                CONTESTANT_USER, "600");
+        log.info("Staged grader files for task {}", task.taskId());
+    }
+
+    /**
+     * Builds the task's manager once per task version and leaves it owned by the checker user.
+     * Recompiling on every test would cost more than running it.
+     */
+    public void prepareManager(Task task) throws InterruptedException, IOException {
+        String stamp = taskVersion(task.taskId());
+        if (fileExists(ContainerPaths.managerBinary()) && stamp.equals(readFile(ContainerPaths.managerStamp()))) {
+            log.debug("Manager for task {} already built from version {}", task.taskId(), stamp);
+            return;
+        }
+        buildTaskEvaluator(task, ContainerPaths.taskManagerDir(task.taskId()), ContainerPaths.managerBinary());
+        executeCommandSync(dockerClient, containerId,
+                "printf '%s' '" + stamp + "' > " + ContainerPaths.managerStamp());
+        log.info("Built manager for task {} at version {}", task.taskId(), stamp);
+    }
+
+    /**
+     * Compiles the single C++ source the task supplies as its evaluator. The bundled testlib
+     * header is on the include path, and a copy shipped with the task takes precedence.
+     */
+    private void buildTaskEvaluator(Task task, String sourceDir, String target)
+            throws InterruptedException, IOException {
+        if (!fileExists(sourceDir)) {
+            throw new RuntimeException("Task " + task.taskId() + " supplies no source at " + sourceDir);
+        }
+        CommandResult sources = executeCommandSync(dockerClient, containerId,
+                "ls " + sourceDir + "/*.cpp 2>/dev/null");
+        String sourceList = sources.getStdout().toString(StandardCharsets.UTF_8).trim().replace("\n", " ");
+        if (sourceList.isEmpty()) {
+            throw new RuntimeException("Task " + task.taskId() + " supplies no evaluator source");
+        }
+        executeCommandSync(dockerClient, containerId,
+                "mkdir -p " + target.substring(0, target.lastIndexOf('/')));
+        CompilationResult result = CppExecutor.compile(dockerClient, containerId, sourceList, target,
+                "-I" + sourceDir + " -I" + ContainerPaths.BUILTIN_CHECKERS_DIR);
+        if (!result.isSuccess()) {
+            log.error("Failed to compile evaluator for task {}: {}", task.taskId(), result.getErrorMessage());
+            throw new RuntimeException("Failed to compile evaluator for task " + task.taskId() + ": "
+                    + result.getErrorMessage());
+        }
+        changePermissions(dockerClient, containerId, target, CHECKER_USER, "700");
+    }
+
+    /**
+     * The task's lastUpdate marker, or "0" when the task carries none.
+     */
+    private String taskVersion(String taskId) throws InterruptedException {
+        String version = readFile(ContainerPaths.taskLastUpdate(taskId));
+        return version == null || version.isEmpty() ? "0" : version.replaceAll("[^0-9]", "");
     }
 
     private void prepareEnvironment(File submission, Executor executor) throws IOException, InterruptedException {
@@ -237,6 +438,22 @@ public class Sandbox implements AutoCloseable {
                 .withTarInputStream(compressFile(submission, "submission." + executor.getSuffix()))
                 .withRemotePath("/sandbox/submission/")
                 .exec();
+        // Compilation runs as the contestant, so the sources must belong to them.
+        changePermissions(dockerClient, containerId,
+                ContainerPaths.SUBMISSION_DIR + "/submission." + executor.getSuffix(),
+                CONTESTANT_USER, "600");
+    }
+
+    /**
+     * Drops the sandbox's copy of a task before it is re-synced.
+     *
+     * <p>Uploading an archive merges into what is already there, so a file the teacher deleted
+     * would otherwise survive here forever - a grader moved to the manager slot would still be
+     * linked into every submission, and fail it with a duplicate main.
+     */
+    public void clearTaskDirectory(String taskId) throws InterruptedException {
+        executeCommandSync(dockerClient, containerId, "rm -rf " + ContainerPaths.taskDir(taskId));
+        log.debug("Cleared cached files for task {}", taskId);
     }
 
     void clearSubmissionDirectory() throws InterruptedException {
@@ -253,11 +470,18 @@ public class Sandbox implements AutoCloseable {
         }
 
         copyFile(String.format("%s/%s/%s", baseDir, testsDirName, task.inputName()), taskId,
-                "/sandbox/submission/input");
-        copyFile(String.format("%s/%s/%s", baseDir, testsDirName, task.outputName()), taskId,
-                "/sandbox/checker/output");
+                ContainerPaths.submissionInput());
 
-        executeCommandSync(dockerClient, containerId, "touch /sandbox/submission/output");
+        String answer = String.format("%s/%s/%s", baseDir, testsDirName, task.outputName());
+        if (task.isCommunication() && !fileExists(answer)) {
+            // The manager derives the expected result from the input, so many communication
+            // tasks ship no answer files at all.
+            executeCommandSync(dockerClient, containerId, "touch " + ContainerPaths.checkerAnswer());
+        } else {
+            copyFile(answer, taskId, ContainerPaths.checkerAnswer());
+        }
+
+        executeCommandSync(dockerClient, containerId, "touch " + ContainerPaths.submissionOutput());
         log.debug("Loaded test {}-{} for task {}", task.inputName(), task.outputName(), taskId);
     }
 

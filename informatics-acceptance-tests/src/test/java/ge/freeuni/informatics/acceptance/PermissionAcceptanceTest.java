@@ -545,6 +545,14 @@ public class PermissionAcceptanceTest extends BaseAcceptanceTest {
                     .when()
                     .post(relativePath);
         }
+        if (resolvedPath.endsWith("/task/" + task.getId() + "/graders")
+                || resolvedPath.endsWith("/task/" + task.getId() + "/manager")
+                || resolvedPath.endsWith("/task/" + task.getId() + "/checker")) {
+            return request.contentType("multipart/form-data")
+                    .multiPart("file", "grader.cpp", "int main() {}".getBytes())
+                    .when()
+                    .post(relativePath);
+        }
         return request.body(defaultJsonBody(resolvedPath, "POST")).when().post(relativePath);
     }
 
@@ -592,6 +600,8 @@ public class PermissionAcceptanceTest extends BaseAcceptanceTest {
         path = path.replace("{filename}", "file.png");
         path = path.replace("{language}", "KA");
         path = path.replace("{testKey}", "1");
+        path = path.replace("{kind}", "GRADER");
+        path = path.replace("{fileName}", "grader.cpp");
         path = path.replace("{key}", "custom-test-key");
         path = path.replace("{link}", "invalid-link");
 

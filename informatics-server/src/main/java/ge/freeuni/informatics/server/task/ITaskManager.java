@@ -43,11 +43,7 @@ public interface ITaskManager {
 
     AddTestcasesResult addTestcases(long taskId, byte[] testsZip) throws InformaticsServerException;
 
-    void addManager(long taskId, byte[] manager);
-
     void setPublicTestcase(long taskId, String testcaseKey, boolean publicTestcase) throws InformaticsServerException;
-
-    void removeManager(long taskId, String managerName);
 
     void removeTestCase(long taskId, String testKey) throws InformaticsServerException;
 

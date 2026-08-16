@@ -3,6 +3,7 @@ import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import {useState} from "react";
 import getMessage from "../Components/lang";
+import {testColor} from "../styles/testResultColors";
 
 const SubmissionTestResult = ({testcase}) => {
     const [expanded, setExpanded] = useState(false);
@@ -13,8 +14,7 @@ const SubmissionTestResult = ({testcase}) => {
             marginBottom: '1rem',
             userSelect: 'contain',
             WebkitUserSelect: 'contain',
-            backgroundColor:
-                testcase.testStatus === 'CORRECT' ? '#CFE8D3' : '#E8CFD4',
+            backgroundColor: testColor(testcase),
         }}
     >
         <Typography sx={{fontSize: '15px'}}>

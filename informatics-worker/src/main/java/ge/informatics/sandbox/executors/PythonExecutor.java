@@ -1,6 +1,7 @@
 package ge.informatics.sandbox.executors;
 
 import com.github.dockerjava.api.DockerClient;
+import ge.informatics.sandbox.ContainerPaths;
 import ge.informatics.sandbox.Sandbox;
 import ge.informatics.sandbox.Utils;
 import ge.informatics.sandbox.model.*;
@@ -25,7 +26,11 @@ public class PythonExecutor implements  Executor {
     @Override
     public CompilationResult compileSubmission(DockerClient client, String containerId) throws IOException, InterruptedException {
         log.info("Compiling python file");
-        Utils.CommandResult result = executeCommandSync(client, containerId, "/usr/bin/python3 -m compileall -b .");
+        // As the contestant, and scoped to the submission directory rather than the whole
+        // filesystem, for the same reason the C++ compile is not run as root.
+        Utils.CommandResult result = executeCommandSync(client, containerId,
+                "su -c \"/usr/bin/python3 -m compileall -q -b " + ContainerPaths.SUBMISSION_DIR + "\" "
+                        + Sandbox.CONTESTANT_USER);
         if (result.getExitCode() != 0) {
             return new CompilationResult(false, result.getStderr().toString(StandardCharsets.UTF_8));
         }
@@ -41,12 +46,18 @@ public class PythonExecutor implements  Executor {
         Utils.CommandResult result = executeCommandSync(
                 client,
                 containerId,
-                "/usr/bin/time -v su -c '/usr/bin/python3 /sandbox/submission/submission' " + Sandbox.CONTESTANT_USER + " < /sandbox/submission/input > /sandbox/submission/output",
+                "/usr/bin/time -v su -c '" + runCommand(task) + "' " + Sandbox.CONTESTANT_USER
+                        + " < " + ContainerPaths.submissionInput() + " > " + ContainerPaths.submissionOutput(),
                 task.timeLimitMillis() + 500,
                 task.memoryLimitKB() + 10 * 1024
         );
         long runtime = System.currentTimeMillis() - executionStart;
 
         return buildTestResult(task, result, runtime, client, containerId);
+    }
+
+    @Override
+    public String runCommand(Task task) {
+        return "/usr/bin/python3 " + ContainerPaths.submissionBinary();
     }
 }

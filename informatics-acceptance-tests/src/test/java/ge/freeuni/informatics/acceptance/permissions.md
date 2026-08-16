@@ -44,8 +44,17 @@ STUDENT | GET     /api/submission/{id}                                    -> Con
 STUDENT | POST    /api/submit                                             -> SubmissionController#submit
 TEACHER | POST    /api/task                                               -> TaskController#saveTask
 STUDENT | GET     /api/task/{id}                                          -> TaskController#getTask
+STUDENT | GET     /api/task/{taskId}/attachment/{fileName}                -> TaskFileController#getAttachment
+STUDENT | GET     /api/task/{taskId}/attachments                          -> TaskFileController#getAttachments
+TEACHER | POST    /api/task/{taskId}/checker                              -> TaskFileController#addChecker
+TEACHER | DELETE  /api/task/{taskId}/file/{kind}/{fileName}               -> TaskFileController#removeTaskFile
+TEACHER | GET     /api/task/{taskId}/file/{kind}/{fileName}               -> TaskFileController#getTaskFile
+TEACHER | PUT     /api/task/{taskId}/file/{kind}/{fileName}/public        -> TaskFileController#setFilePublic
+TEACHER | GET     /api/task/{taskId}/files                                -> TaskFileController#getTaskFiles
+TEACHER | POST    /api/task/{taskId}/graders                              -> TaskFileController#addGraders
 TEACHER | POST    /api/task/{taskId}/image                                -> FileController#uploadImage
 STUDENT | GET     /api/task/{taskId}/image/{filename}                     -> FileController#downloadImage
+TEACHER | POST    /api/task/{taskId}/manager                              -> TaskFileController#addManager
 TEACHER | POST    /api/task/{taskId}/statement                            -> TaskController#uploadStatement
 STUDENT | GET     /api/task/{taskId}/statement/{language}                 -> TaskController#getStatement
 TEACHER | POST    /api/task/{taskId}/testcase                             -> TestcaseController#addSingleTestcase

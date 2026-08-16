@@ -13,6 +13,8 @@ import ge.freeuni.informatics.utils.UserUtils;
 import jakarta.persistence.NoResultException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -178,6 +180,96 @@ class UserManagerTest {
         assertEquals(1L, result.getId(), "User ID should match");
         
         verify(userRepository).getFirstByUsername("testuser");
+    }
+
+    /**
+     * Every worker heartbeats as the same service account every 30 seconds. Writing lastLogin on
+     * each one is what makes User rows contend, so a recent timestamp must skip the write.
+     */
+    @Test
+    void testAuthenticate_SkipsLastLoginWriteWhenRecent() {
+        String testPassword = "password123";
+        String testSalt = "salt";
+        User worker = new User();
+        worker.setId(5L);
+        worker.setUsername("worker");
+        worker.setPasswordSalt(testSalt);
+        worker.setPassword(UserUtils.getHash(testPassword, testSalt));
+        worker.setLastLogin(new java.util.Date());   // just logged in
+        when(userRepository.getFirstByUsername("worker")).thenReturn(worker);
+
+        assertNotNull(userManager.authenticate("worker", testPassword));
+
+        // The legacy hash was migrated, so this one must still write.
+        verify(userRepository).save(worker);
+    }
+
+    @Test
+    void testAuthenticate_SkipsWriteForAnUpToDateBcryptUser() {
+        String password = "password123";
+        User user = new User();
+        user.setId(5L);
+        user.setUsername("worker");
+        user.setPasswordSalt("");
+        user.setPassword(new BCryptPasswordEncoder().encode(password));
+        user.setLastLogin(new java.util.Date());
+        when(userRepository.getFirstByUsername("worker")).thenReturn(user);
+
+        assertNotNull(userManager.authenticate("worker", password));
+
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void testAuthenticate_WritesWhenLastLoginIsStale() {
+        String password = "password123";
+        User user = new User();
+        user.setId(5L);
+        user.setUsername("worker");
+        user.setPasswordSalt("");
+        user.setPassword(new BCryptPasswordEncoder().encode(password));
+        user.setLastLogin(new java.util.Date(System.currentTimeMillis() - 300_000));
+        when(userRepository.getFirstByUsername("worker")).thenReturn(user);
+
+        assertNotNull(userManager.authenticate("worker", password));
+
+        verify(userRepository).save(user);
+    }
+
+    /**
+     * The recovery path runs after the lastLogin write has exhausted its retries. It must still
+     * verify the password: returning the user on the strength of a failed write would be an
+     * authentication bypass.
+     */
+    @Test
+    void testRecover_StillRejectsAWrongPassword() {
+        User user = new User();
+        user.setId(5L);
+        user.setUsername("worker");
+        user.setPasswordSalt("");
+        user.setPassword(new BCryptPasswordEncoder().encode("correct"));
+        when(userRepository.getFirstByUsername("worker")).thenReturn(user);
+
+        User result = userManager.recoverFromLockContention(
+                new ObjectOptimisticLockingFailureException(User.class, 5L), "worker", "wrong");
+
+        assertNull(result, "recovery must not authenticate a wrong password");
+    }
+
+    @Test
+    void testRecover_ReturnsTheUserForValidCredentials() {
+        User user = new User();
+        user.setId(5L);
+        user.setUsername("worker");
+        user.setPasswordSalt("");
+        user.setPassword(new BCryptPasswordEncoder().encode("correct"));
+        when(userRepository.getFirstByUsername("worker")).thenReturn(user);
+
+        User result = userManager.recoverFromLockContention(
+                new ObjectOptimisticLockingFailureException(User.class, 5L), "worker", "correct");
+
+        assertNotNull(result, "a valid login must survive a failed bookkeeping write");
+        verify(userRepository, never()).save(any());
     }
 
     @Test

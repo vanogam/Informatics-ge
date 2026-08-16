@@ -15,9 +15,16 @@ RUN adduser --disabled-password --gecos '' contestant && \
     chmod 750 /sandbox/submission && \
     chown checker:checker /sandbox/checker && \
     chmod 770 /sandbox/checker && \
+    mkdir -p /sandbox/manager && \
+    chown checker:checker /sandbox/manager && \
+    chmod 750 /sandbox/manager && \
+    mkdir -p /sandbox/fifo && \
+    chown contestant:contestant /sandbox/fifo && \
+    chmod 770 /sandbox/fifo && \
     usermod -aG contestant checker && \
     apt-get update && \
     apt-get install -y time && \
+    apt-get install -y procps && \
     apt-get install -y g++ make && \
     apt-get install -y python3 && \
     chown contestant:contestant /usr/bin/time && \

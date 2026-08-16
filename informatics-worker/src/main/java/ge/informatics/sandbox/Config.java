@@ -37,7 +37,22 @@ public class Config {
     }
 
 
+    /**
+     * Configuration value for {@code key}, with an environment variable of the same name in
+     * upper snake case taking precedence - "sandbox.image" is overridden by SANDBOX_IMAGE.
+     * Workers are started as containers, so environment is how a deployment configures them.
+     */
     public static String get(String key) {
+        String fromEnvironment = System.getenv(environmentVariableFor(key));
+        if (fromEnvironment != null && !fromEnvironment.isBlank()) {
+            return fromEnvironment;
+        }
         return properties.getProperty(key);
+    }
+
+    static String environmentVariableFor(String key) {
+        return key.replace('.', '_')
+                .replaceAll("([a-z0-9])([A-Z])", "$1_$2")
+                .toUpperCase(java.util.Locale.ROOT);
     }
 }

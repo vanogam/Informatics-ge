@@ -422,19 +422,26 @@ public class JudgeIntegration implements IJudgeIntegration{
     }
 
     private void finalizeSubmission(Submission submission, String message) {
+        // A submission that failed to compile ran no tests, so there is nothing to score: it is
+        // zero by definition. Scoring it anyway is not merely wasted work - GROUP_MIN reads the
+        // result list positionally and throws on an empty one, which turned a plain compile
+        // error into a SYSTEM_ERROR and hid the compiler's message from the contestant.
         if (submission.getStatus() == SubmissionStatus.COMPILATION_ERROR) {
             submission.setScore(0f);
             submission.setCompilationMessage(truncateToLength(message, COMPILATION_MESSAGE_MAX_LENGTH));
-        } else {
-            float finalScore = submission.getSubmissionTestResults().stream().map(SubmissionTestResult::getScore).reduce(0f, (sum, result) -> sum + result);
-            if (finalScore == 0f) {
-                submission.setStatus(SubmissionStatus.FAILED);
-            } else if (submission.getSubmissionTestResults().stream().allMatch(res -> res.getScore() == 1f)) {
-                submission.setStatus(SubmissionStatus.CORRECT);
-            } else {
-                submission.setStatus(SubmissionStatus.PARTIAL);
-            }
+            completeSubmission(submission);
+            return;
         }
+
+        float testScoreSum = submission.getSubmissionTestResults().stream().map(SubmissionTestResult::getScore).reduce(0f, (sum, result) -> sum + result);
+        if (testScoreSum == 0f) {
+            submission.setStatus(SubmissionStatus.FAILED);
+        } else if (submission.getSubmissionTestResults().stream().allMatch(res -> res.getScore() == 1f)) {
+            submission.setStatus(SubmissionStatus.CORRECT);
+        } else {
+            submission.setStatus(SubmissionStatus.PARTIAL);
+        }
+
         float finalScore = 0f;
         try {
             // GROUP_MIN slices this list positionally, and results arrive in whatever order the
@@ -449,6 +456,15 @@ public class JudgeIntegration implements IJudgeIntegration{
             submission.setStatus(SubmissionStatus.SYSTEM_ERROR);
         }
         submission.setScore(roundScore(finalScore));
+        completeSubmission(submission);
+    }
+
+    /**
+     * Persists a finished submission and drops the bookkeeping that tracked it while it ran.
+     * Every path out of {@link #finalizeSubmission} ends here, so a submission is never left
+     * holding a lock or a completion counter.
+     */
+    private void completeSubmission(Submission submission) {
         submissionRepository.save(submission);
         testCompletionMap.remove(submission.getId());
         submissionLocks.remove(submission.getId());

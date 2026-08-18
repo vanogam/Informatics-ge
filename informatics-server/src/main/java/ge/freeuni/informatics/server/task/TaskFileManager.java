@@ -2,6 +2,7 @@ package ge.freeuni.informatics.server.task;
 
 import ge.freeuni.informatics.common.dto.AddTaskFilesResult;
 import ge.freeuni.informatics.common.dto.TaskFileDTO;
+import ge.freeuni.informatics.common.exception.ExceptionType;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.task.TaskFile;
 import ge.freeuni.informatics.common.model.task.TaskFileKind;
@@ -104,7 +105,7 @@ public class TaskFileManager implements ITaskFileManager {
                 .stream()
                 .filter(f -> f.getFileName().equals(safeName))
                 .findFirst()
-                .orElseThrow(() -> new InformaticsServerException("taskFileNotFound"));
+                .orElseThrow(() -> new InformaticsServerException("taskFileNotFound", ExceptionType.NOT_FOUND));
         return resolveExisting(taskFile);
     }
 
@@ -130,7 +131,7 @@ public class TaskFileManager implements ITaskFileManager {
             throws InformaticsServerException {
         if (visible && kind != TaskFileKind.GRADER) {
             // Managers and checkers hold the reference solution and the scoring rules.
-            throw new InformaticsServerException("evaluatorCanNotBePublished");
+            throw new InformaticsServerException("evaluatorCanNotBePublished", ExceptionType.VALIDATION_ERROR);
         }
         TaskFile taskFile = requireFile(taskId, kind, sanitizeFileName(fileName));
         taskFile.setVisibleToContestants(visible);
@@ -157,7 +158,7 @@ public class TaskFileManager implements ITaskFileManager {
         if (text.contains("testlib.h") || text.contains("registerManager")
                 || text.contains("registerChecker")) {
             log.warn("Refused evaluator source '{}' uploaded as a grader", fileName);
-            throw new InformaticsServerException("evaluatorUploadedAsGrader");
+            throw new InformaticsServerException("evaluatorUploadedAsGrader", ExceptionType.VALIDATION_ERROR);
         }
     }
 
@@ -220,7 +221,7 @@ public class TaskFileManager implements ITaskFileManager {
                 byte[] data = zis.readAllBytes();
                 totalBytes += data.length;
                 if (totalBytes > MAX_UNPACKED_BYTES) {
-                    throw new InformaticsServerException("taskFilesTooLarge");
+                    throw new InformaticsServerException("taskFilesTooLarge", ExceptionType.VALIDATION_ERROR);
                 }
                 try {
                     files.put(sanitizeFileName(leaf), data);
@@ -230,7 +231,7 @@ public class TaskFileManager implements ITaskFileManager {
             }
         } catch (IOException e) {
             log.error("Error while reading uploaded archive", e);
-            throw new InformaticsServerException("invalidArchive");
+            throw new InformaticsServerException("invalidArchive", ExceptionType.VALIDATION_ERROR);
         }
         return files;
     }
@@ -241,22 +242,22 @@ public class TaskFileManager implements ITaskFileManager {
      */
     String sanitizeFileName(String fileName) throws InformaticsServerException {
         if (fileName == null || fileName.isBlank() || fileName.length() > MAX_FILE_NAME_LENGTH) {
-            throw new InformaticsServerException("invalidTaskFileName");
+            throw new InformaticsServerException("invalidTaskFileName", ExceptionType.VALIDATION_ERROR);
         }
         if (fileName.contains("/") || fileName.contains("\\") || fileName.contains("..")
                 || fileName.startsWith(".")) {
-            throw new InformaticsServerException("invalidTaskFileName");
+            throw new InformaticsServerException("invalidTaskFileName", ExceptionType.VALIDATION_ERROR);
         }
         if (!fileName.matches("[A-Za-z0-9_.\\-]+")) {
-            throw new InformaticsServerException("invalidTaskFileName");
+            throw new InformaticsServerException("invalidTaskFileName", ExceptionType.VALIDATION_ERROR);
         }
         int dot = fileName.lastIndexOf('.');
         if (dot < 0) {
-            throw new InformaticsServerException("invalidTaskFileName");
+            throw new InformaticsServerException("invalidTaskFileName", ExceptionType.VALIDATION_ERROR);
         }
         String extension = fileName.substring(dot + 1).toLowerCase(Locale.ROOT);
         if (!ALLOWED_EXTENSIONS.contains(extension)) {
-            throw new InformaticsServerException("unsupportedTaskFileType");
+            throw new InformaticsServerException("unsupportedTaskFileType", ExceptionType.VALIDATION_ERROR);
         }
         return fileName;
     }
@@ -273,7 +274,7 @@ public class TaskFileManager implements ITaskFileManager {
     private TaskFile requireFile(long taskId, TaskFileKind kind, String fileName) throws InformaticsServerException {
         TaskFile taskFile = taskFileRepository.findFirstByTaskIdAndKindAndFileName(taskId, kind, fileName);
         if (taskFile == null) {
-            throw new InformaticsServerException("taskFileNotFound");
+            throw new InformaticsServerException("taskFileNotFound", ExceptionType.NOT_FOUND);
         }
         return taskFile;
     }
@@ -282,7 +283,7 @@ public class TaskFileManager implements ITaskFileManager {
         File file = new File(taskFile.getFileAddress());
         if (!file.isFile()) {
             log.error("Task file {} is recorded but missing at {}", taskFile.getFileName(), taskFile.getFileAddress());
-            throw new InformaticsServerException("taskFileNotFound");
+            throw new InformaticsServerException("taskFileNotFound", ExceptionType.NOT_FOUND);
         }
         return file;
     }

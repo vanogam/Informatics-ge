@@ -385,7 +385,10 @@ public class Sandbox implements AutoCloseable {
      * Recompiling on every test would cost more than running it.
      */
     public void prepareManager(Task task) throws InterruptedException, IOException {
-        String stamp = taskVersion(task.taskId());
+        // Keyed by task as well as version: there is a single manager binary per container, so a
+        // stamp holding only the version would let the next task reuse the previous task's
+        // manager whenever their lastUpdate markers happened to match.
+        String stamp = task.taskId() + ":" + taskVersion(task.taskId());
         if (fileExists(ContainerPaths.managerBinary()) && stamp.equals(readFile(ContainerPaths.managerStamp()))) {
             log.debug("Manager for task {} already built from version {}", task.taskId(), stamp);
             return;

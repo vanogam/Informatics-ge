@@ -10,6 +10,7 @@ public class ContainerPaths {
     public static final String CHECKER_DIR = "/sandbox/checker";
     public static final String MANAGER_DIR = "/sandbox/manager";
     public static final String FIFO_DIR = "/sandbox/fifo";
+    public static final String RUN_DIR = "/sandbox/run";
     public static final String TASKS_DIR = "/sandbox/tasks";
     public static final String BUILTIN_CHECKERS_DIR = "/sandbox/checkers";
 
@@ -103,5 +104,22 @@ public class ContainerPaths {
      */
     public static String fifoSolutionToManager(int index) {
         return FIFO_DIR + "/sol" + index + "_to_mgr";
+    }
+
+    /**
+     * Where solution {@code index} leaves its stderr - its own diagnostics followed by the
+     * /usr/bin/time report. One file per process, since they run at the same time and would
+     * otherwise interleave into an unparseable stream.
+     */
+    public static String processStderr(int index) {
+        return RUN_DIR + "/sol" + index + ".err";
+    }
+
+    /**
+     * Where the exit status of solution {@code index} is recorded. The processes run detached,
+     * so their statuses cannot be read from the exec's own exit code.
+     */
+    public static String processExitCode(int index) {
+        return RUN_DIR + "/sol" + index + ".code";
     }
 }

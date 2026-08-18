@@ -189,15 +189,24 @@ public class Utils {
     }
 
     public static class CommandResult {
+        /** Exit code reported for a command killed by the wall-clock guard, as `timeout` uses. */
+        public static final int TIMEOUT_EXIT_CODE = 124;
+
         private final int exitCode;
         private final boolean timeout;
         private final ByteArrayOutputStream stdout;
         private final ByteArrayOutputStream stderr;
 
+        /**
+         * A command that never returned. The streams are empty rather than null so that a
+         * caller which forgets to check {@link #isTimeout()} degrades into an empty-output
+         * failure instead of a NullPointerException, and the exit code is the shell's
+         * conventional timeout code so an {@code exitCode == 0} success check cannot pass.
+         */
         public CommandResult(boolean timeout) {
-            this.exitCode = 0;
-            this.stdout = null;
-            this.stderr = null;
+            this.exitCode = timeout ? TIMEOUT_EXIT_CODE : 0;
+            this.stdout = new ByteArrayOutputStream();
+            this.stderr = new ByteArrayOutputStream();
             this.timeout = timeout;
         }
 

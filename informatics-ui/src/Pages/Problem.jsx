@@ -1,8 +1,9 @@
 import {useParams} from 'react-router-dom'
 import {Page, pdfjs} from 'react-pdf';
 import {
-    Box, TextField, MenuItem
+    Box, TextField, MenuItem, Stack, Typography
 } from '@mui/material'
+import {Download} from '@mui/icons-material'
 import React, {useContext, useState} from 'react'
 import Editor from 'react-simple-code-editor'
 import {highlight, languages} from 'prismjs/components/prism-core'
@@ -30,6 +31,7 @@ import TableRow from "@mui/material/TableRow";
 import TableCell from "@mui/material/TableCell";
 import {Paper} from "@mui/material";
 import ContestNavigationBar from "../Components/ContestNavigationBar";
+import markdownComponents from "../utils/markdownComponents";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
@@ -85,6 +87,8 @@ export default function Problem() {
     const [language, setLanguage] = useState("CPP")
     const [statement, setStatement] = useState("")
     const [taskOrder, setTaskOrder] = useState(null)
+    const [attachments, setAttachments] = useState([])
+    const [limits, setLimits] = useState(null)
     const editorWrapperRef = React.useRef(null)
 
     useEffect(() => {
@@ -117,10 +121,14 @@ export default function Problem() {
 
     const lang = ['CPP', 'PYTHON']
     useEffect(() => {
-        // Fetch task details to get order
+        // Fetch task details to get the order and the limits shown under the title
         axiosInstance.get(`/task/${problem_id}`)
             .then((response) => {
                 setTaskOrder(response.data.order)
+                setLimits({
+                    timeLimitMillis: response.data.timeLimitMillis,
+                    memoryLimitMB: response.data.memoryLimitMB
+                })
             })
             .catch(_ => {})
 
@@ -131,7 +139,34 @@ export default function Problem() {
             })
             .catch(_ => {})
 
+        // Only the files a teacher marked visible come back here; a task with none
+        // answers with an empty list and the section stays hidden.
+        axiosInstance.get(`/task/${problem_id}/attachments`)
+            .then((response) => {
+                setAttachments(response.data.files || [])
+            })
+            .catch(_ => {})
+
     }, [problem_id])
+
+    // Fetched through axios rather than linked directly: the download is session
+    // authenticated and the API may sit on a different host than the UI.
+    const downloadAttachment = (fileName) => {
+        axiosInstance.get(`/task/${problem_id}/attachment/${fileName}`, {responseType: 'blob'})
+            .then((response) => {
+                if (response.status !== 200) {
+                    return
+                }
+                const url = window.URL.createObjectURL(new Blob([response.data]))
+                const a = document.createElement('a')
+                a.href = url
+                a.download = fileName
+                document.body.appendChild(a)
+                a.click()
+                a.remove()
+                window.URL.revokeObjectURL(url)
+            })
+    }
     // Built from the parts that exist, so a missing title cannot render as "1. null".
     const statementTitle = !!statement.statement
         ? [taskOrder ? `${taskOrder}.` : '', statement.statement.title || '']
@@ -142,12 +177,26 @@ export default function Problem() {
     const section = (label, body) => body && body.trim()
         ? `**${getMessage('ka', label)}:**\n\n${body.trim()}\n\n`
         : '';
+    // Title and body render separately so the limits can sit between them. Both go through
+    // markdown - a title can carry math or formatting just like the body does.
+    const statementTitleText = statementTitle ? `**${statementTitle}**` : '';
     const statementText = !!statement.statement
-        ? (statementTitle ? `**${statementTitle}**\n\n` : '')
-        + (statement.statement.statement ? `${statement.statement.statement}\n\n` : '')
+        ? (statement.statement.statement ? `${statement.statement.statement}\n\n` : '')
         + section('inputContent', statement.statement.inputInfo)
         + section('outputContent', statement.statement.outputInfo)
         : '';
+    const renderMarkdown = (text) => (
+        <ReactMarkdown
+            children={text}
+            remarkPlugins={[remarkMath, remarkGfm]}
+            rehypePlugins={[rehypeMathjax]}
+            components={markdownComponents}
+            urlTransform={url => `/api/task/${problem_id}/image/${url}`}
+        />
+    );
+    // Seconds read better than milliseconds at contest limits, and trailing zeros are dropped
+    // so a 1000ms limit shows as "1" rather than "1.0".
+    const formatTimeLimit = (millis) => `${parseFloat((millis / 1000).toFixed(3))}`;
     return (
         <Box>
             <ContestNavigationBar />
@@ -158,12 +207,28 @@ export default function Problem() {
             }}>
             <Box sx={{marginLeft: '2%', marginTop: '5%', width: '60%'}}>
                 <div className="markdown-body">
-                    <ReactMarkdown
-                        children={statementText}
-                        remarkPlugins={[remarkMath, remarkGfm]}
-                        rehypePlugins={[rehypeMathjax]}
-                        urlTransform={url => `/api/task/${problem_id}/image/${url}`}
-                    />
+                    {statementTitleText && renderMarkdown(statementTitleText)}
+                </div>
+                {limits && (limits.timeLimitMillis != null || limits.memoryLimitMB != null) && (
+                    <Stack direction="row"
+                           gap="1.5rem"
+                           flexWrap="wrap"
+                           sx={{my: '1rem', color: 'text.secondary'}}>
+                        {limits.timeLimitMillis != null && (
+                            <Typography variant="body2">
+                                <b>{getMessage('ka', 'timeLimit')}:</b>{' '}
+                                {getMessage('ka', 'seconds', formatTimeLimit(limits.timeLimitMillis))}
+                            </Typography>
+                        )}
+                        {limits.memoryLimitMB != null && (
+                            <Typography variant="body2">
+                                <b>{getMessage('ka', 'memoryLimit')}:</b> {limits.memoryLimitMB} MB
+                            </Typography>
+                        )}
+                    </Stack>
+                )}
+                <div className="markdown-body">
+                    {renderMarkdown(statementText)}
                 </div>
                 {statement.publicTestcases && statement.publicTestcases.length > 0 && (
                     <TableContainer component={Paper} sx={{ marginTop: 2, maxWidth: 600 }}>
@@ -255,6 +320,36 @@ export default function Problem() {
                     {getMessage('ka', 'submit')}
                 </Button>
 
+                {attachments.length > 0 && (
+                    <Box sx={{marginTop: '5%'}}>
+                        <Typography variant="subtitle1" sx={{fontWeight: 'bold'}}>
+                            {getMessage('ka', 'attachments')}
+                        </Typography>
+                        <Stack sx={{marginTop: '8px'}}>
+                            {attachments.map((file) => (
+                                <Stack key={file.fileName}
+                                       direction="row"
+                                       justifyContent="space-between"
+                                       alignItems="center"
+                                       gap="8px"
+                                       sx={{py: 0.5}}>
+                                    <Typography sx={{wordBreak: 'break-all'}}>{file.fileName}</Typography>
+                                    <Stack direction="row" alignItems="center" gap="8px">
+                                        <Typography variant="body2" color="textSecondary" noWrap>
+                                            {Math.max(1, Math.round((file.sizeBytes || 0) / 1024))} KB
+                                        </Typography>
+                                        <Button size="small"
+                                                variant="outlined"
+                                                startIcon={<Download/>}
+                                                onClick={() => downloadAttachment(file.fileName)}>
+                                            {getMessage('ka', 'download')}
+                                        </Button>
+                                    </Stack>
+                                </Stack>
+                            ))}
+                        </Stack>
+                    </Box>
+                )}
 
             </Box>
         </Box>

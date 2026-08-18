@@ -56,16 +56,24 @@ export default function GradersEditor({taskId, isCommunication, isCustomChecker}
                 const response = await axiosInstance.post(`/task/${taskId}/${endpoint}`, formData,
                     {ignoreErrors: true});
                 added.push(...(response.data.result?.success || []));
-                rejected.push(...(response.data.result?.rejected || []));
-            } catch (_) {
-                rejected.push(file.name);
+                rejected.push(...(response.data.result?.rejected || []).map(name => ({name})));
+            } catch (error) {
+                // The server explains why it turned the file away - a misplaced manager, a
+                // name it cannot store, an unsupported type. Without the code the teacher only
+                // sees "failed" and has nothing to act on.
+                rejected.push({name: file.name, reason: error.response?.data?.message});
             }
         }
         if (added.length > 0) {
             toast.success(getMessage('ka', 'graderAdded') + ': ' + added.join(', '));
         }
         if (rejected.length > 0) {
-            toast.warn(getMessage('ka', 'failedToAddFiles') + ': ' + rejected.join(', '));
+            const details = rejected
+                .map(entry => entry.reason
+                    ? `${entry.name} — ${getMessage('ka', entry.reason)}`
+                    : entry.name)
+                .join('; ');
+            toast.warn(getMessage('ka', 'failedToAddFiles') + ': ' + details);
         }
         reset([]);
         loadFiles();
@@ -110,8 +118,12 @@ export default function GradersEditor({taskId, isCommunication, isCustomChecker}
                     toast.success(getMessage('ka', 'saved'));
                 }
             })
-            .catch(_ => {
-                toast.error(getMessage('ka', 'unexpectedException'));
+            .catch(error => {
+                // A 400 carries a reason the interceptor already toasted; a generic message on
+                // top of it would only contradict the specific one.
+                if (error.response?.status !== 400) {
+                    toast.error(getMessage('ka', 'unexpectedException'));
+                }
             });
     };
 

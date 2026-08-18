@@ -10,6 +10,7 @@ import remarkMath from "remark-math";
 import rehypeMathjax from "rehype-mathjax";
 import Card from "@mui/material/Card";
 import getMessage from "../lang";
+import markdownComponents from "../../utils/markdownComponents";
 import {NavLink} from "react-router-dom";
 
 export default function Post({id}) {
@@ -58,6 +59,7 @@ export default function Post({id}) {
                         children={post.content}
                         remarkPlugins={[remarkMath, remarkGfm]}
                         rehypePlugins={[rehypeMathjax]}
+                        components={markdownComponents}
                         urlTransform={imageDownloadFunc}
                     />
                 </div>

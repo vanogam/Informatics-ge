@@ -17,6 +17,13 @@ public class CppExecutor implements Executor {
 
     private static final Logger log = LoggerFactory.getLogger(CppExecutor.class);
 
+    /**
+     * g++ budget. The shared default is sized for bookkeeping execs; a testlib checker or a
+     * heavily templated submission routinely needs more than that, and overrunning it used to
+     * surface as a worker crash rather than a compile error.
+     */
+    private static final long COMPILE_TIMEOUT_MILLIS = 60_000;
+
     @Override
     public String getSuffix() {
         return "cpp";
@@ -85,7 +92,12 @@ public class CppExecutor implements Executor {
         if (user != null) {
             command = "su -c \"" + command + "\" " + user;
         }
-        Utils.CommandResult result = executeCommandSync(client, containerId, command);
+        Utils.CommandResult result = executeCommandSync(client, containerId, command, COMPILE_TIMEOUT_MILLIS, null);
+        if (result.isTimeout()) {
+            log.error("Compilation timed out after {}ms: {}", COMPILE_TIMEOUT_MILLIS, cppFile);
+            return new CompilationResult(false, "Compilation timed out after "
+                    + COMPILE_TIMEOUT_MILLIS / 1000 + "s");
+        }
         return new CompilationResult(result.getExitCode() == 0,
                 result.getStderr().toString(StandardCharsets.UTF_8));
     }

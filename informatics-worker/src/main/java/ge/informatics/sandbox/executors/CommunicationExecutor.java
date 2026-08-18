@@ -12,6 +12,7 @@ import ge.informatics.sandbox.model.TestStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -48,6 +49,19 @@ public class CommunicationExecutor implements Executor {
      */
     private static final String MANAGER_PROCESS_NAME = "manager";
 
+    /** Separates the per-process blocks when their stderr files are dumped in one exec. */
+    private static final String PROCESS_MARKER = "###process ";
+
+    /** What `timeout` reports when it kills the command it was guarding. */
+    private static final int TIMEOUT_EXIT_CODE = 124;
+
+    /** Stand-in status for a process that left no exit status behind at all. */
+    private static final int KILLED_EXIT_CODE = 137;
+
+    private static final int MAX_PROCESS_MESSAGE_CHARS = 500;
+
+    private static final int MAX_MESSAGE_CHARS = 4000;
+
     private final Executor languageExecutor;
 
     public CommunicationExecutor(Executor languageExecutor) {
@@ -73,20 +87,13 @@ public class CommunicationExecutor implements Executor {
     @Override
     public TestResult execute(DockerClient client, String containerId, Task task)
             throws IOException, InterruptedException {
-        if (task.processCount() != 1) {
-            throw new UnsupportedOperationException(
-                    "Communication tasks with " + task.processCount() + " solution processes are not supported yet");
-        }
-        String solutionToManager = ContainerPaths.fifoSolutionToManager(0);
-        String managerToSolution = ContainerPaths.fifoManagerToSolution(0);
-
+        int processes = task.processCount();
         try {
-            createFifos(client, containerId, solutionToManager, managerToSolution);
-            startManager(client, containerId, task, solutionToManager, managerToSolution);
+            createFifos(client, containerId, processes);
+            startManager(client, containerId, task, processes);
 
             long executionStart = System.currentTimeMillis();
-            Utils.CommandResult solutionResult = runSolution(client, containerId, task,
-                    solutionToManager, managerToSolution);
+            Utils.CommandResult solutionResult = runSolutions(client, containerId, task, processes);
             long runtime = System.currentTimeMillis() - executionStart;
 
             waitForManager(client, containerId, task);
@@ -96,10 +103,17 @@ public class CommunicationExecutor implements Executor {
         }
     }
 
-    private void createFifos(DockerClient client, String containerId, String... fifos) throws InterruptedException {
+    /**
+     * One FIFO pair per solution process. All of them are created up front, because the manager
+     * opens every pair before it starts talking to any process.
+     */
+    private void createFifos(DockerClient client, String containerId, int processes) throws InterruptedException {
         StringBuilder command = new StringBuilder("mkdir -p " + ContainerPaths.FIFO_DIR);
-        for (String fifo : fifos) {
-            command.append(" && rm -f ").append(fifo).append(" && mkfifo -m 660 ").append(fifo);
+        for (int i = 0; i < processes; i++) {
+            for (String fifo : new String[]{ContainerPaths.fifoSolutionToManager(i),
+                    ContainerPaths.fifoManagerToSolution(i)}) {
+                command.append(" && rm -f ").append(fifo).append(" && mkfifo -m 660 ").append(fifo);
+            }
         }
         // The directory belongs to the contestant and the checker user is in that group, so
         // both processes can open both ends without either gaining access to the other's files.
@@ -113,13 +127,22 @@ public class CommunicationExecutor implements Executor {
     }
 
     /**
-     * Launches the manager detached, so it is already waiting when the submission opens its end.
-     * Opening a FIFO blocks until the other side is present, so the order matters.
+     * Launches the manager detached, so it is already waiting when the submissions open their
+     * ends. Opening a FIFO blocks until the other side is present, so the order matters.
+     *
+     * <p>The manager receives one pair of FIFO paths per process, solution-to-manager first -
+     * the CMS argument order, which is what task-supplied managers are written against. A
+     * manager infers the process count from how many pairs it is handed.
      */
-    private void startManager(DockerClient client, String containerId, Task task,
-                              String solutionToManager, String managerToSolution) throws InterruptedException {
+    private void startManager(DockerClient client, String containerId, Task task, int processes)
+            throws InterruptedException {
+        StringBuilder fifoArgs = new StringBuilder();
+        for (int i = 0; i < processes; i++) {
+            fifoArgs.append(' ').append(ContainerPaths.fifoSolutionToManager(i))
+                    .append(' ').append(ContainerPaths.fifoManagerToSolution(i));
+        }
         String command = "nohup su -c '" + ContainerPaths.managerBinary()
-                + " " + solutionToManager + " " + managerToSolution
+                + fifoArgs
                 + " < " + ContainerPaths.submissionInput()
                 + " > " + ContainerPaths.managerScore()
                 + " 2> " + ContainerPaths.managerMessage() + "' " + Sandbox.CHECKER_USER + " &";
@@ -132,15 +155,150 @@ public class CommunicationExecutor implements Executor {
         log.debug("Manager started for task {} test {}", task.taskId(), task.testId());
     }
 
-    private Utils.CommandResult runSolution(DockerClient client, String containerId, Task task,
-                                            String solutionToManager, String managerToSolution)
+    /**
+     * Starts every solution process at once and waits for all of them. They have to run
+     * concurrently: the manager holds all the FIFO pairs open and decides for itself which
+     * process it talks to next, so a process that has not started yet would deadlock it.
+     *
+     * <p>Each process gets its own FIFO pair as stdin/stdout and, when the task uses more than
+     * one, its index as the single argument - again the CMS convention the task's stub expects.
+     */
+    private Utils.CommandResult runSolutions(DockerClient client, String containerId, Task task, int processes)
             throws InterruptedException {
-        long guardMillis = task.timeLimitMillis() * WALL_CLOCK_GUARD_FACTOR;
-        String command = "/usr/bin/time -v su -c '" + languageExecutor.runCommand(task) + "' "
-                + Sandbox.CONTESTANT_USER
-                + " < " + managerToSolution + " > " + solutionToManager;
-        return Utils.executeGuarded(client, containerId, command,
-                guardMillis + 1000, task.memoryLimitKB() + 10 * 1024, guardMillis);
+        long guardMillis = wallClockGuardMillis(task, processes);
+        // Mirrors executeGuarded: the ceiling is doubled for interpreter and runtime overhead,
+        // and applies per process because ulimit is inherited, not shared.
+        long memoryCeilingKB = (task.memoryLimitKB() + 10L * 1024) * 2;
+        StringBuilder script = new StringBuilder("mkdir -p " + ContainerPaths.RUN_DIR
+                + " && rm -f " + ContainerPaths.RUN_DIR + "/*"
+                + " && ulimit -v " + memoryCeilingKB + " ; ");
+        for (int i = 0; i < processes; i++) {
+            // The exit status is written to a file: these run detached, so `wait` cannot report
+            // which of them failed. Note there is no separator between the jobs - `&` is one,
+            // and a `;` after it is a syntax error.
+            script.append("( timeout ").append(guardMillis / 1000f).append("s /usr/bin/time -v su -c '")
+                    .append(solutionCommand(task, processes, i)).append("' ").append(Sandbox.CONTESTANT_USER)
+                    .append(" < ").append(ContainerPaths.fifoManagerToSolution(i))
+                    .append(" > ").append(ContainerPaths.fifoSolutionToManager(i))
+                    .append(" 2> ").append(ContainerPaths.processStderr(i))
+                    .append(" ; echo $? > ").append(ContainerPaths.processExitCode(i))
+                    .append(" ) & ");
+        }
+        script.append("wait");
+        Utils.CommandResult launch = executeCommandSync(client, containerId, script.toString(),
+                guardMillis + 2000, null);
+        if (launch.isTimeout()) {
+            return launch;
+        }
+        return collectSolutionResults(client, containerId, processes);
+    }
+
+    /**
+     * Wall-clock budget for a single process. This is only a deadlock guard - the verdict comes
+     * from CPU time - so it scales with the process count: the manager drives the processes one
+     * at a time, which means a process spends most of its wall clock blocked waiting its turn
+     * while the others work.
+     */
+    private long wallClockGuardMillis(Task task, int processes) {
+        return task.timeLimitMillis() * WALL_CLOCK_GUARD_FACTOR * processes;
+    }
+
+    private String solutionCommand(Task task, int processes, int index) {
+        String command = languageExecutor.runCommand(task);
+        return processes == 1 ? command : command + " " + index;
+    }
+
+    /**
+     * Folds the per-process stderr files and exit statuses into the single result the shared
+     * verdict logic expects: the worst exit status, the largest memory footprint and the
+     * longest CPU time of any process, since one process breaking a limit fails the test.
+     */
+    private Utils.CommandResult collectSolutionResults(DockerClient client, String containerId, int processes)
+            throws InterruptedException {
+        StringBuilder dump = new StringBuilder();
+        for (int i = 0; i < processes; i++) {
+            dump.append("echo \"").append(PROCESS_MARKER).append(i).append(' ')
+                    .append("$(cat ").append(ContainerPaths.processExitCode(i)).append(" 2>/dev/null)\" ; ")
+                    .append("cat ").append(ContainerPaths.processStderr(i)).append(" 2>/dev/null ; ");
+        }
+        Utils.CommandResult dumped = executeCommandSync(client, containerId, dump.toString());
+        if (dumped.isTimeout()) {
+            return dumped;
+        }
+
+        int exitCode = 0;
+        long maxCpuMillis = 0;
+        int maxMemoryKB = 0;
+        StringBuilder messages = new StringBuilder();
+        for (String block : dumped.getStdout().toString(StandardCharsets.UTF_8).split(PROCESS_MARKER)) {
+            if (block.isBlank()) {
+                continue;
+            }
+            // "<index> <exit status>\n<stderr of that process>"
+            String header = block.split("\\R", 2)[0].trim();
+            String stderr = block.substring(Math.min(block.length(), header.length() + 1));
+            String[] headerParts = header.split("\\s+");
+            int index = parseIntOrDefault(headerParts[0], -1);
+            // A missing status means the process never got to write one - killed outright.
+            int processExit = headerParts.length > 1 ? parseIntOrDefault(headerParts[1], KILLED_EXIT_CODE)
+                    : KILLED_EXIT_CODE;
+            if (processExit == TIMEOUT_EXIT_CODE) {
+                // The guard fired. Reported as a timeout so the verdict is a time limit rather
+                // than a runtime error, exactly as the single-process guard in executeGuarded is.
+                log.warn("Solution process {} was killed by the wall clock guard", index);
+                return new Utils.CommandResult(true);
+            }
+            if (processExit != 0 && exitCode == 0) {
+                exitCode = processExit;
+            }
+
+            Map<String, String> metrics = parseResult(stderr);
+            maxCpuMillis = Math.max(maxCpuMillis, cpuTimeMillis(metrics, 0));
+            maxMemoryKB = Math.max(maxMemoryKB, parseIntOrDefault(metrics.get(MEMORY_KEY), 0));
+            appendMessage(messages, processes, index, stderr.split(START_STRING)[0].trim());
+        }
+        return synthesizeResult(exitCode, messages.toString(), maxCpuMillis, maxMemoryKB);
+    }
+
+    /**
+     * Labels each process's diagnostics with its index, so a contestant reading the feedback can
+     * tell which of them failed, and caps the total - 64 crashing processes would otherwise fill
+     * the result with the same stack trace repeated.
+     */
+    private void appendMessage(StringBuilder messages, int processes, int index, String stderr) {
+        if (stderr.isEmpty() || messages.length() >= MAX_MESSAGE_CHARS) {
+            return;
+        }
+        if (processes > 1) {
+            messages.append("[process ").append(index).append("] ");
+        }
+        messages.append(stderr.length() > MAX_PROCESS_MESSAGE_CHARS
+                        ? stderr.substring(0, MAX_PROCESS_MESSAGE_CHARS) + "..."
+                        : stderr)
+                .append('\n');
+    }
+
+    /**
+     * Rebuilds the stderr of a single timed run from the aggregated numbers, so the shared
+     * verdict logic can parse limits out of it the same way it does for a one-process test.
+     */
+    private Utils.CommandResult synthesizeResult(int exitCode, String messages, long cpuMillis, int memoryKB) {
+        String stderr = messages
+                + START_STRING + " \"solution processes\"\n"
+                + "\t" + TIME_KEY + ": " + (cpuMillis / 1000f) + "\n"
+                + "\t" + SYSTEM_TIME_KEY + ": 0.0\n"
+                + "\t" + MEMORY_KEY + ": " + memoryKB + "\n";
+        ByteArrayOutputStream stderrStream = new ByteArrayOutputStream();
+        stderrStream.writeBytes(stderr.getBytes(StandardCharsets.UTF_8));
+        return new Utils.CommandResult(exitCode, new ByteArrayOutputStream(), stderrStream);
+    }
+
+    private int parseIntOrDefault(String value, int fallback) {
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException | NullPointerException e) {
+            return fallback;
+        }
     }
 
     /**

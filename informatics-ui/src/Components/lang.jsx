@@ -53,6 +53,12 @@ const langDictionary = {
 		'taskCodeAlreadyExists': 'ასეთი უნიკალური ID უკვე გამოყენებულია',
 		'invalidTaskCode': 'უნიკალური ID უნდა შეიცავდეს მხოლოდ ლათინურ ასოებს, ციფრებს, _ და -',
 		'evaluatorUploadedAsGrader': 'ეს მენეჯერის/ჩეკერის ფაილია — ატვირთეთ შესაბამის ველში, არა გრეიდერებში',
+		'evaluatorCanNotBePublished': 'მენეჯერისა და ჩეკერის ფაილები მონაწილეებისთვის ვერ გამოქვეყნდება',
+		'invalidTaskFileName': 'ფაილის დასაშვები სახელი შეიცავს მხოლოდ ლათინურ ასოებს, ციფრებს, _ . და -',
+		'unsupportedTaskFileType': 'ფაილის ეს ტიპი არ არის დაშვებული (დასაშვებია: cpp, cc, cxx, c, h, hpp, hxx, py, java, txt, md)',
+		'taskFilesTooLarge': 'არქივის შიგთავსი ზომის ლიმიტს აჭარბებს',
+		'invalidArchive': 'არქივი ვერ წაიკითხა',
+		'taskFileNotFound': 'ფაილი ვერ მოიძებნა',
 		'taskType': 'ამოცანის ტიპი',
 		'taskScoreType': 'ქულების დაწერის წესის ტიპი',
 		'taskSuccessfullyAdded': 'ამოცანა წარმატებით დაემატა',
@@ -93,6 +99,9 @@ const langDictionary = {
 		'taskScoreParameter': 'ქულების დაწერის წესი',
 		'timeLimitMillis': 'დროის ლიმიტი (მწ)',
 		'memoryLimitMB': 'მეხსიერების ლიმიტი (MB)',
+		'timeLimit': 'დროის ლიმიტი',
+		'memoryLimit': 'მეხსიერების ლიმიტი',
+		'seconds': '{0} წამი',
 		'inputTemplate': 'შემავალი ფაილის სახელის შაბლონი',
 		'outputTemplate': 'გამომავალი ფაილის სახელის შაბლონი',
 
@@ -139,6 +148,8 @@ const langDictionary = {
         'public': 'საჯარო',
 
 		'submit': 'გაშვება',
+		'attachments': 'დამხმარე ფაილები',
+		'download': 'ჩამოტვირთვა',
 
 		'language': 'ენა',
 		'LANG_CPP': 'C++ (GNU G++20 12.2 -O2)',
@@ -149,6 +160,7 @@ const langDictionary = {
         'saved': 'ცვლილება შენახულია',
 		'statementSaved': 'პირობა შენახულია',
 		'markdownPlaceholder': 'აკრიფეთ ტექსტი...',
+		'imageSizeHint': 'სურათის ზომის მითითება შესაძლებელია ასე: ![სათაური|400](...) — 400 პიქსელი, ან ![სათაური|50%](...) — სვეტის ნახევარი.',
 	}
 }
 

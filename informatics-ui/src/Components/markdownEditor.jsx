@@ -9,6 +9,7 @@ import getMessage from "./lang";
 import {AxiosContext} from '../utils/axiosInstance'
 import {Button} from "@mui/material";
 import {youtubeRegex} from "../utils/constants";
+import markdownComponents from "../utils/markdownComponents";
 
 const MarkdownEditor = ({
                             entries,
@@ -122,6 +123,11 @@ const MarkdownEditor = ({
                         />
                     </>))
                 }
+                {activeTab === "editor" &&
+                    <div style={{fontSize: "13px", color: "gray", marginBottom: "10px"}}>
+                        {getMessage('ka', 'imageSizeHint')}
+                    </div>
+                }
                 {activeTab === "preview" &&
                     <div style={{border: "1px solid #ccc", padding: "10px"}}>
 
@@ -136,6 +142,7 @@ const MarkdownEditor = ({
                                         children={entry.value}
                                         remarkPlugins={[remarkMath, remarkGfm]}
                                         rehypePlugins={[rehypeMathjax, rehypeRaw]}
+                                        components={markdownComponents}
                                         urlTransform={imageDownloadFunc}
                                     />
                                 </div>

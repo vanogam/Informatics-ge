@@ -23,6 +23,8 @@ public class SandboxTest {
     private static final Logger log = LoggerFactory.getLogger(SandboxTest.class);
     private final String contestFiles = Objects.requireNonNull(getClass().getClassLoader().getResource("testTask")).getPath();
     private final String commFiles = Objects.requireNonNull(getClass().getClassLoader().getResource("commTask")).getPath();
+    private final String multiCommFiles = Objects.requireNonNull(
+            getClass().getClassLoader().getResource("multiCommTask")).getPath();
     private static final Task task = new Task("testTask",
             "1",
             "1",
@@ -353,6 +355,63 @@ public class SandboxTest {
                 new File(getClass().getClassLoader().getResource(solution).getPath()));
         assertTrue(compilationResult.isSuccess(), compilationResult.getErrorMessage());
         return sandbox.execute(task);
+    }
+
+    /**
+     * A task whose manager drives several solution processes at once, each one taking its index
+     * as an argument. IOI communication tasks are routinely built this way.
+     */
+    private TestResult runMultiProcessCommunication(String solution, int processes) throws Exception {
+        Task task = new Task("multiCommTask",
+                "1",
+                "1",
+                solution,
+                Language.CPP,
+                3500,
+                256 * 1024,
+                "01",
+                "01.in",
+                "01.out",
+                Task.CheckerType.MANAGER,
+                TaskType.COMMUNICATION,
+                processes,
+                Stage.TESTING);
+        sandbox.uploadTar(compressFile(new File(multiCommFiles), "multiCommTask"), "/sandbox/tasks/");
+        CompilationResult compilationResult = sandbox.compile(task,
+                new File(getClass().getClassLoader().getResource(solution).getPath()));
+        assertTrue(compilationResult.isSuccess(), compilationResult.getErrorMessage());
+        return sandbox.execute(task);
+    }
+
+    @Test
+    public void testMultiProcessCommunicationScoresFull() throws Exception {
+        TestResult result = runMultiProcessCommunication("multi_comm_model.cpp", 8);
+
+        assertEquals(TestStatus.CORRECT, result.getStatus(), result.getMessage());
+        assertEquals(1.0, result.getScore(), 1e-9, result.getMessage());
+    }
+
+    /**
+     * Every process has to be told which one it is. Without the index the grader exits before
+     * saying anything, which is a wrong answer from the manager's side rather than a crash.
+     */
+    @Test
+    public void testMultiProcessCommunicationWrongSolutionScoresZero() throws Exception {
+        TestResult result = runMultiProcessCommunication("multi_comm_wrong.cpp", 8);
+
+        assertEquals(TestStatus.WRONG_ANSWER, result.getStatus(), result.getMessage());
+        assertEquals(0.0, result.getScore(), 1e-9, result.getMessage());
+    }
+
+    /**
+     * Guards the shell the executor builds: the processes are launched as background jobs, and
+     * a stray separator between them is a syntax error that only shows up beyond one process.
+     */
+    @Test
+    public void testMultiProcessCommunicationScalesToManyProcesses() throws Exception {
+        TestResult result = runMultiProcessCommunication("multi_comm_model.cpp", 64);
+
+        assertEquals(TestStatus.CORRECT, result.getStatus(), result.getMessage());
     }
 
     @Test

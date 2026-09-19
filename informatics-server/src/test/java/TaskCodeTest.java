@@ -42,7 +42,7 @@ public class TaskCodeTest {
 
     private TaskDTO dto(Long id, String code) {
         return new TaskDTO(id, 1L, code, "Ball Machine", null, null, null,
-                1000, 256, null, 1, "*.in", "*.out", new HashMap<>(), new ArrayList<>(), null);
+                1000, 256, null, 1, true, false, "*.in", "*.out", new HashMap<>(), new ArrayList<>(), null);
     }
 
     @Test

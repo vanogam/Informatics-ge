@@ -16,6 +16,7 @@ import ge.freeuni.informatics.common.model.user.User;
 import ge.freeuni.informatics.repository.contest.ContestJpaRepository;
 import ge.freeuni.informatics.repository.contest.ContestantResultJpaRepository;
 import ge.freeuni.informatics.repository.contestroom.ContestRoomJpaRepository;
+import ge.freeuni.informatics.repository.submission.SubmissionJpaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -53,6 +54,9 @@ class ContestServiceTest {
 
     @Mock
     private ContestantResultJpaRepository contestantResultJpaRepository;
+
+    @Mock
+    private SubmissionJpaRepository submissionRepository;
 
     @Mock
     private Logger log;
@@ -621,5 +625,250 @@ class ContestServiceTest {
         assertEquals(2, result.size());
         assertTrue(result.contains(1L));
         assertTrue(result.contains(2L));
+    }
+
+    // ---- SUBTASK_MAX ----------------------------------------------------------------------
+
+    /** Puts the contest in SUBTASK_MAX mode with the given contestant already in the standings. */
+    private void liveSubtaskMaxContest(TaskResultDTO existing, float totalScore) {
+        testContest.setScoringType(ScoringType.SUBTASK_MAX);
+        Map<String, TaskResultDTO> taskResults = new HashMap<>();
+        if (existing != null) {
+            taskResults.put(existing.getTaskCode(), existing);
+        }
+        testContest.getStandings().add(ContestantResultDTO.builder()
+                .contestantId(100L)
+                .totalScore(totalScore)
+                .taskResults(taskResults)
+                .build());
+        ReflectionTestUtils.invokeMethod(contestService, "activateContest", testContest);
+        when(contestRoomJpaRepository.getReferenceById(1L)).thenReturn(testRoom);
+    }
+
+    private TaskResultDTO submitAndReadTaskResult(float score, String subtaskScores)
+            throws InformaticsServerException {
+        testSubmission.setScore(score);
+        testSubmission.setSubtaskScores(subtaskScores);
+        contestService.addSubmission(new SubmissionEvent(testSubmission));
+        return contestService.getStandings(1L, 0, 10).stream()
+                .filter(r -> r.contestantId() == 100L)
+                .findFirst()
+                .orElseThrow()
+                .taskResults()
+                .get("TASK1");
+    }
+
+    /**
+     * The point of the mode: two partial solutions, each winning subtasks the other missed, add
+     * up to the union of both rather than to the better of the two.
+     */
+    @Test
+    void testSubtaskMax_MergesTheBestAwardOnEachSubtask() throws InformaticsServerException {
+        liveSubtaskMaxContest(new TaskResultDTO("TASK1", 35f, "10,20,0,5,0", 1, 1000L), 35f);
+
+        TaskResultDTO merged = submitAndReadTaskResult(35f, "10,0,15,10,0");
+
+        assertEquals("10.0,20.0,15.0,10.0,0.0", merged.getSubtaskScores());
+        assertEquals(55f, merged.getScore());
+        assertEquals(55f, contestService.getStandings(1L, 0, 10).iterator().next().totalScore());
+        assertEquals(2, merged.getAttempts());
+    }
+
+    @Test
+    void testSubtaskMax_FirstSubmissionSeedsTheVector() throws InformaticsServerException {
+        liveSubtaskMaxContest(null, 0f);
+
+        TaskResultDTO result = submitAndReadTaskResult(35f, "10.0,20.0,0.0,5.0,0.0");
+
+        assertEquals("10.0,20.0,0.0,5.0,0.0", result.getSubtaskScores());
+        assertEquals(35f, result.getScore());
+    }
+
+    /**
+     * A submission with no breakdown - a compile error, most often - must not pull the
+     * accumulated score back down; it only counts as an attempt.
+     */
+    @Test
+    void testSubtaskMax_SubmissionWithoutABreakdownKeepsTheAccumulatedScore()
+            throws InformaticsServerException {
+        liveSubtaskMaxContest(new TaskResultDTO("TASK1", 35f, "10,20,0,5,0", 1, 1000L), 35f);
+
+        TaskResultDTO result = submitAndReadTaskResult(0f, null);
+
+        assertEquals("10,20,0,5,0", result.getSubtaskScores());
+        assertEquals(35f, result.getScore());
+        assertEquals(2, result.getAttempts());
+    }
+
+    /**
+     * Vectors of different lengths mean the task's subtasks were re-configured mid-contest, and
+     * there is no honest way to line the old entries up with the new. Falls back on comparing
+     * totals, as BEST_SUBMISSION does.
+     */
+    @Test
+    void testSubtaskMax_FallsBackToBestSubmissionOnALengthMismatch()
+            throws InformaticsServerException {
+        liveSubtaskMaxContest(new TaskResultDTO("TASK1", 35f, "10,20,0,5,0", 1, 1000L), 35f);
+
+        TaskResultDTO result = submitAndReadTaskResult(40f, "10,30");
+
+        assertEquals(40f, result.getScore(), "the higher total wins when the vectors cannot merge");
+        assertEquals("10,30", result.getSubtaskScores());
+    }
+
+    @Test
+    void testSubtaskMax_KeepsTheAccumulatedScoreWhenASubmissionAddsNothing()
+            throws InformaticsServerException {
+        liveSubtaskMaxContest(new TaskResultDTO("TASK1", 35f, "10,20,0,5,0", 1, 1000L), 35f);
+
+        TaskResultDTO result = submitAndReadTaskResult(10f, "10,0,0,0,0");
+
+        assertEquals(35f, result.getScore());
+        assertEquals(1000L, result.getSuccessTime(), "the total did not move, so neither does its time");
+    }
+
+    // ---- re-judge rebuilds the standings --------------------------------------------------
+
+    /** A scored submission for the contestant and task the tests replay over. */
+    private Submission submissionAt(long id, float score, String subtaskScores, long minutesIn) {
+        Submission submission = new Submission();
+        submission.setId(id);
+        submission.setUser(testUser);
+        submission.setTask(testTask);
+        submission.setContest(testContestEntity);
+        submission.setScore(score);
+        submission.setSubtaskScores(subtaskScores);
+        submission.setSubmissionTime(new Date(testContest.getStartDate().getTime() + minutesIn * 60_000L));
+        return submission;
+    }
+
+    /** Puts the contestant in the standings with the task result a re-judge is about to correct. */
+    private void liveContestWith(ScoringType scoringType, TaskResultDTO existing, float totalScore) {
+        testContest.setScoringType(scoringType);
+        Map<String, TaskResultDTO> taskResults = new HashMap<>();
+        if (existing != null) {
+            taskResults.put(existing.getTaskCode(), existing);
+        }
+        testContest.getStandings().add(ContestantResultDTO.builder()
+                .contestantId(100L)
+                .totalScore(totalScore)
+                .taskResults(taskResults)
+                .build());
+        ReflectionTestUtils.invokeMethod(contestService, "activateContest", testContest);
+        when(contestRoomJpaRepository.getReferenceById(1L)).thenReturn(testRoom);
+    }
+
+    private TaskResultDTO rejudgeAndReadTaskResult(Submission rejudged, Submission... history)
+            throws InformaticsServerException {
+        when(submissionRepository.findScoredForReplay(100L, 200L)).thenReturn(List.of(history));
+        contestService.addSubmission(new SubmissionEvent(rejudged, true));
+        return contestService.getStandings(1L, 0, 10).stream()
+                .filter(r -> r.contestantId() == 100L)
+                .findFirst()
+                .orElseThrow()
+                .taskResults()
+                .get("TASK1");
+    }
+
+    /**
+     * The case the replay exists for: a grader was wrong, the submission is re-judged downwards,
+     * and the standings have to follow it down. Folding the result in would have kept the 100.
+     */
+    @Test
+    void testRejudge_LowersTheStandingsWhenTheCorrectedScoreIsLower()
+            throws InformaticsServerException {
+        liveContestWith(ScoringType.BEST_SUBMISSION, new TaskResultDTO("TASK1", 100f, null, 1, 600_000L), 100f);
+        Submission corrected = submissionAt(1L, 40f, null, 10);
+
+        TaskResultDTO result = rejudgeAndReadTaskResult(corrected, corrected);
+
+        assertEquals(40f, result.getScore(), "the corrected score replaces the old one");
+        assertEquals(40f, contestService.getStandings(1L, 0, 10).iterator().next().totalScore());
+    }
+
+    /** A re-judge is not a new attempt: the count is what the replay finds, not one more. */
+    @Test
+    void testRejudge_DoesNotCountAsAnExtraAttempt() throws InformaticsServerException {
+        liveContestWith(ScoringType.BEST_SUBMISSION, new TaskResultDTO("TASK1", 100f, null, 2, 600_000L), 100f);
+        Submission first = submissionAt(1L, 30f, null, 5);
+        Submission corrected = submissionAt(2L, 40f, null, 10);
+
+        TaskResultDTO result = rejudgeAndReadTaskResult(corrected, first, corrected);
+
+        assertEquals(2, result.getAttempts(), "two submissions replayed, so two attempts");
+        assertEquals(40f, result.getScore());
+    }
+
+    /**
+     * The replay keeps BEST_SUBMISSION's own rule: among the submissions that survive the
+     * re-judge, the best still wins, even when the re-judged one is not it.
+     */
+    @Test
+    void testRejudge_KeepsTheBestOfTheRemainingSubmissions() throws InformaticsServerException {
+        liveContestWith(ScoringType.BEST_SUBMISSION, new TaskResultDTO("TASK1", 100f, null, 2, 600_000L), 100f);
+        Submission best = submissionAt(1L, 70f, null, 5);
+        Submission corrected = submissionAt(2L, 40f, null, 10);
+
+        TaskResultDTO result = rejudgeAndReadTaskResult(corrected, best, corrected);
+
+        assertEquals(70f, result.getScore());
+        assertEquals(5 * 60_000L, result.getSuccessTime(),
+                "successTime comes from when the winning submission was made");
+    }
+
+    /** Under SUBTASK_MAX the replay re-accumulates, so a lost subtask is actually given up. */
+    @Test
+    void testRejudge_ReaccumulatesSubtaskMaxRatherThanKeepingALostSubtask()
+            throws InformaticsServerException {
+        liveContestWith(ScoringType.SUBTASK_MAX, new TaskResultDTO("TASK1", 55f, "10,20,15,10,0", 2, 300_000L), 55f);
+        Submission first = submissionAt(1L, 35f, "10,20,0,5,0", 5);
+        // The re-judge took subtask 3 away from the second submission.
+        Submission corrected = submissionAt(2L, 20f, "10,0,0,10,0", 10);
+
+        TaskResultDTO result = rejudgeAndReadTaskResult(corrected, first, corrected);
+
+        assertEquals("10.0,20.0,0.0,10.0,0.0", result.getSubtaskScores(),
+                "subtask 3 is gone because no surviving submission still wins it");
+        assertEquals(40f, result.getScore());
+        assertEquals(40f, contestService.getStandings(1L, 0, 10).iterator().next().totalScore());
+    }
+
+    /** Other tasks in the same row are left exactly as they were. */
+    @Test
+    void testRejudge_LeavesTheContestantsOtherTasksAlone() throws InformaticsServerException {
+        testContest.setScoringType(ScoringType.BEST_SUBMISSION);
+        Map<String, TaskResultDTO> taskResults = new HashMap<>();
+        taskResults.put("TASK1", new TaskResultDTO("TASK1", 100f, null, 1, 600_000L));
+        taskResults.put("TASK2", new TaskResultDTO("TASK2", 60f, null, 3, 120_000L));
+        testContest.getStandings().add(ContestantResultDTO.builder()
+                .contestantId(100L)
+                .totalScore(160f)
+                .taskResults(taskResults)
+                .build());
+        ReflectionTestUtils.invokeMethod(contestService, "activateContest", testContest);
+        when(contestRoomJpaRepository.getReferenceById(1L)).thenReturn(testRoom);
+
+        Submission corrected = submissionAt(1L, 40f, null, 10);
+        rejudgeAndReadTaskResult(corrected, corrected);
+
+        ContestantResultDTO row = contestService.getStandings(1L, 0, 10).iterator().next();
+        assertEquals(60f, row.taskResults().get("TASK2").getScore(), "TASK2 is untouched");
+        assertEquals(3, row.taskResults().get("TASK2").getAttempts());
+        assertEquals(100f, row.totalScore(), "160 - 100 + 40");
+    }
+
+    /** An ordinary submission still folds in, and must not hit the database for a replay. */
+    @Test
+    void testOrdinarySubmission_StillFoldsInWithoutAReplay() throws InformaticsServerException {
+        liveContestWith(ScoringType.BEST_SUBMISSION, new TaskResultDTO("TASK1", 100f, null, 1, 600_000L), 100f);
+        testSubmission.setScore(40f);
+
+        contestService.addSubmission(new SubmissionEvent(testSubmission));
+
+        TaskResultDTO result = contestService.getStandings(1L, 0, 10).iterator().next()
+                .taskResults().get("TASK1");
+        assertEquals(100f, result.getScore(), "a lower new submission never lowers the standing");
+        assertEquals(2, result.getAttempts());
+        verify(submissionRepository, never()).findScoredForReplay(anyLong(), anyLong());
     }
 }

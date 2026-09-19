@@ -211,6 +211,34 @@ public class TestDataFactory {
         return contest;
     }
 
+    /**
+     * A live contest scored the IOI way: each task's score is the sum of the contestant's best
+     * result on every subtask, across all of their submissions.
+     */
+    @Transactional
+    public Contest createLiveSubtaskMaxContest(String name, ContestRoom room, int durationMinutes) {
+        Date now = new Date();
+        Contest contest = createContest(name, room,
+                new Date(now.getTime() - 60000),
+                new Date(now.getTime() + (durationMinutes * 60000L)),
+                ScoringType.SUBTASK_MAX, true);
+
+        ContestDTO contestDTO = ContestDTO.toDTO(contest);
+        contestDTO.setStatus(ContestStatus.LIVE);
+        eventPublisher.publishEvent(new ContestChangeEvent(contestDTO));
+
+        return contest;
+    }
+
+    /** Turns an existing task into one that also - or only - accepts uploaded output files. */
+    @Transactional
+    public Task setSubmissionKinds(Task task, boolean allowCode, boolean allowOutputs) {
+        task = taskRepository.getReferenceById(task.getId());
+        task.setAllowCodeSubmission(allowCode);
+        task.setAllowOutputSubmission(allowOutputs);
+        return taskRepository.save(task);
+    }
+
     @Transactional
     public Task createTask(Contest contest, String code, String title, int numTestcases) {
         // Reload contest to ensure it's managed in this transaction

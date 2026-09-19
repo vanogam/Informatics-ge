@@ -1,7 +1,7 @@
 import {useParams} from 'react-router-dom'
 import {Page, pdfjs} from 'react-pdf';
 import {
-    Box, TextField, MenuItem, Stack, Typography
+    Box, TextField, MenuItem, Stack, Tab, Tabs, Typography
 } from '@mui/material'
 import {Download} from '@mui/icons-material'
 import React, {useContext, useState} from 'react'
@@ -32,6 +32,7 @@ import TableCell from "@mui/material/TableCell";
 import {Paper} from "@mui/material";
 import ContestNavigationBar from "../Components/ContestNavigationBar";
 import markdownComponents from "../utils/markdownComponents";
+import {toast} from "react-toastify";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
@@ -73,6 +74,39 @@ export default function Problem() {
             })
     }
 
+    /**
+     * Uploads the contestant's own output files: one test's answer, or a zip covering several.
+     * Sent as multipart because the payload is a file, and a single test's answer can be large.
+     */
+    function submitOutputs(contest_id, task_id) {
+        if (!outputFile) {
+            return
+        }
+        const body = new FormData()
+        body.append('taskId', task_id)
+        body.append('file', outputFile)
+        if (outputTestKey) {
+            body.append('testKey', outputTestKey)
+        }
+        setSubmittingOutputs(true)
+        axiosInstance
+            .post(`/submit/output`, body)
+            .then((response) => {
+                if (response.status === 200) {
+                    // The uncovered tests score zero rather than being rejected, so the count is
+                    // the only thing telling the contestant how much of the task they just sent.
+                    toast.success(getMessage('ka', 'outputsAccepted')
+                        .replace('{matched}', response.data.matchedTests)
+                        .replace('{total}', response.data.totalTests))
+                    window.location = `/contest/${contest_id}/mySubmissions`
+                }
+            })
+            .catch((error) => {
+                toast.error(getMessage('ka', error?.response?.data?.message || 'unexpectedException'))
+            })
+            .finally(() => setSubmittingOutputs(false))
+    }
+
     const {contest_id, problem_id} = useParams()
     const [code, setCode] = React.useState({
         "CPP": {
@@ -89,6 +123,15 @@ export default function Problem() {
     const [taskOrder, setTaskOrder] = useState(null)
     const [attachments, setAttachments] = useState([])
     const [limits, setLimits] = useState(null)
+    // Which submission kinds this task takes. Code-only until the task says otherwise, which is
+    // what every task that predates output submissions is.
+    const [allowCode, setAllowCode] = useState(true)
+    const [allowOutputs, setAllowOutputs] = useState(false)
+    const [submitMode, setSubmitMode] = useState('CODE')
+    const [testKeys, setTestKeys] = useState([])
+    const [outputFile, setOutputFile] = useState(null)
+    const [outputTestKey, setOutputTestKey] = useState('')
+    const [submittingOutputs, setSubmittingOutputs] = useState(false)
     const editorWrapperRef = React.useRef(null)
 
     useEffect(() => {
@@ -129,6 +172,13 @@ export default function Problem() {
                     timeLimitMillis: response.data.timeLimitMillis,
                     memoryLimitMB: response.data.memoryLimitMB
                 })
+                const codeAllowed = response.data.allowCodeSubmission !== false
+                const outputsAllowed = response.data.allowOutputSubmission === true
+                setAllowCode(codeAllowed)
+                setAllowOutputs(outputsAllowed)
+                // An output-only task opens on the tab that is the only way to submit at all.
+                setSubmitMode(codeAllowed ? 'CODE' : 'OUTPUT')
+                setTestKeys((response.data.testcases || []).map((tc) => tc.key))
             })
             .catch(_ => {})
 
@@ -267,6 +317,60 @@ export default function Problem() {
                     fontSize: '20',
                 }}
             >
+                {allowOutputs && allowCode && (
+                    <Tabs
+                        value={submitMode}
+                        onChange={(_, value) => setSubmitMode(value)}
+                        sx={{marginBottom: '8px'}}
+                    >
+                        <Tab value="CODE" label={getMessage('ka', 'submitCode')}/>
+                        <Tab value="OUTPUT" label={getMessage('ka', 'submitOutputs')}/>
+                    </Tabs>
+                )}
+                {submitMode === 'OUTPUT' ? (
+                    <Stack gap="1rem" sx={{marginTop: '8px'}}>
+                        <Typography>{getMessage('ka', 'outputUploadHint')}</Typography>
+                        <Button variant="outlined" component="label">
+                            {outputFile ? outputFile.name : getMessage('ka', 'chooseOutputFile')}
+                            <input
+                                type="file"
+                                hidden
+                                onChange={(e) => setOutputFile(e.target.files[0] || null)}
+                            />
+                        </Button>
+                        <TextField
+                            select
+                            label={getMessage('ka', 'outputTestKey')}
+                            value={outputTestKey}
+                            onChange={(e) => setOutputTestKey(e.target.value)}
+                            variant="outlined"
+                            size="small"
+                            fullWidth
+                            // Only a single file needs to be told which test it answers; a zip
+                            // carries that in the names of the files inside it.
+                            helperText={getMessage('ka', 'outputTestKeyHint')}
+                        >
+                            <MenuItem value="">{getMessage('ka', 'outputTestKeyFromName')}</MenuItem>
+                            {testKeys.map((key) => (
+                                <MenuItem key={key} value={key}>{key}</MenuItem>
+                            ))}
+                        </TextField>
+                        <Button
+                            sx={{
+                                marginInline: '2px',
+                                marginLeft: '60px',
+                                width: '50%',
+                                background: '#3c324e',
+                            }}
+                            disabled={!outputFile || submittingOutputs}
+                            onClick={() => submitOutputs(contest_id, problem_id)}
+                            variant="contained"
+                        >
+                            {getMessage('ka', 'submit')}
+                        </Button>
+                    </Stack>
+                ) : (
+                <>
                 <p sx={{color: 'purple'}}>შეიყვანე კოდი: </p>
                 <div ref={editorWrapperRef} style={{ minHeight: '55vh', maxHeight: '55vh', overflow: 'auto', width: '100%' }}>
                     <Editor
@@ -319,6 +423,8 @@ export default function Problem() {
                 >
                     {getMessage('ka', 'submit')}
                 </Button>
+                </>
+                )}
 
                 {attachments.length > 0 && (
                     <Box sx={{marginTop: '5%'}}>

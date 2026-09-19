@@ -1,9 +1,11 @@
 package ge.freeuni.informatics.controller.servlet.submission;
 
+import ge.freeuni.informatics.common.dto.OutputSubmissionDTO;
 import ge.freeuni.informatics.common.dto.UserProblemDTO;
 import ge.freeuni.informatics.common.dto.SubmissionDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.CodeLanguage;
+import ge.freeuni.informatics.common.model.submission.SubmissionKind;
 import ge.freeuni.informatics.common.model.user.ProblemAttemptStatus;
 import ge.freeuni.informatics.common.model.user.User;
 import ge.freeuni.informatics.controller.model.*;
@@ -13,9 +15,12 @@ import ge.freeuni.informatics.server.submission.ISubmissionManager;
 import ge.freeuni.informatics.server.user.IUserManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -54,6 +59,7 @@ public class SubmissionController {
         try {
             submissionDTO = new SubmissionDTO(
                     request.getLanguage().toString(),
+                    SubmissionKind.SOURCE,
                     userManager.getAuthenticatedUser().username(),
                     request.getContestId(),
                     request.getTaskId(),
@@ -76,6 +82,37 @@ public class SubmissionController {
         } catch (InformaticsServerException e) {
             response.setMessage(e.getCode());
             return ResponseEntity.status(ServletUtils.getResponseCode(e)).body(response);
+        }
+    }
+
+    /**
+     * Submits the contestant's own output files for an output-only or mixed task: either one
+     * test's answer, or a zip covering as many as they have solved.
+     *
+     * <p>Multipart rather than JSON because the payload is a file and can be large; the answer to
+     * a single test may be megabytes of text, and base64 in a JSON body would inflate it further.
+     */
+    @PostMapping(value = "/submit/output", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<OutputSubmitResponse> submitOutput(
+            @RequestParam Long taskId,
+            @RequestParam MultipartFile file,
+            @RequestParam(required = false) String testKey) {
+        try {
+            OutputSubmissionDTO result = submissionManager.addOutputSubmission(
+                    taskId, file.getOriginalFilename(), file.getBytes(), testKey);
+
+            OutputSubmitResponse response = new OutputSubmitResponse();
+            response.setSubmissionId(result.submissionId());
+            response.setMatchedTests(result.matchedTests());
+            response.setTotalTests(result.totalTests());
+            response.setUnmatchedFiles(result.unmatchedFiles());
+            return ResponseEntity.ok(response);
+        } catch (InformaticsServerException e) {
+            return ResponseEntity.status(ServletUtils.getResponseCode(e))
+                    .body(new OutputSubmitResponse(e.getCode()));
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new OutputSubmitResponse(InformaticsServerException.UNEXPECTED_ERROR.getCode()));
         }
     }
 

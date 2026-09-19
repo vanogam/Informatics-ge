@@ -5,6 +5,12 @@ import ge.freeuni.informatics.common.model.contest.TaskResult;
 public class TaskResultDTO {
         private String taskCode;
         private Float score;
+        /**
+         * Best-so-far per-subtask awards for this task, encoded by
+         * {@link ge.freeuni.informatics.common.model.submission.SubtaskScores}. Only carried for
+         * a {@link ge.freeuni.informatics.common.model.contest.ScoringType#SUBTASK_MAX} contest.
+         */
+        private String subtaskScores;
         private Integer attempts;
         private Long successTime;
 
@@ -20,8 +26,13 @@ public class TaskResultDTO {
     }
 
     public TaskResultDTO(String taskCode, Float score, Integer attempts, Long successTime) {
+        this(taskCode, score, null, attempts, successTime);
+    }
+
+    public TaskResultDTO(String taskCode, Float score, String subtaskScores, Integer attempts, Long successTime) {
         this.taskCode = taskCode;
         this.score = score;
+        this.subtaskScores = subtaskScores;
         this.attempts = attempts;
         this.successTime = successTime;
     }
@@ -40,6 +51,14 @@ public class TaskResultDTO {
 
     public void setScore(Float score) {
         this.score = score;
+    }
+
+    public String getSubtaskScores() {
+        return subtaskScores;
+    }
+
+    public void setSubtaskScores(String subtaskScores) {
+        this.subtaskScores = subtaskScores;
     }
 
     public Integer getAttempts() {
@@ -62,6 +81,7 @@ public class TaskResultDTO {
         return new TaskResultDTO(
                 taskResult.getTaskCode(),
                 taskResult.getScore(),
+                taskResult.getSubtaskScores(),
                 taskResult.getAttempts(),
                 taskResult.getSuccessTime()
         );
@@ -71,6 +91,7 @@ public class TaskResultDTO {
         TaskResult taskResult = new TaskResult();
         taskResult.setTaskCode(taskResultDTO.getTaskCode());
         taskResult.setScore(taskResultDTO.getScore());
+        taskResult.setSubtaskScores(taskResultDTO.getSubtaskScores());
         taskResult.setAttempts(taskResultDTO.getAttempts());
         taskResult.setSuccessTime(taskResultDTO.getSuccessTime());
         return taskResult;

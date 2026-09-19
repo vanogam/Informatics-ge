@@ -23,4 +23,21 @@ public interface SubmissionJpaRepository extends JpaRepository<Submission, Long>
               LIMIT :limit OFFSET :offset
     """)
     List<Submission> findSubmissions(Long userId, Long taskId, Long contestId, Long roomId, Integer offset, Integer limit);
+
+    /**
+     * Every submission one contestant has made to one task that has been scored, oldest first.
+     *
+     * <p>Used to rebuild a standings row from scratch after a re-judge. Ordered by submission time
+     * because that is what decides the tie-break, so a replay reaches the same successTime the
+     * contestant originally earned however often the submissions are re-judged. A null score means
+     * the submission has never finished judging and has never counted towards the standings.
+     */
+    @Query("""
+        SELECT s FROM Submission s
+        WHERE s.user.id = :userId
+          AND s.task.id = :taskId
+          AND s.score IS NOT NULL
+        ORDER BY s.submissionTime ASC, s.id ASC
+    """)
+    List<Submission> findScoredForReplay(Long userId, Long taskId);
 }

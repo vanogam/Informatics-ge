@@ -36,6 +36,9 @@ public class MockKafkaWorker {
     
     // Map of submission ID -> should fail compilation
     private final Map<Long, Boolean> submissionCompilationFailure = new ConcurrentHashMap<>();
+
+    // Map of submission ID -> the test keys that should pass, when the caller names them
+    private final Map<Long, java.util.Set<String>> submissionPassingKeys = new ConcurrentHashMap<>();
     
     public MockKafkaWorker(KafkaTemplate<String, String> kafkaTemplate) {
         this.kafkaTemplate = kafkaTemplate;
@@ -72,12 +75,24 @@ public class MockKafkaWorker {
     }
     
     /**
+     * Set exactly which tests a submission passes, by key.
+     *
+     * <p>The percentage form always passes a prefix of the tests, which cannot express two
+     * submissions that solve different parts of a task - the case SUBTASK_MAX exists for.
+     */
+    public void setPassingTestKeys(Long submissionId, java.util.Set<String> testKeys) {
+        submissionPassingKeys.put(submissionId, testKeys);
+        log.info("Set passing tests for submission {}: {}", submissionId, testKeys);
+    }
+
+    /**
      * Clear all predefined scores and statuses.
      */
     public void clearScores() {
         submissionScores.clear();
         submissionTestStatus.clear();
         submissionCompilationFailure.clear();
+        submissionPassingKeys.clear();
         log.info("Cleared all mock submission scores and statuses");
     }
     
@@ -107,7 +122,8 @@ public class MockKafkaWorker {
             sendCallback(new KafkaCallback(
                     submissionId,
                     CallbackType.COMPILATION_STARTED,
-                    null, null, null, null, null, null, null, null
+                    null, null, null, null, null, null, null, null,
+                    task.judgeToken()
             ));
             
             // Simulate compilation time
@@ -120,7 +136,8 @@ public class MockKafkaWorker {
                         CallbackType.COMPILATION_FAILED,
                         null, 
                         "error: expected ';' before '}' token", // compilation error message
-                        null, null, null, null, null, null
+                        null, null, null, null, null, null,
+                        task.judgeToken()
                 ));
                 log.info("=== MOCK WORKER === Compilation failed for submission {}", submissionId);
             } else {
@@ -128,7 +145,8 @@ public class MockKafkaWorker {
                 sendCallback(new KafkaCallback(
                         submissionId,
                         CallbackType.COMPILATION_COMPLETED,
-                        null, null, null, null, null, null, null, null
+                        null, null, null, null, null, null, null, null,
+                        task.judgeToken()
                 ));
                 log.info("=== MOCK WORKER === Compilation completed for submission {}", submissionId);
             }
@@ -175,6 +193,11 @@ public class MockKafkaWorker {
                         message = forcedStatus.toString();
                         break;
                 }
+            } else if (submissionPassingKeys.containsKey(submissionId)) {
+                boolean testPasses = submissionPassingKeys.get(submissionId).contains(testcaseKey);
+                status = testPasses ? TestStatus.CORRECT : TestStatus.WRONG_ANSWER;
+                score = testPasses ? 1.0 : 0.0;
+                message = testPasses ? "Accepted" : "Wrong Answer";
             } else {
                 // Get the desired score percentage for this submission (default 100%)
                 int scorePercentage = submissionScores.getOrDefault(submissionId, 100);
@@ -209,7 +232,10 @@ public class MockKafkaWorker {
                     0, // exit code
                     timeMs, // time in ms
                     1024L, // memory in KB
-                    "Test outcome"
+                    "Test outcome",
+                    // Echoed like a real worker: the core drops results whose token no longer
+                    // matches the submission's current judging run.
+                    task.judgeToken()
             ));
             
             log.info("=== MOCK WORKER === Test {} for submission {}: {} (score: {})", 

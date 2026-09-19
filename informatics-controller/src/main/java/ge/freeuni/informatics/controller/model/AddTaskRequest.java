@@ -20,6 +20,11 @@ public record AddTaskRequest(
         Integer memoryLimitMB,
         CheckerType checkerType,
         Integer numProcesses,
+        /**
+         * Which submission kinds the task accepts. Absent means the defaults - code only.
+         */
+        Boolean allowCodeSubmission,
+        Boolean allowOutputSubmission,
         String inputTemplate,
         String outputTemplate
 ) {}

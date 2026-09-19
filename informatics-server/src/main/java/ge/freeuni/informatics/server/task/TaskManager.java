@@ -14,6 +14,7 @@ import ge.freeuni.informatics.common.model.contest.TaskResult;
 import ge.freeuni.informatics.common.model.contestroom.ContestRoom;
 import ge.freeuni.informatics.common.model.task.Statement;
 import ge.freeuni.informatics.common.model.task.Task;
+import ge.freeuni.informatics.common.model.task.TestKeys;
 import ge.freeuni.informatics.common.model.task.TaskInfo;
 import ge.freeuni.informatics.common.model.task.Testcase;
 import ge.freeuni.informatics.repository.contest.ContestJpaRepository;
@@ -616,16 +617,6 @@ public class TaskManager implements ITaskManager {
     }
 
     private String getKeyFromTemplate(String fileName, String template) {
-        Pattern SPECIAL_REGEX_CHARS = Pattern.compile("[{}()\\[\\].+?^$\\\\|]");
-        template = SPECIAL_REGEX_CHARS.matcher(template).replaceAll("\\\\$0");
-        template = template.replace("*", "(.*)");
-
-        Pattern pattern = Pattern.compile(template);
-        Matcher matcher = pattern.matcher(fileName);
-
-        if (matcher.matches()) {
-            return matcher.group(1);
-        }
-        return null;
+        return TestKeys.fromTemplate(fileName, template);
     }
 }

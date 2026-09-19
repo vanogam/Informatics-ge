@@ -13,7 +13,14 @@ public record Task(String taskId,
                    CheckerType checkerType,
                    TaskType taskType,
                    Integer numProcesses,
-                   Stage stage
+                   Stage stage,
+                   /** Opaque token of the judging run; echoed back on every callback. */
+                   Integer judgeToken,
+                   /**
+                    * Whether the contestant submitted code or their own output files. Null in
+                    * messages published before the field existed, all of which are source.
+                    */
+                   SubmissionKind submissionKind
 ) {
 
     /**
@@ -29,6 +36,19 @@ public record Task(String taskId,
      */
     public int processCount() {
         return numProcesses == null || numProcesses < 1 ? 1 : numProcesses;
+    }
+
+    /**
+     * True when the submission carries the answers themselves: nothing is compiled and nothing is
+     * run, the uploaded file is simply handed to the checker.
+     */
+    public boolean isOutputSubmission() {
+        return submissionKind == SubmissionKind.OUTPUT;
+    }
+
+    public enum SubmissionKind {
+        SOURCE,
+        OUTPUT
     }
 
     public enum CheckerType {

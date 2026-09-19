@@ -55,6 +55,20 @@ public class Task {
     Integer numProcesses;
 
     /**
+     * The kinds of submission the task accepts. A task normally takes source code and nothing
+     * else; an output-only task takes the answers themselves - one file for a single test, or a
+     * zip covering many - and a mixed task, IOI's "BatchAndOutput", takes either.
+     *
+     * <p>Nullable for the sake of tasks that predate the columns: absent reads as code-only,
+     * which is what every existing task is.
+     */
+    @Column(name = "allowcodesubmission")
+    Boolean allowCodeSubmission = Boolean.TRUE;
+
+    @Column(name = "allowoutputsubmission")
+    Boolean allowOutputSubmission = Boolean.FALSE;
+
+    /**
      * Used to parse and number test case file names.
      */
     String inputTemplate;
@@ -171,6 +185,31 @@ public class Task {
 
     public void setNumProcesses(Integer numProcesses) {
         this.numProcesses = numProcesses;
+    }
+
+    /** Defaults to true, so a task saved before the column existed still accepts code. */
+    public boolean isCodeSubmissionAllowed() {
+        return allowCodeSubmission == null || allowCodeSubmission;
+    }
+
+    public Boolean getAllowCodeSubmission() {
+        return allowCodeSubmission;
+    }
+
+    public void setAllowCodeSubmission(Boolean allowCodeSubmission) {
+        this.allowCodeSubmission = allowCodeSubmission;
+    }
+
+    public boolean isOutputSubmissionAllowed() {
+        return allowOutputSubmission != null && allowOutputSubmission;
+    }
+
+    public Boolean getAllowOutputSubmission() {
+        return allowOutputSubmission;
+    }
+
+    public void setAllowOutputSubmission(Boolean allowOutputSubmission) {
+        this.allowOutputSubmission = allowOutputSubmission;
     }
 
     public String getInputTemplate() {

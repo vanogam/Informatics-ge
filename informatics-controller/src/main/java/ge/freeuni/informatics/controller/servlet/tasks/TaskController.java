@@ -93,6 +93,8 @@ public class TaskController {
                 request.memoryLimitMB(),
                 request.checkerType(),
                 request.numProcesses(),
+                request.allowCodeSubmission(),
+                request.allowOutputSubmission(),
                 request.inputTemplate(),
                 request.outputTemplate(),
                 new HashMap<>(),

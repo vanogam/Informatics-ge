@@ -1,4 +1,4 @@
-import {Button, Container, MenuItem, Paper, Stack, TextField, Typography} from '@mui/material'
+import {Button, Container, FormControlLabel, MenuItem, Paper, Stack, Switch, TextField, Typography} from '@mui/material'
 import {useContext, useEffect, useState} from 'react'
 import {AxiosContext} from '../../utils/axiosInstance'
 import getMessage from '../lang'
@@ -18,6 +18,10 @@ export default function NewTaskCard() {
     const [contestId, setContestId] = useState(contest_id);
     const [taskType, setTaskType] = useState('BATCH');
     const [numProcesses, setNumProcesses] = useState(1);
+    // Which submission kinds the task takes. An IOI "BatchAndOutput" task is simply a task with
+    // both switched on; an output-only one has code switched off.
+    const [allowCodeSubmission, setAllowCodeSubmission] = useState(true);
+    const [allowOutputSubmission, setAllowOutputSubmission] = useState(false);
     const [evaluatorType, setEvaluatorType] = useState('TOKEN');
     const [taskScoreType, setTaskScoreType] = useState('SUM');
     const [taskScoreParameter, setTaskScoreParameter] = useState('');
@@ -78,6 +82,8 @@ export default function NewTaskCard() {
             setContestId(task.contestId);
             setTaskType(task.taskType);
             setNumProcesses(task.numProcesses || 1);
+            setAllowCodeSubmission(task.allowCodeSubmission !== false);
+            setAllowOutputSubmission(task.allowOutputSubmission === true);
             setTaskScoreType(task.taskScoreType);
             setTaskScoreParameter(task.taskScoreParameter);
             setTimeLimitMillis(task.timeLimitMillis);
@@ -132,6 +138,8 @@ export default function NewTaskCard() {
             timeLimitMillis: parseInt(timeLimitMillis),
             checkerType: isCommunication ? 'MANAGER' : evaluatorType.toString(),
             numProcesses: isCommunication ? parseInt(numProcesses) || 1 : null,
+            allowCodeSubmission: allowCodeSubmission,
+            allowOutputSubmission: allowOutputSubmission,
             memoryLimitMB: parseInt(memoryLimitMB),
             inputTemplate: inputTemplate.toString(),
             outputTemplate: outputTemplate.toString(),
@@ -289,6 +297,20 @@ export default function NewTaskCard() {
                             size='small'
                         />
                     )}
+                    <FormControlLabel
+                        control={<Switch
+                            checked={allowCodeSubmission}
+                            onChange={(e) => setAllowCodeSubmission(e.target.checked)}
+                        />}
+                        label={getMessage('ka', 'allowCodeSubmission')}
+                    />
+                    <FormControlLabel
+                        control={<Switch
+                            checked={allowOutputSubmission}
+                            onChange={(e) => setAllowOutputSubmission(e.target.checked)}
+                        />}
+                        label={getMessage('ka', 'allowOutputSubmission')}
+                    />
                     <TextField
                         label={getMessage('ka', 'timeLimitMillis')}
                         value={timeLimitMillis}

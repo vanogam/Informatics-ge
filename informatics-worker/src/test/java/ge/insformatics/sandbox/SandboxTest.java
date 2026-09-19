@@ -25,6 +25,8 @@ public class SandboxTest {
     private final String commFiles = Objects.requireNonNull(getClass().getClassLoader().getResource("commTask")).getPath();
     private final String multiCommFiles = Objects.requireNonNull(
             getClass().getClassLoader().getResource("multiCommTask")).getPath();
+    private final String outputFiles = Objects.requireNonNull(
+            getClass().getClassLoader().getResource("outputTask")).getPath();
     private static final Task task = new Task("testTask",
             "1",
             "1",
@@ -38,7 +40,9 @@ public class SandboxTest {
             Task.CheckerType.TOKEN,
             TaskType.BATCH,
             1,
-            Stage.COMPILATION);
+            Stage.COMPILATION,
+            null,
+            Task.SubmissionKind.SOURCE);
     private static Sandbox sandbox;
 
     @BeforeAll
@@ -146,7 +150,9 @@ public class SandboxTest {
                 Task.CheckerType.YES_NO,
                 TaskType.BATCH,
                 1,
-                Stage.TESTING);
+                Stage.TESTING,
+                null,
+                Task.SubmissionKind.SOURCE);
         CompilationResult compilationResult = sandbox.compile(task,
                 new File(getClass().getClassLoader().getResource("yesno.cpp").getPath()));
         sandbox.uploadTar(compressFile(new File(contestFiles), "testTask"), "/sandbox/tasks/");
@@ -172,7 +178,9 @@ public class SandboxTest {
                 Task.CheckerType.YES_NO,
                 TaskType.BATCH,
                 1,
-                Stage.TESTING);
+                Stage.TESTING,
+                null,
+                Task.SubmissionKind.SOURCE);
         CompilationResult compilationResult = sandbox.compile(task,
                 new File(getClass().getClassLoader().getResource("yesno.cpp").getPath()));
         sandbox.uploadTar(compressFile(new File(contestFiles), "testTask"), "/sandbox/tasks/");
@@ -198,7 +206,9 @@ public class SandboxTest {
                 Task.CheckerType.DOUBLE_E9,
                 TaskType.BATCH,
                 1,
-                Stage.TESTING);
+                Stage.TESTING,
+                null,
+                Task.SubmissionKind.SOURCE);
         CompilationResult compilationResult = sandbox.compile(task,
                 new File(getClass().getClassLoader().getResource("double9.cpp").getPath()));
         sandbox.uploadTar(compressFile(new File(contestFiles), "testTask"), "/sandbox/tasks/");
@@ -224,7 +234,9 @@ public class SandboxTest {
                 Task.CheckerType.DOUBLE_E9,
                 TaskType.BATCH,
                 1,
-                Stage.TESTING);
+                Stage.TESTING,
+                null,
+                Task.SubmissionKind.SOURCE);
         CompilationResult compilationResult = sandbox.compile(task,
                 new File(getClass().getClassLoader().getResource("double9_2.cpp").getPath()));
         sandbox.uploadTar(compressFile(new File(contestFiles), "testTask"), "/sandbox/tasks/");
@@ -341,7 +353,9 @@ public class SandboxTest {
                 Task.CheckerType.MANAGER,
                 TaskType.COMMUNICATION,
                 1,
-                Stage.TESTING);
+                Stage.TESTING,
+                null,
+                Task.SubmissionKind.SOURCE);
     }
 
     /**
@@ -375,7 +389,9 @@ public class SandboxTest {
                 Task.CheckerType.MANAGER,
                 TaskType.COMMUNICATION,
                 processes,
-                Stage.TESTING);
+                Stage.TESTING,
+                null,
+                Task.SubmissionKind.SOURCE);
         sandbox.uploadTar(compressFile(new File(multiCommFiles), "multiCommTask"), "/sandbox/tasks/");
         CompilationResult compilationResult = sandbox.compile(task,
                 new File(getClass().getClassLoader().getResource(solution).getPath()));
@@ -454,6 +470,96 @@ public class SandboxTest {
                 "Expected the submission's own CPU time, got " + result.getTimeMillis() + "ms");
     }
 
+    /**
+     * An output-only submission: the contestant uploaded the answer itself, so nothing is
+     * compiled and nothing is run - the file is copied into place and handed to the checker.
+     *
+     * @param submissionName directory of uploaded answers under the task's storage, one file per
+     *                       test key
+     */
+    private Task outputTask(String submissionName, Task.CheckerType checkerType) {
+        return new Task("outputTask",
+                "1",
+                "1",
+                submissionName,
+                // No language at all: this is what the core publishes for an output submission,
+                // and reading one here would be a NullPointerException rather than a verdict.
+                null,
+                1000,
+                256 * 1024,
+                "01",
+                "01.in",
+                "01.out",
+                checkerType,
+                TaskType.BATCH,
+                1,
+                Stage.TESTING,
+                null,
+                Task.SubmissionKind.OUTPUT);
+    }
+
+    private TestResult runOutputOnly(String submissionName, Task.CheckerType checkerType) throws Exception {
+        Task task = outputTask(submissionName, checkerType);
+        sandbox.uploadTar(compressFile(new File(outputFiles), "outputTask"), "/sandbox/tasks/");
+        // No compile step, deliberately: an output submission never has one to skip.
+        return sandbox.execute(task);
+    }
+
+    @Test
+    public void testOutputOnlyCorrectAnswerIsAccepted() throws Exception {
+        TestResult result = runOutputOnly("correctOutput", Task.CheckerType.TOKEN);
+
+        assertEquals(1.0, result.getScore(), result.getMessage());
+        assertEquals(TestStatus.CORRECT, result.getStatus());
+    }
+
+    @Test
+    public void testOutputOnlyWrongAnswerScoresZero() throws Exception {
+        TestResult result = runOutputOnly("wrongOutput", Task.CheckerType.TOKEN);
+
+        assertEquals(0.0, result.getScore(), result.getMessage());
+        assertEquals(TestStatus.WRONG_ANSWER, result.getStatus());
+    }
+
+    /**
+     * The contestant spent none of the limits: there was no process. Reporting the checker's
+     * runtime instead would charge them for the judging itself.
+     */
+    @Test
+    public void testOutputOnlyConsumesNoLimits() throws Exception {
+        TestResult result = runOutputOnly("correctOutput", Task.CheckerType.TOKEN);
+
+        assertEquals(0, result.getTimeMillis());
+        assertEquals(0, result.getMemoryKB());
+    }
+
+    /**
+     * The whole point of reusing the evaluation pipeline: an output-only task is normally scored
+     * by a checker of its own, and partial credit has to survive the path. Half marks here can
+     * only have come from the task's checker.
+     */
+    @Test
+    public void testOutputOnlyUsesTheTasksOwnChecker() throws Exception {
+        TestResult result = runOutputOnly("closeOutput", Task.CheckerType.CUSTOM);
+
+        assertEquals(TestStatus.PARTIAL, result.getStatus(), result.getMessage());
+        assertEquals(0.5, result.getScore(), 1e-9, result.getMessage());
+    }
+
+    /**
+     * The uploaded answer is what the checker reads, not a leftover from whatever ran last in
+     * this container - the submission directory is cleared and the file copied in per test.
+     */
+    @Test
+    public void testOutputOnlyDoesNotReuseThePreviousSubmissionsOutput() throws Exception {
+        assertEquals(TestStatus.CORRECT, runOutputOnly("correctOutput", Task.CheckerType.TOKEN).getStatus());
+
+        TestResult result = runOutputOnly("wrongOutput", Task.CheckerType.TOKEN);
+
+        assertEquals(TestStatus.WRONG_ANSWER, result.getStatus(), result.getMessage());
+        assertEquals("5", result.getOutcome().trim(), "the outcome must be the answer just uploaded");
+    }
+
     @Test
     public void testCorrectPython() throws Exception {
         Task task = new Task("testTask",
@@ -469,7 +575,9 @@ public class SandboxTest {
                 Task.CheckerType.TOKEN,
                 TaskType.BATCH,
                 1,
-                Stage.TESTING);
+                Stage.TESTING,
+                null,
+                Task.SubmissionKind.SOURCE);
         CompilationResult compilationResult = sandbox.compile(task,
                 new File(getClass().getClassLoader().getResource("correct.py").getPath()));
         sandbox.uploadTar(compressFile(new File(contestFiles), "testTask"), "/sandbox/tasks/");

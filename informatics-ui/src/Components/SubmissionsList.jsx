@@ -1,4 +1,4 @@
-import {useContext, useState} from 'react'
+import {useContext, useRef, useState} from 'react'
 import Editor from 'react-simple-code-editor'
 import {highlight, languages} from 'prismjs/components/prism-core'
 
@@ -18,12 +18,17 @@ import getMessage from "./lang";
 import SubmissionTestResult from "../Pages/SubmissionTestResult";
 import SubmissionSubtask from "../Pages/SubmissionSubtask";
 import {groupTestcases, roundScore} from "../utils/subtasks";
+import RejudgeActions, {useCanRejudge} from "./RejudgeActions";
 
 export default function SubmissionsList({getEndpoint, title, autoRefresh = true}) {
     const [submissions, setSubmissions] = useState([])
     const [selectedSubmission, setSelectedSubmission] = useState({})
     const [popUp, setPopUp] = useState(false)
     const axiosInstance = useContext(AxiosContext)
+    const canRejudge = useCanRejudge()
+    // Lets an action refresh the list immediately instead of waiting out the poll - and is the
+    // only refresh at all on the profile tab, which runs with polling switched off.
+    const refetch = useRef(() => {})
 
     useEffect(() => {
         const fetchSubmissions = () => {
@@ -42,6 +47,7 @@ export default function SubmissionsList({getEndpoint, title, autoRefresh = true}
                 })
         }
         
+        refetch.current = fetchSubmissions
         fetchSubmissions()
 
         if (autoRefresh) {
@@ -138,6 +144,7 @@ export default function SubmissionsList({getEndpoint, title, autoRefresh = true}
                                 <TableCell align="right" sx={{wordBreak: 'break-word', width: '8%'}}>ენა</TableCell>
                                 <TableCell align="right" sx={{wordBreak: 'break-word', width: '7%'}}>ქულა</TableCell>
                                 <TableCell align="right" sx={{wordBreak: 'break-word', width: '28%'}}>სტატუსი</TableCell>
+                                {canRejudge && <TableCell align="right" sx={{width: '10%'}}/>}
                             </TableRow>
                         </TableHead>
 
@@ -174,6 +181,12 @@ export default function SubmissionsList({getEndpoint, title, autoRefresh = true}
                                     <TableCell align="right" sx={{wordBreak: 'break-word'}}>
                                         {getMessage('ka', `SUBMISSION_STATUS_${submission.status}`, submission.currentTest)}
                                     </TableCell>
+                                    {canRejudge && (
+                                        <TableCell align="right">
+                                            <RejudgeActions submission={submission}
+                                                            onDone={() => refetch.current()}/>
+                                        </TableCell>
+                                    )}
                                 </TableRow>
                             ))}
                         </TableBody>
@@ -220,6 +233,18 @@ export default function SubmissionsList({getEndpoint, title, autoRefresh = true}
                         </Typography>
                     </Paper>
                     <Paper elevation={4} sx={{padding: '1rem', marginBottom: '1rem', userSelect: 'contain', WebkitUserSelect: 'contain'}}>
+                        {selectedSubmission.kind === 'OUTPUT' ? (
+                            // There is no source to show: the submission is a set of uploaded
+                            // answers, and their names are what identifies what was sent.
+                            <>
+                                <Typography sx={{fontSize: '13px', fontWeight: '400', marginBottom: '0.5rem'}}>
+                                    {getMessage('ka', 'submittedOutputs')}
+                                </Typography>
+                                <pre style={{margin: 0, maxHeight: '20rem', overflowY: 'auto', fontSize: 12}}>
+                                    {selectedSubmission.text}
+                                </pre>
+                            </>
+                        ) : (
                         <Editor
                             value={selectedSubmission.text}
                             highlight={(code) =>
@@ -233,6 +258,7 @@ export default function SubmissionsList({getEndpoint, title, autoRefresh = true}
                                 fontSize: 12,
                             }}
                         />
+                        )}
                     </Paper>
                     <Paper elevation={4} sx={{padding: '1rem', marginBottom: '1rem'}}>
                         <Typography sx={{fontSize: '13px', fontWeight: '400'}}>

@@ -1,3 +1,4 @@
+ADMIN   | POST    /api/admin/submissions/rejudge                          -> AdminController#rejudgeSubmissions
 ADMIN   | DELETE  /api/admin/workers                                      -> AdminController#stopAllWorkers
 ADMIN   | GET     /api/admin/workers                                      -> AdminController#getWorkers
 ADMIN   | POST    /api/admin/workers                                      -> AdminController#addWorkerInstances
@@ -42,6 +43,7 @@ TEACHER | POST    /api/room/{roomId}/post                                 -> Pos
 STUDENT | GET     /api/room/{roomId}/posts                                -> PostController#getPosts
 STUDENT | GET     /api/submission/{id}                                    -> ContestController#getSubmission
 STUDENT | POST    /api/submit                                             -> SubmissionController#submit
+STUDENT | POST    /api/submit/output                                      -> SubmissionController#submitOutput
 TEACHER | POST    /api/task                                               -> TaskController#saveTask
 STUDENT | GET     /api/task/{id}                                          -> TaskController#getTask
 STUDENT | GET     /api/task/{taskId}/attachment/{fileName}                -> TaskFileController#getAttachment

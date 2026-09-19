@@ -14,7 +14,12 @@ public record KafkaCallback(
         @JsonProperty("exitCode") Integer exitCode,
         @JsonProperty("timeMillis") Long timeMillis,
         @JsonProperty("memoryKB") Long memoryKB,
-        @JsonProperty("outcome") String outcome
+        @JsonProperty("outcome") String outcome,
+        /**
+         * Echo of the token the task message carried, or null from a worker old enough not to
+         * know about it - which is treated as "belongs to the current run".
+         */
+        @JsonProperty("judgeToken") Integer judgeToken
 ) {
     @JsonCreator
     public KafkaCallback {

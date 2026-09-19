@@ -2,6 +2,7 @@ package ge.freeuni.informatics.judgeintegration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ge.freeuni.informatics.common.model.CodeLanguage;
+import ge.freeuni.informatics.common.model.submission.SubmissionKind;
 import ge.freeuni.informatics.common.model.customtest.CustomTestRun;
 import ge.freeuni.informatics.common.model.task.Task;
 import ge.freeuni.informatics.judgeintegration.model.KafkaCallback;
@@ -124,7 +125,10 @@ public class CustomTestCallbackListener {
                     task.getCheckerType(),
                     task.getTaskType(),
                     task.getNumProcesses() == null ? 1 : task.getNumProcesses(),
-                    Stage.TESTING
+                    Stage.TESTING,
+                    // A custom test run is never re-judged, so it has no run to tell apart.
+                    null,
+                    SubmissionKind.SOURCE
             );
             String msg = objectMapper.writeValueAsString(kafkaTask);
             log.debug("Publishing custom test message: {}", msg);

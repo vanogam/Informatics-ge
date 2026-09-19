@@ -31,7 +31,7 @@ export default function NewContest() {
     const [scoringType, setScoringType] = useState('BEST_SUBMISSION');
     const [upsolvingAfterFinish, setUpsolvingAfterFinish] = useState(true);
 
-    const scoringTypes = ['BEST_SUBMISSION', 'LAST_SUBMISSION'];
+    const scoringTypes = ['BEST_SUBMISSION', 'LAST_SUBMISSION', 'SUBTASK_MAX'];
 
     const [showNewTaskCard, setShowNewTaskCard] = useState(false)
     const durationTypes = ['Hours', 'Minutes']

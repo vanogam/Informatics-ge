@@ -22,6 +22,9 @@ public record TaskDTO(
         Integer memoryLimitMB,
         CheckerType checkerType,
         Integer numProcesses,
+        /** @see Task#getAllowCodeSubmission() */
+        Boolean allowCodeSubmission,
+        Boolean allowOutputSubmission,
         String inputTemplate,
         String outputTemplate,
         Map<Language, String> statements,
@@ -39,6 +42,8 @@ public record TaskDTO(
         task.setCode(taskDTO.code());
         task.setCheckerType(taskDTO.checkerType());
         task.setNumProcesses(taskDTO.numProcesses());
+        task.setAllowCodeSubmission(taskDTO.allowCodeSubmission() == null || taskDTO.allowCodeSubmission());
+        task.setAllowOutputSubmission(taskDTO.allowOutputSubmission() != null && taskDTO.allowOutputSubmission());
         task.setInputTemplate(taskDTO.inputTemplate());
         task.setOutputTemplate(taskDTO.outputTemplate());
         task.setMemoryLimitMB(taskDTO.memoryLimitMB());
@@ -71,6 +76,8 @@ public record TaskDTO(
                 task.getMemoryLimitMB(),
                 task.getCheckerType(),
                 task.getNumProcesses(),
+                task.isCodeSubmissionAllowed(),
+                task.isOutputSubmissionAllowed(),
                 task.getInputTemplate(),
                 task.getOutputTemplate(),
                 task.getStatements(),

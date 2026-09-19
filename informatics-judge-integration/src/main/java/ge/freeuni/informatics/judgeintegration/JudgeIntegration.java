@@ -2,12 +2,16 @@ package ge.freeuni.informatics.judgeintegration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ge.freeuni.informatics.common.events.SubmissionEvent;
+import ge.freeuni.informatics.common.dto.RejudgeResultDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.CodeLanguage;
 import ge.freeuni.informatics.common.model.customtest.CustomTestRun;
+import ge.freeuni.informatics.common.model.submission.RejudgeAction;
 import ge.freeuni.informatics.common.model.submission.Submission;
+import ge.freeuni.informatics.common.model.submission.SubmissionKind;
 import ge.freeuni.informatics.common.model.submission.SubmissionStatus;
 import ge.freeuni.informatics.common.model.submission.SubmissionTestResult;
+import ge.freeuni.informatics.common.model.submission.SubtaskScores;
 import ge.freeuni.informatics.common.model.task.Task;
 import ge.freeuni.informatics.common.model.task.TaskScoreType;
 import ge.freeuni.informatics.common.model.task.TestKeys;
@@ -24,6 +28,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
@@ -48,6 +53,17 @@ public class JudgeIntegration implements IJudgeIntegration{
     private static final HashMap<Long, TreeMap<String, Integer>> testCompletionMap = new HashMap<>();
 
     private static final ConcurrentHashMap<Long, Object> submissionLocks = new ConcurrentHashMap<>();
+
+    /**
+     * Submissions whose current judging run was started by a re-judge rather than by a contestant.
+     * Set when the re-judge is accepted and cleared when the run finishes, so that the event the
+     * standings listen on can say which it was.
+     *
+     * <p>In memory like the maps above, and lost on restart for the same reason: a run still in
+     * flight when the core restarts then completes as an ordinary submission, which is exactly
+     * today's behaviour and no worse than it.
+     */
+    private static final Set<Long> rejudgedRuns = ConcurrentHashMap.newKeySet();
 
     private static final int COMPILATION_MESSAGE_MAX_LENGTH = 1000;
     private static final int TEST_RESULT_MESSAGE_MAX_LENGTH = 1000;
@@ -86,12 +102,175 @@ public class JudgeIntegration implements IJudgeIntegration{
 
     @Override
     public void addSubmission(Task task, Submission submission) throws InformaticsServerException {
+        // putIfAbsent, not put: replacing a live lock would leave a callback already inside the
+        // synchronized block holding an object nobody else can see, and the mutual exclusion the
+        // lock exists for would silently stop working.
+        submissionLocks.putIfAbsent(submission.getId(), new Object());
+        submission.nextJudgeToken();
+        submissionRepository.save(submission);
+        if (submission.isOutputSubmission()) {
+            // The contestant uploaded the answers themselves: there is no program to build, so
+            // judging starts at the tests.
+            startOutputJudging(task, submission);
+            return;
+        }
+        publishCompilationMessage(task, submission);
+    }
+
+    /**
+     * Starts an output submission at the testing stage.
+     *
+     * <p>The tests it uploaded no output for have already been recorded as zeros by the caller,
+     * which is what keeps them out of {@link #outstandingTests} and out of the fan-out: a test
+     * with no answer has nothing to run and its verdict is known.
+     */
+    private void startOutputJudging(Task task, Submission submission) throws InformaticsServerException {
+        submission.setStatus(SubmissionStatus.RUNNING);
+        submission.setCurrentTest(1);
+        submissionRepository.save(submission);
+
+        TreeMap<String, Integer> outstanding = outstandingTests(submission);
+        testCompletionMap.put(submission.getId(), outstanding);
+        if (outstanding.isEmpty()) {
+            // Every test the task has was already answered with a zero, so there is nothing to
+            // wait for and the submission can be scored now.
+            finalizeSubmission(submission, submission.getCompilationMessage());
+            return;
+        }
+        sendTestMessages(task, submission, outstanding.keySet());
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public RejudgeResultDTO rejudge(long submissionId, RejudgeAction action) {
+        // Its own lock entry, its own transaction: re-judging a hundred submissions must commit a
+        // hundred times rather than risk rolling back rows whose Kafka messages already went out.
+        Object created = new Object();
+        Object existing = submissionLocks.putIfAbsent(submissionId, created);
+        boolean lockIsOurs = existing == null;
+        Object lock = lockIsOurs ? created : existing;
+        try {
+            synchronized (lock) {
+                Submission submission = submissionRepository.findById(submissionId).orElse(null);
+                if (submission == null) {
+                    return refuse(submissionId, lockIsOurs, lock, "submissionNotFound");
+                }
+                Task task = submission.getTask();
+                if (task == null) {
+                    return refuse(submissionId, lockIsOurs, lock, "taskNotFound");
+                }
+                // A submission that is still in flight is not refused: one that is stuck - its
+                // worker died, its callback was lost - is exactly what these actions exist to
+                // rescue, and stuck submissions never leave the in-flight statuses. Each action
+                // moves the submission onto a new judge token, so whatever the abandoned run
+                // still reports is discarded on arrival instead of mixing into the new verdict.
+                if (submission.isOutputSubmission() && action != RejudgeAction.RESCORE) {
+                    // Neither action means anything here. There is no source to compile, and a
+                    // re-run would re-judge every testcase - including the ones the contestant
+                    // uploaded no answer for, whose zeros were recorded up front precisely so
+                    // that they would never be sent to a worker. Scoring the results it already
+                    // has is the only re-judge an output submission has a use for.
+                    return refuse(submissionId, lockIsOurs, lock, "cantRecompileOrRerun");
+                }
+                if (submission.getStatus() == SubmissionStatus.COMPILATION_ERROR
+                        && action != RejudgeAction.RECOMPILE) {
+                    // There is no binary to run and no result to score. Only a recompile can help.
+                    return refuse(submissionId, lockIsOurs, lock, "submissionNotCompiled");
+                }
+                if (action != RejudgeAction.RESCORE
+                        && (task.getTestcases() == null || task.getTestcases().isEmpty())) {
+                    return refuse(submissionId, lockIsOurs, lock, "taskHasNoTestcases");
+                }
+
+                // Marked before the action runs: RESCORE finalizes the submission inline, so a
+                // mark set afterwards would arrive after the event it is meant to describe.
+                rejudgedRuns.add(submissionId);
+                try {
+                    switch (action) {
+                        case RECOMPILE -> recompile(task, submission);
+                        case RERUN -> rerun(task, submission);
+                        case RESCORE -> rescore(submission);
+                    }
+                } catch (Exception e) {
+                    // Nothing was started, so nothing will arrive to clear the mark.
+                    rejudgedRuns.remove(submissionId);
+                    throw e;
+                }
+                log.info("Re-judged submission {} with action {}", submissionId, action);
+                return RejudgeResultDTO.accepted(submissionId);
+            }
+        } catch (Exception e) {
+            log.error("Failed to re-judge submission {} with action {}", submissionId, action, e);
+            return refuse(submissionId, lockIsOurs, lock, "rejudgeFailed");
+        }
+    }
+
+    /**
+     * Releases the lock again when this call was the one that installed it, so that a refusal
+     * leaves no entry behind for a later callback to synchronize on with no tracking beside it.
+     */
+    private RejudgeResultDTO refuse(long submissionId, boolean lockIsOurs, Object lock, String code) {
+        if (lockIsOurs) {
+            submissionLocks.remove(submissionId, lock);
+        }
+        log.info("Refusing to re-judge submission {}: {}", submissionId, code);
+        return RejudgeResultDTO.refused(submissionId, code);
+    }
+
+    /**
+     * Starts the whole job again: a new binary built from the task's current graders, then every
+     * test, then the score. Whatever the previous run still has in flight is left to arrive and be
+     * discarded - it carries the token of a run that no longer exists.
+     */
+    private void recompile(Task task, Submission submission) throws InformaticsServerException {
+        submission.setStatus(SubmissionStatus.IN_QUEUE);
+        submission.setCurrentTest(null);
+        submission.setCompilationMessage(null);
+        submission.setSubmissionTestResults(new ArrayList<>());
+        submission.nextJudgeToken();
+        submissionRepository.save(submission);
+        // Nothing is outstanding until the compilation reports back and publishes the tests.
+        testCompletionMap.remove(submission.getId());
+        publishCompilationMessage(task, submission);
+    }
+
+    /**
+     * Scores the submission on the results it already has. Any test still outstanding is abandoned
+     * rather than waited for - which is the point when a run is stuck - so the token moves on and a
+     * late arrival cannot reopen a submission that has just been scored.
+     */
+    private void rescore(Submission submission) {
+        submission.nextJudgeToken();
+        testCompletionMap.remove(submission.getId());
+        finalizeSubmission(submission, submission.getCompilationMessage());
+    }
+
+    /**
+     * Re-runs the existing binary over the task's testcases as they stand now. Clearing the results
+     * first is what makes {@link #outstandingTests} enumerate all of them again, and is also what
+     * drops results for testcases the task no longer has.
+     */
+    private void rerun(Task task, Submission submission) throws InformaticsServerException {
+        submission.setStatus(SubmissionStatus.RUNNING);
+        submission.setCurrentTest(1);
+        submission.setSubmissionTestResults(new ArrayList<>());
+        submission.nextJudgeToken();
+        submissionRepository.save(submission);
+        sendTestMessages(task, submission);
+    }
+
+    /**
+     * Publishes the message that starts a submission's compilation. Split out from
+     * {@link #addSubmission} so that a re-judge, which already holds the submission's lock, can
+     * send it without touching the lock table.
+     */
+    private void publishCompilationMessage(Task task, Submission submission) throws InformaticsServerException {
         KafkaTask kafkaTask = new KafkaTask(
                 String.valueOf(task.getId()),
                 String.valueOf(task.getContest().getId()),
                 String.valueOf(submission.getId()),
                 String.valueOf(submission.getFileName()),
-                CodeLanguage.valueOf(submission.getLanguage()),
+                submissionLanguage(submission),
                 task.getTimeLimitMillis(),
                 task.getMemoryLimitMB() * 1024,
                 null,
@@ -100,9 +279,10 @@ public class JudgeIntegration implements IJudgeIntegration{
                 task.getCheckerType(),
                 task.getTaskType(),
                 numProcesses(task),
-                Stage.COMPILATION
+                Stage.COMPILATION,
+                submission.getJudgeToken(),
+                submission.getKind()
         );
-        submissionLocks.put(submission.getId(), new Object());
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             String message = objectMapper.writeValueAsString(kafkaTask);
@@ -132,7 +312,10 @@ public class JudgeIntegration implements IJudgeIntegration{
                 task.getCheckerType(),
                 task.getTaskType(),
                 numProcesses(task),
-                Stage.COMPILATION
+                Stage.COMPILATION,
+                null,
+                // A custom test is always run against code the contestant just typed.
+                SubmissionKind.SOURCE
         );
         ObjectMapper objectMapper = new ObjectMapper();
         try {
@@ -158,13 +341,18 @@ public class JudgeIntegration implements IJudgeIntegration{
                 .sorted(Comparator.comparing(Testcase::getKey))
                 .filter(tc -> only == null || only.contains(tc.getKey()))
                 .toList();
+        // Seeded before publishing, not after: a worker can answer the first test before this
+        // method returns, and a callback that finds no tracking has to fall back to rebuilding it.
+        if (only == null) {
+            testCompletionMap.put(submission.getId(), outstandingTests(submission));
+        }
         for (Testcase testcase : testcases) {
             KafkaTask kafkaTask = new KafkaTask(
                     String.valueOf(task.getId()),
                     String.valueOf(task.getContest().getId()),
                     String.valueOf(submission.getId()),
                     String.valueOf(submission.getFileName()),
-                    CodeLanguage.valueOf(submission.getLanguage()),
+                    submissionLanguage(submission),
                     task.getTimeLimitMillis(),
                     task.getMemoryLimitMB() * 1024,
                     testcase.getKey(),
@@ -173,7 +361,9 @@ public class JudgeIntegration implements IJudgeIntegration{
                     task.getCheckerType(),
                     task.getTaskType(),
                     numProcesses(task),
-                    Stage.TESTING
+                    Stage.TESTING,
+                    submission.getJudgeToken(),
+                    submission.getKind()
             );
             ObjectMapper objectMapper = new ObjectMapper();
             try {
@@ -186,9 +376,6 @@ public class JudgeIntegration implements IJudgeIntegration{
                 log.error("Failed to serialize KafkaTask: {}", e.getMessage());
                 throw new InformaticsServerException("serializationError", e);
             }
-        }
-        if (only == null) {
-            testCompletionMap.put(submission.getId(), outstandingTests(submission));
         }
     }
 
@@ -205,6 +392,9 @@ public class JudgeIntegration implements IJudgeIntegration{
             Submission submission = submissionRepository.findById(callback.submissionId()).orElse(null);
             if (submission == null) {
                 log.info("No Submission entity found for id {}, skipping in JudgeIntegration", callback.submissionId());
+                return;
+            }
+            if (isStaleJudgeRun(submission, callback)) {
                 return;
             }
             if (!submissionLocks.containsKey(submission.getId())) {
@@ -268,6 +458,41 @@ public class JudgeIntegration implements IJudgeIntegration{
             log.error("Error while processing submission message", e);
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * True when a callback does not belong to the submission's current judging run - the submission
+     * was re-judged while this worker was still busy with the previous one. Those results describe
+     * a binary or a testcase set that is no longer current, so recording them would mix two runs
+     * into one verdict.
+     *
+     * <p>A callback carrying no token at all comes from a worker built before this mechanism, and is
+     * dropped like any other mismatch. That leaves such a worker unable to finish anything, which is
+     * why the log says so outright: the fix is to restart the workers on the current build.
+     */
+    private boolean isStaleJudgeRun(Submission submission, KafkaCallback callback) {
+        Integer current = submission.getJudgeToken();
+        Integer reported = callback.judgeToken();
+        if (Objects.equals(current, reported)) {
+            return false;
+        }
+        if (reported == null) {
+            log.warn("Dropping {} callback for submission {}: the worker reported no judge token, "
+                            + "so it is running a build older than the current one and needs restarting",
+                    callback.messageType(), submission.getId());
+        } else {
+            log.info("Dropping {} callback for submission {} from superseded judging run {} (current is {})",
+                    callback.messageType(), submission.getId(), reported, current);
+        }
+        return true;
+    }
+
+    /**
+     * The language a worker should build and run the submission with - absent for an output
+     * submission, whose language column holds a marker rather than a {@link CodeLanguage}.
+     */
+    private static CodeLanguage submissionLanguage(Submission submission) {
+        return submission.isOutputSubmission() ? null : CodeLanguage.valueOf(submission.getLanguage());
     }
 
     private int numProcesses(Task task) {
@@ -428,7 +653,20 @@ public class JudgeIntegration implements IJudgeIntegration{
         // error into a SYSTEM_ERROR and hid the compiler's message from the contestant.
         if (submission.getStatus() == SubmissionStatus.COMPILATION_ERROR) {
             submission.setScore(0f);
+            submission.setSubtaskScores(null);
             submission.setCompilationMessage(truncateToLength(message, COMPILATION_MESSAGE_MAX_LENGTH));
+            completeSubmission(submission);
+            return;
+        }
+
+        // Likewise for a submission that has no results for any other reason - a run abandoned
+        // while it was still stuck, most often. Zero, without asking the scorers to read a list
+        // that is not there: GROUP_MIN would index past its end and SUM would find its per-test
+        // parameter the wrong length, and both would surface as SYSTEM_ERROR.
+        if (submission.getSubmissionTestResults() == null || submission.getSubmissionTestResults().isEmpty()) {
+            submission.setStatus(SubmissionStatus.FAILED);
+            submission.setScore(0f);
+            submission.setSubtaskScores(null);
             completeSubmission(submission);
             return;
         }
@@ -443,19 +681,25 @@ public class JudgeIntegration implements IJudgeIntegration{
         }
 
         float finalScore = 0f;
+        List<Float> subtaskAwards = null;
         try {
             // GROUP_MIN slices this list positionally, and results arrive in whatever order the
             // workers finish - which, now that tests are spread across partitions, is arbitrary.
             // Sorting here is what aligns each slice with the subtask it was configured for.
             submission.getSubmissionTestResults()
                     .sort(Comparator.comparing(SubmissionTestResult::getTestKey, TestKeys.NATURAL_ORDER));
-            finalScore = submission.getTask().getTaskScoreType().evaluate(submission.getSubmissionTestResults(),
-                    submission.getTask().getTaskScoreParameter());
+            // Scored once, as a vector: the total is its sum, so the per-subtask figures the
+            // standings accumulate can never disagree with the score shown beside them.
+            subtaskAwards = submission.getTask().getTaskScoreType().evaluateSubtasks(
+                    submission.getSubmissionTestResults(), submission.getTask().getTaskScoreParameter());
+            finalScore = SubtaskScores.total(subtaskAwards);
         } catch (Exception e) {
             log.error("Error evaluating task score for submission: {}", submission.getId(), e);
             submission.setStatus(SubmissionStatus.SYSTEM_ERROR);
+            subtaskAwards = null;
         }
         submission.setScore(roundScore(finalScore));
+        submission.setSubtaskScores(SubtaskScores.format(subtaskAwards));
         completeSubmission(submission);
     }
 
@@ -468,8 +712,10 @@ public class JudgeIntegration implements IJudgeIntegration{
         submissionRepository.save(submission);
         testCompletionMap.remove(submission.getId());
         submissionLocks.remove(submission.getId());
-        log.info("Submission {} finalized with status: {}", submission.getId(), submission.getStatus());
+        boolean rejudged = rejudgedRuns.remove(submission.getId());
+        log.info("Submission {} finalized with status: {}{}", submission.getId(), submission.getStatus(),
+                rejudged ? " (re-judged)" : "");
 
-        eventPublisher.publishEvent(new SubmissionEvent(submission));
+        eventPublisher.publishEvent(new SubmissionEvent(submission, rejudged));
     }
 }

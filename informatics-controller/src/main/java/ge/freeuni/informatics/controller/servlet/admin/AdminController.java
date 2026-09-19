@@ -5,6 +5,7 @@ import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.controller.model.*;
 import ge.freeuni.informatics.controller.servlet.ServletUtils;
 import ge.freeuni.informatics.server.annotation.AdminRestricted;
+import ge.freeuni.informatics.server.submission.ISubmissionManager;
 import ge.freeuni.informatics.server.annotation.WorkerRestricted;
 import ge.freeuni.informatics.server.user.IUserManager;
 import ge.freeuni.informatics.server.worker.IWorkerManager;
@@ -23,12 +24,33 @@ public class AdminController {
     final Logger log;
     final IWorkerManager workerManager;
     final IUserManager userManager;
+    final ISubmissionManager submissionManager;
 
     @Autowired
-    public AdminController(IWorkerManager workerManager, IUserManager userManager, Logger log) {
+    public AdminController(IWorkerManager workerManager, IUserManager userManager,
+                           ISubmissionManager submissionManager, Logger log) {
         this.workerManager = workerManager;
         this.userManager = userManager;
+        this.submissionManager = submissionManager;
         this.log = log;
+    }
+
+    /**
+     * Re-judges submissions after the task they belong to has changed - a fixed grader, an added
+     * testcase, a corrected scoring parameter - and rescues ones left stuck by a dead worker.
+     *
+     * <p>Answers 200 whenever the request itself is well formed, even if every submission in it was
+     * turned away: the reasons are per-submission rows in the body.
+     */
+    @PostMapping("/submissions/rejudge")
+    @AdminRestricted
+    public ResponseEntity<RejudgeResponse> rejudgeSubmissions(@RequestBody(required = false) RejudgeRequest request)
+            throws InformaticsServerException {
+        if (request == null) {
+            throw InformaticsServerException.INVALID_REJUDGE_REQUEST;
+        }
+        return ResponseEntity.ok(new RejudgeResponse(
+                submissionManager.rejudge(request.submissionIds(), request.action())));
     }
 
     @PostMapping("/workers/{workerId}/heartbeat")

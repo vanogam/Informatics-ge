@@ -41,10 +41,42 @@ public class Submission {
 
     private Float score;
 
+    /**
+     * The points this submission earned on each of the task's scoring units, encoded by
+     * {@link SubtaskScores}. Null when there is no breakdown to record - a submission that never
+     * compiled, or a task with more scoring units than are worth tracking.
+     *
+     * <p>Kept beside the total so that a contest scored by
+     * {@link ge.freeuni.informatics.common.model.contest.ScoringType#SUBTASK_MAX} can merge this
+     * submission into the contestant's running per-subtask maximum without re-scoring every
+     * earlier submission.
+     */
+    @Column(name = "subtaskscores", length = 2000)
+    private String subtaskScores;
+
+    /**
+     * Whether this submission is source code or the contestant's own output files. Null for the
+     * submissions that predate the column, all of which are source.
+     *
+     * <p>For an OUTPUT submission {@link #fileName} names a directory holding one file per test
+     * key rather than a single source file, and {@link #language} is not a {@code CodeLanguage}.
+     */
+    @Column(name = "submissionkind")
+    private SubmissionKind kind = SubmissionKind.SOURCE;
+
     @Column(length = 1000)
     private String compilationMessage;
 
     private Integer currentTest;
+
+    /**
+     * Identifies the current judging run. Changes every time judging is started for this
+     * submission, is carried on every message sent to a worker and echoed back on every
+     * callback, so that results belonging to an abandoned run - one superseded by a re-judge -
+     * can be told apart from the current one and dropped. Starts at 1.
+     */
+    @Column(nullable = false)
+    private Integer judgeToken = 1;
 
     @ElementCollection(fetch = FetchType.LAZY)
     private List<SubmissionTestResult> submissionTestResults;
@@ -153,6 +185,44 @@ public class Submission {
 
     public void setCurrentTest(Integer currentTest) {
         this.currentTest = currentTest;
+    }
+
+    /** Defaults to SOURCE, so a submission stored before the column existed reads correctly. */
+    public SubmissionKind getKind() {
+        return kind == null ? SubmissionKind.SOURCE : kind;
+    }
+
+    public void setKind(SubmissionKind kind) {
+        this.kind = kind;
+    }
+
+    public boolean isOutputSubmission() {
+        return getKind() == SubmissionKind.OUTPUT;
+    }
+
+    public String getSubtaskScores() {
+        return subtaskScores;
+    }
+
+    public void setSubtaskScores(String subtaskScores) {
+        this.subtaskScores = subtaskScores;
+    }
+
+    public Integer getJudgeToken() {
+        return judgeToken;
+    }
+
+    public void setJudgeToken(Integer judgeToken) {
+        this.judgeToken = judgeToken;
+    }
+
+    /**
+     * Moves the submission onto a fresh judging run, so that anything still outstanding from the
+     * previous one is recognisable as stale when it reports back.
+     */
+    public int nextJudgeToken() {
+        judgeToken = judgeToken == null ? 1 : judgeToken + 1;
+        return judgeToken;
     }
 
     public List<SubmissionTestResult> getSubmissionTestResults() {

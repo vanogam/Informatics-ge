@@ -83,6 +83,8 @@ class TaskControllerTest {
                 256,
                 CheckerType.TOKEN,
                 1,
+                true,
+                false,
                 "test*.in",
                 "test*.out",
                 new HashMap<>(),
@@ -198,7 +200,7 @@ class TaskControllerTest {
     void testSaveTask_ReturnsErrorCodeInBody() throws Exception {
         AddTaskRequest request = new AddTaskRequest(
                 null, 1, "ballmachine", "Ball Machine", TaskType.COMMUNICATION,
-                TaskScoreType.GROUP_MIN, "[0,1]", 3500, 2048, CheckerType.MANAGER, 1, "*.in", "*.out");
+                TaskScoreType.GROUP_MIN, "[0,1]", 3500, 2048, CheckerType.MANAGER, 1, true, false, "*.in", "*.out");
         when(taskManager.addTask(eq(1L), any(TaskDTO.class)))
                 .thenThrow(InformaticsServerException.TASK_CODE_ALREADY_EXISTS);
 
@@ -224,6 +226,8 @@ class TaskControllerTest {
                 2048,
                 CheckerType.MANAGER,
                 1,
+                true,
+                false,
                 "*.in",
                 "*.out"
         );
@@ -255,6 +259,8 @@ class TaskControllerTest {
                 256,
                 CheckerType.TOKEN,
                 1,
+                true,
+                false,
                 "test*.in",
                 "test*.out"
         );
@@ -284,6 +290,8 @@ class TaskControllerTest {
                 256,
                 CheckerType.TOKEN,
                 1,
+                true,
+                false,
                 "test*.in",
                 "test*.out"
         );

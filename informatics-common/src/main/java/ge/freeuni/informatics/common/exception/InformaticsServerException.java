@@ -49,6 +49,15 @@ public class InformaticsServerException extends Exception {
     public static final InformaticsServerException CONTEST_NOT_FOUND = new InformaticsServerException("contestNotFound", ExceptionType.NOT_FOUND);
     public static final InformaticsServerException CONTEST_NOT_LIVE = new InformaticsServerException("contestNotLive", ExceptionType.VALIDATION_ERROR);
 
+    // Submission related exceptions
+    public static final InformaticsServerException SUBMISSION_NOT_FOUND = new InformaticsServerException("submissionNotFound", ExceptionType.NOT_FOUND);
+    public static final InformaticsServerException INVALID_REJUDGE_REQUEST = new InformaticsServerException("invalidRejudgeRequest", ExceptionType.VALIDATION_ERROR);
+    public static final InformaticsServerException CODE_SUBMISSION_NOT_ALLOWED = new InformaticsServerException("codeSubmissionNotAllowed", ExceptionType.VALIDATION_ERROR);
+    public static final InformaticsServerException OUTPUT_SUBMISSION_NOT_ALLOWED = new InformaticsServerException("outputSubmissionNotAllowed", ExceptionType.VALIDATION_ERROR);
+    /** Nothing in the upload could be matched to a test, so there is nothing to judge. */
+    public static final InformaticsServerException NO_MATCHING_OUTPUTS = new InformaticsServerException("noMatchingOutputs", ExceptionType.VALIDATION_ERROR);
+    public static final InformaticsServerException OUTPUT_TOO_LARGE = new InformaticsServerException("outputTooLarge", ExceptionType.VALIDATION_ERROR);
+
     public InformaticsServerException(String code, ExceptionType exceptionType) {
         super();
         this.code = code;

@@ -1,6 +1,9 @@
-import {TextField, Box, FormGroup, FormControlLabel, Checkbox, Stack, Button} from '@mui/material'
+import {TextField, Box, FormGroup, FormControlLabel, Checkbox, MenuItem, Stack, Button} from '@mui/material'
 import {DateTimePicker} from '@mui/x-date-pickers/DateTimePicker'
 import getMessage from "../../Components/lang";
+
+// Kept in step with ScoringType, which is persisted by ordinal: constants are only ever appended.
+const scoringTypes = ['BEST_SUBMISSION', 'LAST_SUBMISSION', 'SUBTASK_MAX']
 
 export default function ContestForm({contestData, setContestData, handleSubmit, buttonText}) {
     const handleChange = (event) => {
@@ -59,6 +62,21 @@ export default function ContestForm({contestData, setContestData, handleSubmit, 
                 inputFormat={'DD/MM/YYYY HH:mm'}
                 renderInput={(params) => <TextField variant='outlined' {...params} error={!contestData.startDate}/>}
             />
+            <TextField
+                select
+                label={getMessage('ka', 'scoringType')}
+                value={contestData.scoringType || 'BEST_SUBMISSION'}
+                onChange={(e) =>
+                    setContestData((prevData) => ({...prevData, scoringType: e.target.value}))
+                }
+                variant='outlined'
+            >
+                {scoringTypes.map((type) => (
+                    <MenuItem key={type} value={type}>
+                        {getMessage('ka', `SCORING_TYPE_${type}`)}
+                    </MenuItem>
+                ))}
+            </TextField>
             <Stack direction='row' gap='1rem'>
                 <TextField
                     label='ხანგრძლივობა (წთ)'

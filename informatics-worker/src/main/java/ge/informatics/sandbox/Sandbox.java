@@ -6,6 +6,7 @@ import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.HostConfig;
 import ge.informatics.sandbox.executors.CommunicationExecutor;
+import ge.informatics.sandbox.executors.OutputOnlyExecutor;
 import ge.informatics.sandbox.executors.CppExecutor;
 import ge.informatics.sandbox.executors.Executor;
 import ge.informatics.sandbox.fileservice.FileService;
@@ -279,9 +280,15 @@ public class Sandbox implements AutoCloseable {
                 prepareManager(task);
             }
             long evaluatorReady = System.currentTimeMillis();
-            loadSubmission(task);
+            if (!task.isOutputSubmission()) {
+                loadSubmission(task);
+            }
             long submissionLoaded = System.currentTimeMillis();
             loadTest(task);
+            if (task.isOutputSubmission()) {
+                // After loadTest, which creates the output file the contestant's upload replaces.
+                loadSubmittedOutput(task);
+            }
             long testLoaded = System.currentTimeMillis();
             TestResult result = executor.execute(dockerClient, containerId, task);
             long finished = System.currentTimeMillis();
@@ -303,8 +310,28 @@ public class Sandbox implements AutoCloseable {
      * language still decides how the binary is invoked.
      */
     private Executor executorFor(Task task) {
+        // Checked before the language is read at all: an output submission has no language, and
+        // there is nothing for a language executor to do with a file the contestant wrote by hand.
+        if (task.isOutputSubmission()) {
+            return new OutputOnlyExecutor();
+        }
         Executor languageExecutor = task.language().getExecutor();
         return task.isCommunication() ? new CommunicationExecutor(languageExecutor) : languageExecutor;
+    }
+
+    /**
+     * Puts the contestant's uploaded answer for this test where a program's output would have
+     * been written, so the checker sees exactly what it sees for any other submission.
+     */
+    private void loadSubmittedOutput(Task task) throws IOException, InterruptedException {
+        String remotePath = Config.get("fileStorageDirectory.url") + "/" + task.taskId()
+                + "/submissions/" + task.submissionName() + "/" + task.testId();
+        fileService.downloadFile(remotePath, ContainerPaths.SUBMISSION_DIR, "output", this, true);
+        // Owned by the contestant like any other submission output, and readable by the checker
+        // user that is about to grade it.
+        changePermissions(dockerClient, containerId, ContainerPaths.submissionOutput(),
+                CONTESTANT_USER, "644");
+        log.info("Loaded submitted output for test {} of submission {}", task.testId(), task.submissionId());
     }
 
     public String retrieveOutcome() throws InterruptedException {

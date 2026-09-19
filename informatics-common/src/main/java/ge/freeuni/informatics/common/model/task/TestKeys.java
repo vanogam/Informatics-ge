@@ -18,10 +18,16 @@ import java.util.regex.Pattern;
  *
  * <p>Digits compare numerically so "1-2" sorts before "1-10", matching how the task editor lists
  * tests and therefore how subtask sizes were counted when they were configured.
+ *
+ * <p>It also holds the mapping from a file name to the test key it belongs to, which the task's
+ * input/output templates describe - the same rule for testcase files a teacher uploads and for
+ * output files a contestant submits.
  */
 public final class TestKeys {
 
     private static final Pattern CHUNK = Pattern.compile("(\\d+)|(\\D+)");
+
+    private static final Pattern SPECIAL_REGEX_CHARS = Pattern.compile("[{}()\\[\\].+?^$\\\\|]");
 
     public static final Comparator<String> NATURAL_ORDER = TestKeys::compare;
 
@@ -52,5 +58,20 @@ public final class TestKeys {
             parts.add(m.group());
         }
         return parts;
+    }
+
+    /**
+     * The test key a file name belongs to, according to a template like {@code "test*.out"} whose
+     * {@code *} stands for the key.
+     *
+     * @return the key, or null when the name does not match the template at all
+     */
+    public static String fromTemplate(String fileName, String template) {
+        if (fileName == null || template == null) {
+            return null;
+        }
+        String quoted = SPECIAL_REGEX_CHARS.matcher(template).replaceAll("\\\\$0").replace("*", "(.*)");
+        Matcher matcher = Pattern.compile(quoted).matcher(fileName);
+        return matcher.matches() ? matcher.group(1) : null;
     }
 }

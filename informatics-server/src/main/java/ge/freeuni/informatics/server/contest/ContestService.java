@@ -12,10 +12,12 @@ import ge.freeuni.informatics.common.model.contest.ContestantResult;
 import ge.freeuni.informatics.common.model.contest.ScoringType;
 import ge.freeuni.informatics.common.model.contestroom.ContestRoom;
 import ge.freeuni.informatics.common.model.submission.Submission;
+import ge.freeuni.informatics.common.model.submission.SubtaskScores;
 import ge.freeuni.informatics.common.model.user.User;
 import ge.freeuni.informatics.repository.contest.ContestJpaRepository;
 import ge.freeuni.informatics.repository.contest.ContestantResultJpaRepository;
 import ge.freeuni.informatics.repository.contestroom.ContestRoomJpaRepository;
+import ge.freeuni.informatics.repository.submission.SubmissionJpaRepository;
 import ge.freeuni.informatics.server.user.IUserManager;
 import ge.freeuni.informatics.utils.ArrayUtils;
 import jakarta.annotation.PostConstruct;
@@ -60,6 +62,9 @@ public class ContestService {
 
     @Autowired
     private ContestantResultJpaRepository contestantResultJpaRepository;
+
+    @Autowired
+    private SubmissionJpaRepository submissionRepository;
 
     @Autowired
     private PlatformTransactionManager transactionManager;
@@ -182,7 +187,7 @@ public class ContestService {
         long contestId = submission.getContest().getId();
         LiveContestState state = liveContests.get(contestId);
         if (state == null) {
-            addUpsolvingSubmission(submission);
+            addUpsolvingSubmission(submission, event.isRejudged());
             return;
         }
 
@@ -199,7 +204,24 @@ public class ContestService {
         }
 
         // Update in-memory standings only; DB sync happens periodically
-        state.updateStandings(submission);
+        if (event.isRejudged()) {
+            state.replayStandings(submission, scoredSubmissionsForReplay(submission));
+        } else {
+            state.updateStandings(submission);
+        }
+    }
+
+    /**
+     * Every scored submission this contestant has made to this task, oldest first - the input a
+     * replay needs.
+     *
+     * <p>The re-judged submission itself is read from the list rather than from the event, so the
+     * replay works from one consistent set of rows; it has just been saved, so the list already
+     * carries its new score.
+     */
+    private List<Submission> scoredSubmissionsForReplay(Submission submission) {
+        return submissionRepository.findScoredForReplay(
+                submission.getUser().getId(), submission.getTask().getId());
     }
 
     private static Long getSuccessTime(Submission submission, TaskResultDTO taskResult, ContestDTO contestDTO) {
@@ -234,6 +256,44 @@ public class ContestService {
         // Always increment attempts
         int attempts = existingTaskResult != null ? existingTaskResult.getAttempts() + 1 : 1;
         
+        // SUBTASK_MAX keeps the contestant's best award on every subtask rather than the best
+        // single submission, so it merges vectors instead of comparing totals.
+        if (scoringType == ScoringType.SUBTASK_MAX) {
+            List<Float> merged = SubtaskScores.merge(
+                    existingTaskResult == null ? null : SubtaskScores.parse(existingTaskResult.getSubtaskScores()),
+                    SubtaskScores.parse(newTaskResult.getSubtaskScores()));
+
+            // No merge is possible when either side has no breakdown - the first submission for
+            // this task, one that never compiled - or when the two vectors disagree on length,
+            // which means the task's subtasks were re-configured mid-contest and there is no
+            // honest way to line the old entries up with the new. Both fall back on comparing
+            // totals, exactly as BEST_SUBMISSION does.
+            if (merged != null) {
+                float mergedScore = SubtaskScores.total(merged);
+                TaskResultDTO mergedResult = new TaskResultDTO(
+                        newTaskResult.getTaskCode(),
+                        mergedScore,
+                        SubtaskScores.format(merged),
+                        attempts,
+                        // The accumulated score can only rise, so the moment it was reached is
+                        // this submission's whenever it added anything at all.
+                        mergedScore > initialScore ? successTime : existingTaskResult.getSuccessTime()
+                );
+                taskResults.put(newTaskResult.getTaskCode(), mergedResult);
+                return ContestantResultDTO.builder(currentResult)
+                        .totalScore(currentTotalScore + mergedScore - initialScore)
+                        .taskResults(taskResults)
+                        .build();
+            }
+            if (existingTaskResult != null && SubtaskScores.parse(newTaskResult.getSubtaskScores()).isEmpty()
+                    && !SubtaskScores.parse(existingTaskResult.getSubtaskScores()).isEmpty()) {
+                // Static context: the injected `log` belongs to the instance.
+                org.slf4j.LoggerFactory.getLogger(ContestService.class).warn(
+                        "Submission for task {} carries no subtask breakdown; keeping the accumulated one",
+                        newTaskResult.getTaskCode());
+            }
+        }
+
         // Determine if we should update the score based on ScoringType
         boolean shouldUpdate = scoringType == ScoringType.LAST_SUBMISSION 
                 || newTaskResult.getScore() > initialScore 
@@ -247,6 +307,7 @@ public class ContestService {
             taskResultToUse = new TaskResultDTO(
                     newTaskResult.getTaskCode(),
                     newTaskResult.getScore(),
+                    newTaskResult.getSubtaskScores(),
                     attempts,
                     successTime
             );
@@ -256,6 +317,7 @@ public class ContestService {
             taskResultToUse = new TaskResultDTO(
                     newTaskResult.getTaskCode(),
                     existingTaskResult.getScore(),
+                    existingTaskResult.getSubtaskScores(),
                     attempts,
                     existingTaskResult.getSuccessTime()
             );
@@ -270,7 +332,7 @@ public class ContestService {
                 .build();
     }
 
-    private void addUpsolvingSubmission(Submission submission) throws InformaticsServerException {
+    private void addUpsolvingSubmission(Submission submission, boolean rejudged) throws InformaticsServerException {
         Contest contest = contestRepository.getReferenceById(submission.getContest().getId());
         ContestDTO contestDTO = ContestDTO.toDTO(contest);
 
@@ -278,7 +340,12 @@ public class ContestService {
             contestDTO.setUpsolvingStandings(new ArrayList<>());
         }
 
-        applySubmissionToStandings(contestDTO.getUpsolvingStandings(), submission, contestDTO, false);
+        if (rejudged) {
+            replayTaskIntoStandings(contestDTO.getUpsolvingStandings(), scoredSubmissionsForReplay(submission),
+                    submission.getTask().getCode(), submission.getUser().getId(), contestDTO, false);
+        } else {
+            applySubmissionToStandings(contestDTO.getUpsolvingStandings(), submission, contestDTO, false);
+        }
 
         // Upsolving persists immediately since there's no concurrency concern
         contestManager.updateContest(contestDTO);
@@ -364,12 +431,69 @@ public class ContestService {
                                                     boolean isLiveContest) {
         ContestantResultDTO contestantResult = findContestantResult(standings, submission.getUser().getId(), contestDTO.getId());
         standings.remove(contestantResult);
+        standings.add(foldSubmission(contestantResult, submission, contestDTO, isLiveContest));
+    }
 
+    /**
+     * Rebuilds one contestant's result for one task by replaying every submission they made to it,
+     * in place of folding a single new submission in.
+     *
+     * <p>Folding is one-directional - a new submission can raise a score but the scoring types
+     * never lower one - which is right for a contestant submitting, and wrong after a re-judge:
+     * a corrected grader may well have taken points away, and the same submission would otherwise
+     * be counted as a second attempt. Replaying from nothing gives the result the contestant would
+     * have had if the task had been correct all along.
+     *
+     * @param submissions every scored submission for this contestant and task, oldest first
+     */
+    private static void replayTaskIntoStandings(Collection<ContestantResultDTO> standings,
+                                                List<Submission> submissions,
+                                                String taskCode,
+                                                long contestantId,
+                                                ContestDTO contestDTO,
+                                                boolean isLiveContest) {
+        ContestantResultDTO contestantResult = findContestantResult(standings, contestantId, contestDTO.getId());
+        standings.remove(contestantResult);
+
+        // Clear the task away first - including its share of the total - so the replay builds it
+        // up from nothing rather than on top of the figures it is replacing.
+        TaskResultDTO stale = contestantResult.getTaskResult(taskCode);
+        Map<String, TaskResultDTO> withoutTask = contestantResult.taskResults() != null
+                ? new HashMap<>(contestantResult.taskResults())
+                : new HashMap<>();
+        withoutTask.remove(taskCode);
+        float totalWithoutTask = (contestantResult.totalScore() != null ? contestantResult.totalScore() : 0f)
+                - (stale != null && stale.getScore() != null ? stale.getScore() : 0f);
+
+        ContestantResultDTO rebuilt = ContestantResultDTO.builder(contestantResult)
+                .totalScore(totalWithoutTask)
+                .taskResults(withoutTask)
+                .build();
+        for (Submission submission : submissions) {
+            rebuilt = foldSubmission(rebuilt, submission, contestDTO, isLiveContest);
+        }
+        standings.add(rebuilt);
+    }
+
+    /**
+     * Folds one scored submission into a contestant's result - the single place the scoring types
+     * are applied, so a replay and a live submission cannot drift apart.
+     */
+    private static ContestantResultDTO foldSubmission(ContestantResultDTO contestantResult,
+                                                      Submission submission,
+                                                      ContestDTO contestDTO,
+                                                      boolean isLiveContest) {
         TaskResultDTO existingTaskResult = contestantResult.getTaskResult(submission.getTask().getCode());
 
         Long successTime;
         if (isLiveContest) {
-            successTime = getSuccessTime(submission, existingTaskResult, contestDTO);
+            // Under SUBTASK_MAX the submission's own total says nothing about whether the
+            // contestant improved - a submission scoring less than the accumulated total can
+            // still win a subtask. So hand over this submission's time and let the merge decide
+            // whether it is the moment the standing total was reached.
+            successTime = contestDTO.getScoringType() == ScoringType.SUBTASK_MAX
+                    ? submission.getSubmissionTime().getTime() - contestDTO.getStartDate().getTime()
+                    : getSuccessTime(submission, existingTaskResult, contestDTO);
         } else {
             successTime = submission.getSubmissionTime().getTime();
         }
@@ -377,17 +501,17 @@ public class ContestService {
         TaskResultDTO newTaskResult = new TaskResultDTO(
                 submission.getTask().getCode(),
                 submission.getScore(),
+                submission.getSubtaskScores(),
                 existingTaskResult != null ? existingTaskResult.getAttempts() + 1 : 1,
                 successTime
         );
 
-        ContestantResultDTO updatedContestantResult = updateTaskResult(
+        return updateTaskResult(
                 contestantResult,
                 newTaskResult,
                 contestDTO.getScoringType(),
                 successTime
         );
-        standings.add(updatedContestantResult);
     }
 
     @EventListener
@@ -557,6 +681,23 @@ public class ContestService {
             try {
                 ensureStandingsInitialized();
                 ContestService.applySubmissionToStandings(contest.getStandings(), submission, contest, true);
+                dirty = true;
+            } finally {
+                lock.writeLock().unlock();
+            }
+        }
+
+        /**
+         * Rebuilds the re-judged submission's task from its whole history, under the same write
+         * lock an ordinary update takes, so a standings snapshot never observes the half-cleared
+         * row the replay starts from.
+         */
+        void replayStandings(Submission submission, List<Submission> submissionsForTask) {
+            lock.writeLock().lock();
+            try {
+                ensureStandingsInitialized();
+                ContestService.replayTaskIntoStandings(contest.getStandings(), submissionsForTask,
+                        submission.getTask().getCode(), submission.getUser().getId(), contest, true);
                 dirty = true;
             } finally {
                 lock.writeLock().unlock();

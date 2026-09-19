@@ -55,3 +55,4 @@ yarn-debug.log*
 yarn-error.log*
 /informatics-ui/cert/
 /informatics-worker/.idea/
+/informatics-ui/build/

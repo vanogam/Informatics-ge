@@ -15,25 +15,24 @@ public enum TaskScoreType {
      * one float, representing value of each test case.
      */
     SUM((testResults, s) -> {
+        // Every test is its own scoring unit here, so the breakdown is one award per test.
+        List<Float> awards = new ArrayList<>();
         if (s.charAt(0) == '[' && s.charAt(s.length() - 1) == ']') {
             String[] parts = s.substring(1, s.length() - 1).split(",");
             if (parts.length != testResults.size()) {
                 LoggerFactory.getLogger(TaskScoreType.class).error("Invalid score format for SUM type: expected {} parts, got {}", testResults.size(), parts.length);
                 throw new IllegalStateException("invalidFormat");
             }
-            float sum = 0;
             for (int i = 0; i < parts.length; i++) {
-                sum += roundScore(Float.parseFloat(parts[i].trim()) * testResults.get(i).getScore());
+                awards.add(roundScore(Float.parseFloat(parts[i].trim()) * testResults.get(i).getScore()));
             }
-            return sum;
         } else {
-            float sum = 0;
             float multiplier = Float.parseFloat(s);
             for (SubmissionTestResult testResult : testResults) {
-                sum += roundScore(testResult.getScore() * multiplier);
+                awards.add(roundScore(testResult.getScore() * multiplier));
             }
-            return sum;
         }
+        return awards;
     }),
     /**
      *  Minimum of test case group.
@@ -43,7 +42,8 @@ public enum TaskScoreType {
      * Sum of all t's must be equal to the quantity of all test cases.
      */
     GROUP_MIN((testResults, s) -> {
-        float sum = 0;
+        // One award per group: the group is the scoring unit, and its weakest test decides it.
+        List<Float> awards = new ArrayList<>();
         if (s.charAt(0) == '[' && s.charAt(s.length() - 1) == ']') {
             s = s.substring(1, s.length() - 1);
             s = s.replaceAll("\\s+", "");
@@ -60,6 +60,15 @@ public enum TaskScoreType {
                 int testcaseCount = Integer.parseInt(group.get(1));
                 float minScore = 1.0f;
                 for (int j = 0; j < testcaseCount; j++, testIndex++) {
+                    if (testIndex >= testResults.size()) {
+                        // The parameter describes more tests than the submission has results for -
+                        // routinely because the task's testcases changed after it was judged. Caught
+                        // here so the log names the mismatch instead of an IndexOutOfBounds.
+                        LoggerFactory.getLogger(TaskScoreType.class).error(
+                                "Invalid score format for GROUP_MIN type: parameter covers more than {} test(s), "
+                                        + "but the submission has {} result(s)", testIndex, testResults.size());
+                        throw new IllegalStateException("invalidFormat");
+                    }
                     minScore = Math.min(minScore, testResults.get(testIndex).getScore());
                 }
                 for (int j = 2; j < group.size(); j++) {
@@ -72,13 +81,13 @@ public enum TaskScoreType {
                 }
                 groupScores.add(minScore);
                 groupScores.add(minScore * multiplier);
-                sum += roundScore(minScore * multiplier);
+                awards.add(roundScore(minScore * multiplier));
             }
         } else {
             LoggerFactory.getLogger(TaskScoreType.class).error("Invalid score format for GROUP_MIN type: expected format [[m1, t1(, p1...)], [m2, t2(, p2...)], ...]");
             throw new IllegalStateException("invalidFormat");
         }
-        return sum;
+        return awards;
     });
 
 
@@ -95,14 +104,31 @@ public enum TaskScoreType {
         return Math.round(score * 100f) / 100f;
     }
 
-    private BiFunction<List<SubmissionTestResult>, String, Float> evaluator;
+    private BiFunction<List<SubmissionTestResult>, String, List<Float>> evaluator;
 
-    TaskScoreType(BiFunction<List<SubmissionTestResult>, String, Float> evaluator) {
+    TaskScoreType(BiFunction<List<SubmissionTestResult>, String, List<Float>> evaluator) {
         this.evaluator = evaluator;
     }
 
-    public Float evaluate(List<SubmissionTestResult> testResults, String scoreParameter) {
+    /**
+     * The points awarded for each of the task's scoring units, in the order the score parameter
+     * describes them - one entry per group for {@link #GROUP_MIN}, one per test for {@link #SUM}.
+     *
+     * <p>This is the single implementation of every scoring rule; {@link #evaluate} is its sum.
+     * A contest scored by {@link ge.freeuni.informatics.common.model.contest.ScoringType#SUBTASK_MAX}
+     * merges these vectors across a contestant's submissions, and the merged vector has to add up
+     * to the total shown beside it - which it only does while both come from the same arithmetic.
+     */
+    public List<Float> evaluateSubtasks(List<SubmissionTestResult> testResults, String scoreParameter) {
         return evaluator.apply(testResults, scoreParameter);
+    }
+
+    public Float evaluate(List<SubmissionTestResult> testResults, String scoreParameter) {
+        float sum = 0;
+        for (Float award : evaluateSubtasks(testResults, scoreParameter)) {
+            sum += award;
+        }
+        return sum;
     }
 
     public Float computeMaxScore(String parameter, int testcaseCount) {

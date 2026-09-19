@@ -120,7 +120,8 @@ public class JobConsumer {
                                 .withSubmissionId(Long.parseLong(task.submissionId()))
                                 .withMessageType(CallbackType.SYSTEM_ERROR)
                                 .withTestcaseKey(task.testId())
-                                .build()
+                                .build(),
+                                task
                         );
                     } finally {
                         // Clear working status when done processing
@@ -156,7 +157,7 @@ public class JobConsumer {
             sendCallback(new TestResult.Builder()
                     .withSubmissionId(Long.parseLong(task.submissionId()))
                     .withMessageType(CallbackType.COMPILATION_STARTED)
-                    .build());
+                    .build(), task);
             // Graders are linked into the submission, so the task files must be in place first.
             syncTaskFiles(task);
             CompilationResult result = sandbox.compile(task, new File(Config.get("fileStorageDirectory.url") + "/" + task.taskId() + "/submissions/" + task.submissionName()));
@@ -164,11 +165,11 @@ public class JobConsumer {
                     .withSubmissionId(Long.parseLong(task.submissionId()))
                     .withMessageType(result.isSuccess() ? CallbackType.COMPILATION_COMPLETED : CallbackType.COMPILATION_FAILED)
                     .withMessage(result.getErrorMessage())
-                    .build());
+                    .build(), task);
         } else if (task.stage() == Stage.TESTING) {
             syncTaskFiles(task);
             TestResult result = sandbox.execute(task);
-            sendCallback(result);
+            sendCallback(result, task);
         }
     }
 
@@ -210,6 +211,15 @@ public class JobConsumer {
             log.warn("Unreadable lastUpdate marker '{}', treating the task as stale", text);
             return 0;
         }
+    }
+
+    /**
+     * Sends a result back stamped with the token of the task it came from, so the core can tell
+     * whether it still belongs to the submission's current judging run.
+     */
+    private void sendCallback(TestResult result, Task task) {
+        result.setJudgeToken(task.judgeToken());
+        sendCallback(result);
     }
 
     private void sendCallback(TestResult result) {

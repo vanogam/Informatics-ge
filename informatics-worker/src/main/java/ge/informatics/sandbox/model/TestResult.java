@@ -16,6 +16,9 @@ public class TestResult {
      */
     private final String outcome;
 
+    /** Which judging run this result belongs to; see {@link #setJudgeToken(Integer)}. */
+    private Integer judgeToken;
+
     public TestResult(CallbackType messageType,
                       String testcaseKey,
                       String message,
@@ -64,6 +67,19 @@ public class TestResult {
 
     public String getOutcome() {
         return outcome;
+    }
+
+    public Integer getJudgeToken() {
+        return judgeToken;
+    }
+
+    /**
+     * Stamped from the task message just before the callback is sent, rather than carried through
+     * every builder: the token means nothing to the code that produces a verdict, and every result
+     * leaves through the same place.
+     */
+    public void setJudgeToken(Integer judgeToken) {
+        this.judgeToken = judgeToken;
     }
 
     public CallbackType getMessageType() {

@@ -10,6 +10,8 @@ import ge.freeuni.informatics.common.model.submission.SubmissionTestResult;
 import ge.freeuni.informatics.common.model.submission.TestStatus;
 import ge.freeuni.informatics.common.model.task.Task;
 import ge.freeuni.informatics.common.model.task.Testcase;
+import ge.freeuni.informatics.common.dto.RejudgeResultDTO;
+import ge.freeuni.informatics.common.model.submission.RejudgeAction;
 import ge.freeuni.informatics.judgeintegration.IJudgeIntegration;
 import ge.freeuni.informatics.repository.submission.SubmissionJpaRepository;
 import org.slf4j.Logger;
@@ -30,6 +32,8 @@ import java.util.function.Function;
 // @Component - Disabled: Using real JudgeIntegration with MockKafkaWorker instead
 // @Primary
 public class MockJudgeIntegration implements IJudgeIntegration {
+
+    private final List<RejudgeRequest> rejudgeRequests = new ArrayList<>();
 
     private static final Logger log = LoggerFactory.getLogger(MockJudgeIntegration.class);
 
@@ -127,6 +131,20 @@ public class MockJudgeIntegration implements IJudgeIntegration {
     @Override
     public void addCustomTest(Task task, CustomTestRun run, CodeLanguage language) throws InformaticsServerException {
 
+    }
+
+    /** Records the request and accepts it; no judging happens in the acceptance context. */
+    @Override
+    public RejudgeResultDTO rejudge(long submissionId, RejudgeAction action) {
+        rejudgeRequests.add(new RejudgeRequest(submissionId, action));
+        return RejudgeResultDTO.accepted(submissionId);
+    }
+
+    public List<RejudgeRequest> getRejudgeRequests() {
+        return rejudgeRequests;
+    }
+
+    public record RejudgeRequest(long submissionId, RejudgeAction action) {
     }
 
     private SubmissionResult defaultResult(Submission submission) {

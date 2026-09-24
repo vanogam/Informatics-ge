@@ -9,11 +9,6 @@ import {
 	TableRow,
 	TableContainer,
 	Paper,
-	Pagination,
-	Select,
-	MenuItem,
-	FormControl,
-	InputLabel,
 	Box,
 	Checkbox,
 	FormControlLabel,
@@ -22,49 +17,136 @@ import { useState, useEffect, useContext } from 'react'
 import { AxiosContext } from '../utils/axiosInstance'
 import ContestNavigationBar from '../Components/ContestNavigationBar'
 import { getScoreCellBackground } from '../styles/scoreColors'
+import { usePagination } from '../utils/usePagination'
+import PaginationControls from '../Components/PaginationControls'
+
+const INCLUDE_UPSOLVING_STORAGE_PREFIX = 'informatics.includeUpsolving.'
+
+// Upsolving-only rows (contestants with no live standings entry) get this tint instead of a
+// place number, so they read as clearly separate from the ranked live standings.
+const UPSOLVING_ONLY_ROW_COLOR = '#fdf3d7'
+
+const readStoredIncludeUpsolving = (contestId) => {
+	try {
+		const raw = localStorage.getItem(INCLUDE_UPSOLVING_STORAGE_PREFIX + contestId)
+		return raw === null ? null : raw === 'true'
+	} catch {
+		return null
+	}
+}
+
+const writeStoredIncludeUpsolving = (contestId, value) => {
+	try {
+		localStorage.setItem(INCLUDE_UPSOLVING_STORAGE_PREFIX + contestId, String(value))
+	} catch {
+		// private browsing / storage disabled - the checkbox just won't persist
+	}
+}
+
+const buildResult = (contestantId, username, liveTaskResults, upTaskResults, includeUpsolving) => {
+	const taskScores = {}
+	const upsolvingTasks = {}
+
+	const allTaskCodes = new Set([
+		...Object.keys(liveTaskResults || {}),
+		...Object.keys(upTaskResults || {}),
+	])
+
+	let totalScore = 0
+
+	allTaskCodes.forEach((taskCode) => {
+		const liveScore =
+			liveTaskResults[taskCode] && liveTaskResults[taskCode].score != null
+				? liveTaskResults[taskCode].score
+				: 0
+
+		let finalScore = liveScore
+		let isUpsolvingUsed = false
+
+		if (includeUpsolving && upTaskResults && upTaskResults[taskCode]) {
+			const upScore =
+				upTaskResults[taskCode].score != null ? upTaskResults[taskCode].score : 0
+			if (upScore > liveScore) {
+				finalScore = upScore
+				isUpsolvingUsed = true
+			}
+		}
+
+		taskScores[taskCode] = finalScore
+		if (isUpsolvingUsed) {
+			upsolvingTasks[taskCode] = true
+		}
+		totalScore += finalScore
+	})
+
+	return { contestantId, username, totalScore, taskScores, upsolvingTasks }
+}
 
 export default function Results() {
 	const axiosInstance = useContext(AxiosContext)
 	const { contest_id } = useParams()
 	const [results, setResults] = useState([])
+	const [upsolvingOnlyResults, setUpsolvingOnlyResults] = useState([])
 	const [standings, setStandings] = useState([])
 	const [upsolvingStandings, setUpsolvingStandings] = useState([])
 	const [taskOrder, setTaskOrder] = useState([])
 	const [taskNameMap, setTaskNameMap] = useState({})
-	const [page, setPage] = useState(0) // 0-indexed for offset calculation
-	const [pageSize, setPageSize] = useState(20)
-	const [totalCount, setTotalCount] = useState(0)
+	const pagination = usePagination()
+	const {page, pageSize, offset, setTotalCount} = pagination
 	const [loading, setLoading] = useState(false)
-	const [includeUpsolving, setIncludeUpsolving] = useState(false)
-
-	const pageSizeOptions = [20, 50, 100, 200]
+	const [includeUpsolving, setIncludeUpsolving] = useState(() => readStoredIncludeUpsolving(contest_id) ?? false)
 
 	useEffect(() => {
 		loadStandings()
-	}, [contest_id, page, pageSize, axiosInstance])
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [contest_id, offset, pageSize, axiosInstance])
+
+	// Re-sync the checkbox when navigating between contests without a full remount.
+	useEffect(() => {
+		const stored = readStoredIncludeUpsolving(contest_id)
+		if (stored !== null) {
+			setIncludeUpsolving(stored)
+		}
+		// If nothing is stored yet, loadUpsolvingStandings (below) picks the default once the
+		// contest's end date is known.
+	}, [contest_id])
+
+	const loadUpsolvingStandings = () => {
+		if (!contest_id) return
+		axiosInstance
+			.get(`/contest/${contest_id}`)
+			.then((response) => {
+				const upStandings = response.data.upsolvingStandings || []
+				setUpsolvingStandings(upStandings)
+
+				if (readStoredIncludeUpsolving(contest_id) === null) {
+					const endDate = response.data.endDate
+					const isPastContest = endDate ? new Date(endDate).getTime() < Date.now() : false
+					writeStoredIncludeUpsolving(contest_id, isPastContest)
+					setIncludeUpsolving(isPastContest)
+				}
+			})
+			.catch((error) => {
+				console.error('Error fetching upsolving standings:', error)
+				setUpsolvingStandings([])
+			})
+	}
 
 	useEffect(() => {
-		const loadUpsolvingStandings = () => {
-			axiosInstance
-				.get(`/contest/${contest_id}`)
-				.then((response) => {
-					const upStandings = response.data.upsolvingStandings || []
-					setUpsolvingStandings(upStandings)
-				})
-				.catch((error) => {
-					console.error('Error fetching upsolving standings:', error)
-					setUpsolvingStandings([])
-				})
-		}
+		loadUpsolvingStandings()
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [contest_id, axiosInstance])
 
-		if (contest_id) {
+	const handleIncludeUpsolvingChange = (checked) => {
+		setIncludeUpsolving(checked)
+		writeStoredIncludeUpsolving(contest_id, checked)
+		if (checked) {
 			loadUpsolvingStandings()
 		}
-	}, [contest_id, axiosInstance])
+	}
 
 	const loadStandings = () => {
 		setLoading(true)
-		const offset = page * pageSize
 
 		axiosInstance
 			.get(`/contest/${contest_id}/standings`, {
@@ -98,12 +180,7 @@ export default function Results() {
 				setTaskOrder(taskOrderArray)
 				setTaskNameMap(taskNameMapData)
 				setStandings(fetchedStandings)
-
-				if (fetchedStandings.length === pageSize) {
-					setTotalCount((page + 1) * pageSize + 1)
-				} else {
-					setTotalCount(offset + fetchedStandings.length)
-				}
+				setTotalCount(response.data.totalCount || 0)
 
 				setLoading(false)
 			})
@@ -121,58 +198,30 @@ export default function Results() {
 			}
 		})
 
+		const liveContestantIds = new Set(standings.map((s) => s.contestantId))
+
 		const processedResults = standings.map((standing) => {
-			const displayName = standing.username || `deleted`
-
-			const taskScores = {}
-			const upsolvingTasks = {}
-
-			const liveTaskResults = standing.taskResults || {}
 			const upEntry = upMap.get(standing.contestantId)
-			const upTaskResults = (upEntry && upEntry.taskResults) || {}
-
-			const allTaskCodes = new Set([
-				...Object.keys(liveTaskResults || {}),
-				...Object.keys(upTaskResults || {}),
-			])
-
-			let totalScore = 0
-
-			allTaskCodes.forEach((taskCode) => {
-				const liveScore =
-					liveTaskResults[taskCode] && liveTaskResults[taskCode].score != null
-						? liveTaskResults[taskCode].score
-						: 0
-
-				let finalScore = liveScore
-				let isUpsolvingUsed = false
-
-				if (includeUpsolving && upTaskResults && upTaskResults[taskCode]) {
-					const upScore =
-						upTaskResults[taskCode].score != null ? upTaskResults[taskCode].score : 0
-					if (upScore > liveScore) {
-						finalScore = upScore
-						isUpsolvingUsed = true
-					}
-				}
-
-				taskScores[taskCode] = finalScore
-				if (isUpsolvingUsed) {
-					upsolvingTasks[taskCode] = true
-				}
-				totalScore += finalScore
-			})
-
-			return {
-				contestantId: standing.contestantId,
-				username: displayName,
-				totalScore,
-				taskScores,
-				upsolvingTasks,
-			}
+			return buildResult(
+				standing.contestantId,
+				standing.username || 'deleted',
+				standing.taskResults || {},
+				(upEntry && upEntry.taskResults) || {},
+				includeUpsolving
+			)
 		})
 
+		const upsolvingOnly = includeUpsolving
+			? upsolvingStandings
+					.filter((up) => up && up.contestantId !== undefined && !liveContestantIds.has(up.contestantId))
+					.map((up) =>
+						buildResult(up.contestantId, up.username || 'deleted', {}, up.taskResults || {}, true)
+					)
+					.sort((a, b) => b.totalScore - a.totalScore)
+			: []
+
 		setResults(processedResults)
+		setUpsolvingOnlyResults(upsolvingOnly)
 	}, [standings, upsolvingStandings, includeUpsolving])
 
 	const getTaskName = (taskCode) => {
@@ -191,17 +240,7 @@ export default function Results() {
 		return isUpsolving ? `${formatted}*` : formatted
 	}
 
-	const handlePageChange = (event, newPage) => {
-		setPage(newPage - 1) // Material-UI Pagination is 1-indexed
-	}
-
-	const handlePageSizeChange = (event) => {
-		const newPageSize = event.target.value
-		setPageSize(newPageSize)
-		setPage(0) // Reset to first page when changing page size
-	}
-
-	const totalPages = Math.ceil(totalCount / pageSize)
+	const columnCount = taskOrder.length + 3 // place + user + total
 
 	return (
 		<main>
@@ -235,32 +274,19 @@ export default function Results() {
 						control={
 							<Checkbox
 								checked={includeUpsolving}
-								onChange={(e) => setIncludeUpsolving(e.target.checked)}
+								onChange={(e) => handleIncludeUpsolvingChange(e.target.checked)}
 								color='primary'
 							/>
 						}
 						label='include upsolving'
 					/>
-					<FormControl size='small' sx={{ minWidth: 120 }}>
-						<InputLabel>გვერდის ზომა</InputLabel>
-						<Select
-							value={pageSize}
-							label='გვერდის ზომა'
-							onChange={handlePageSizeChange}
-						>
-							{pageSizeOptions.map((size) => (
-								<MenuItem key={size} value={size}>
-									{size}
-								</MenuItem>
-							))}
-						</Select>
-					</FormControl>
 				</Box>
 
 				<TableContainer component={Paper} sx={{ marginInline: 'auto' }}>
 					<Table sx={{ marginX: 'auto' }}>
 						<TableHead>
 							<TableRow>
+								<TableCell sx={{ fontWeight: 'bold' }}>ადგილი</TableCell>
 								<TableCell sx={{ fontWeight: 'bold' }}>მომხმარებელი</TableCell>
 								<TableCell
 									sx={{
@@ -281,69 +307,98 @@ export default function Results() {
 						<TableBody>
 							{loading ? (
 								<TableRow>
-									<TableCell colSpan={taskOrder.length + 2} align='center'>
+									<TableCell colSpan={columnCount} align='center'>
 										იტვირთება...
 									</TableCell>
 								</TableRow>
-							) : results.length === 0 ? (
+							) : results.length === 0 && upsolvingOnlyResults.length === 0 ? (
 								<TableRow>
-									<TableCell colSpan={taskOrder.length + 2} align='center'>
+									<TableCell colSpan={columnCount} align='center'>
 										შედეგები ჯერ არ არის
 									</TableCell>
 								</TableRow>
 							) : (
-								results.map((result) => (
-									<TableRow
-										key={result.contestantId}
-										sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-									>
-										<TableCell component='th' scope='row'>
-											{result.username}
-										</TableCell>
-										<TableCell
-											component='th'
-											scope='row'
-											sx={{
-												fontWeight: 'bold',
-												borderRight: '2px solid #ccc',
-												whiteSpace: 'nowrap',
-											}}
+								<>
+									{results.map((result, index) => (
+										<TableRow
+											key={`live-${result.contestantId}`}
+											sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
 										>
-											{result.totalScore.toFixed(2)}
-										</TableCell>
-										{taskOrder.map((taskCode) => (
+											<TableCell align='center'>{page * pageSize + index + 1}</TableCell>
+											<TableCell component='th' scope='row'>
+												{result.username}
+											</TableCell>
 											<TableCell
-												key={taskCode}
-												align='center'
+												component='th'
+												scope='row'
 												sx={{
-													backgroundColor: getScoreCellBackground(
-														result.taskScores[taskCode]
-													),
+													fontWeight: 'bold',
+													borderRight: '2px solid #ccc',
+													whiteSpace: 'nowrap',
 												}}
 											>
-												{getTaskScore(result, taskCode)}
+												{result.totalScore.toFixed(2)}
 											</TableCell>
-										))}
-									</TableRow>
-								))
+											{taskOrder.map((taskCode) => (
+												<TableCell
+													key={taskCode}
+													align='center'
+													sx={{
+														backgroundColor: getScoreCellBackground(
+															result.taskScores[taskCode]
+														),
+													}}
+												>
+													{getTaskScore(result, taskCode)}
+												</TableCell>
+											))}
+										</TableRow>
+									))}
+									{upsolvingOnlyResults.map((result) => (
+										<TableRow
+											key={`up-${result.contestantId}`}
+											sx={{
+												backgroundColor: UPSOLVING_ONLY_ROW_COLOR,
+												'&:last-child td, &:last-child th': { border: 0 },
+											}}
+										>
+											<TableCell align='center'>—</TableCell>
+											<TableCell component='th' scope='row'>
+												{result.username}
+											</TableCell>
+											<TableCell
+												component='th'
+												scope='row'
+												sx={{
+													fontWeight: 'bold',
+													borderRight: '2px solid #ccc',
+													whiteSpace: 'nowrap',
+												}}
+											>
+												{result.totalScore.toFixed(2)}
+											</TableCell>
+											{taskOrder.map((taskCode) => (
+												<TableCell
+													key={taskCode}
+													align='center'
+													sx={{
+														backgroundColor: getScoreCellBackground(
+															result.taskScores[taskCode]
+														),
+													}}
+												>
+													{getTaskScore(result, taskCode)}
+												</TableCell>
+											))}
+										</TableRow>
+									))}
+								</>
 							)}
 						</TableBody>
 					</Table>
 				</TableContainer>
 
-				{/* Pagination */}
-				{totalCount > 0 && (
-					<Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, mb: 3 }}>
-						<Pagination
-							count={totalPages}
-							page={page + 1} // Material-UI Pagination is 1-indexed
-							onChange={handlePageChange}
-							color='primary'
-							showFirstButton
-							showLastButton
-						/>
-					</Box>
-				)}
+				<PaginationControls pagination={pagination} />
 			</Container>
 		</main>
 	)

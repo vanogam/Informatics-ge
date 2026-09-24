@@ -78,24 +78,28 @@ public class PermissionAspect {
 
     @Before("@annotation(memberTaskRestricted) && args(taskId,..)")
     public void memberRestricted(MemberTaskRestricted memberTaskRestricted, Long taskId) throws InformaticsServerException {
-        Long userId = userManager.getAuthenticatedUser().id();
         var task = taskRepository.getReferenceById(taskId);
         var contest = task.getContest();
         var room = roomJpaRepository.getReferenceById(contest.getRoomId());
 
-        if (!room.isOpen() && !room.isMember(userId)) {
-            throw InformaticsServerException.PERMISSION_DENIED;
+        if (!room.isOpen()) {
+            Long userId = userManager.getAuthenticatedUser().id();
+            if (!room.isMember(userId) && !userManager.isAdmin(userId)) {
+                throw InformaticsServerException.PERMISSION_DENIED;
+            }
         }
     }
 
     @Before("@annotation(memberContestRestricted) && args(contestId,..)")
     public void memberRestrictedContest(MemberContestRestricted memberContestRestricted, Long contestId) throws InformaticsServerException {
-        Long userId = userManager.getAuthenticatedUser().id();
         Contest contest = contestJpaRepository.getReferenceById(contestId);
         ContestRoom room = roomJpaRepository.getReferenceById(contest.getRoomId());
 
-        if (!room.isOpen() && !room.isMember(userId)) {
-            throw InformaticsServerException.PERMISSION_DENIED;
+        if (!room.isOpen()) {
+            Long userId = userManager.getAuthenticatedUser().id();
+            if (!room.isMember(userId) && !userManager.isAdmin(userId)) {
+                throw InformaticsServerException.PERMISSION_DENIED;
+            }
         }
     }
 
@@ -104,7 +108,7 @@ public class PermissionAspect {
         ContestRoom room = roomJpaRepository.getReferenceById(roomId);
         if (!room.isOpen()) {
             Long userId = userManager.getAuthenticatedUser().id();
-            if (!room.isMember(userId)) {
+            if (!room.isMember(userId) && !userManager.isAdmin(userId)) {
                 throw InformaticsServerException.PERMISSION_DENIED;
             }
 

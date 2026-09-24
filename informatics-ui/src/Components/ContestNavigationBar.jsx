@@ -4,30 +4,32 @@ import getMessage from './lang'
 
 /**
  * ContestNavigationBar Component
- * 
+ *
  * Provides navigation links for contest-related pages:
  * - List: Links to contest task list or upsolving task list
  * - My Submissions: Links to user's submissions for the contest
  * - All Submissions: Links to all submissions for the contest
- * - Standings: Links to contest standings/results
+ * - Standings: Links to contest standings/results (contest pages only - the archive spans many
+ *   contests, so there's no single standings page for it)
  */
 export default function ContestNavigationBar() {
     const { contest_id, problem_id } = useParams()
     const location = useLocation()
-    
+
     // Determine if we're on a problem statement page or task list page
     const isProblemPage = !!problem_id
-    const isUpsolving = location.pathname.includes('/archive') || location.pathname.includes('/upsolving')
-    
-    if (!contest_id) {
+    const isArchivePage = location.pathname.startsWith('/archive')
+    const isUpsolving = isArchivePage || location.pathname.includes('/upsolving')
+
+    if (!contest_id && !isArchivePage) {
         return null
     }
-    
-    const contestBasePath = `/contest/${contest_id}`
+
+    const contestBasePath = contest_id ? `/contest/${contest_id}` : null
     const listPath = isUpsolving ? `/archive` : contestBasePath
-    const mySubmissionsPath = `${contestBasePath}/mySubmissions`
-    const allSubmissionsPath = `${contestBasePath}/submissions`
-    const standingsPath = `/results/${contest_id}`
+    const mySubmissionsPath = isUpsolving ? `/archive/mySubmissions` : `${contestBasePath}/mySubmissions`
+    const allSubmissionsPath = isUpsolving ? `/archive/status` : `${contestBasePath}/submissions`
+    const standingsPath = contest_id ? `/results/${contest_id}` : null
     
     const linkStyle = {
         textDecoration: 'none',
@@ -122,26 +124,28 @@ export default function ContestNavigationBar() {
                         ყველა მცდელობა
                     </Button>
                     
-                    {/* Standings link */}
-                    <Button
-                        component={NavLink}
-                        to={standingsPath}
-                        sx={{
-                            color: '#452c54',
-                            textTransform: 'none',
-                            fontSize: '14px',
-                            marginLeft: '8px',
-                            '&:hover': {
-                                backgroundColor: 'rgba(69, 44, 84, 0.08)'
-                            },
-                            '&.active': {
-                                fontWeight: 'bold',
-                                textDecoration: 'underline'
-                            }
-                        }}
-                    >
-                        შედეგები
-                    </Button>
+                    {/* Standings link - not shown for the archive, which spans many contests */}
+                    {standingsPath && (
+                        <Button
+                            component={NavLink}
+                            to={standingsPath}
+                            sx={{
+                                color: '#452c54',
+                                textTransform: 'none',
+                                fontSize: '14px',
+                                marginLeft: '8px',
+                                '&:hover': {
+                                    backgroundColor: 'rgba(69, 44, 84, 0.08)'
+                                },
+                                '&.active': {
+                                    fontWeight: 'bold',
+                                    textDecoration: 'underline'
+                                }
+                            }}
+                        >
+                            შედეგები
+                        </Button>
+                    )}
                 </Box>
             </Toolbar>
         </AppBar>

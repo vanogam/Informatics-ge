@@ -14,39 +14,59 @@ import Typography from '@mui/material/Typography'
 import TableContainer from '@mui/material/TableContainer'
 import {useEffect} from 'react'
 import {AxiosContext} from '../utils/axiosInstance'
+import {formatDateTime} from '../utils/dateUtils'
 import getMessage from "./lang";
 import SubmissionTestResult from "../Pages/SubmissionTestResult";
 import SubmissionSubtask from "../Pages/SubmissionSubtask";
 import {groupTestcases, roundScore} from "../utils/subtasks";
 import RejudgeActions, {useCanRejudge} from "./RejudgeActions";
+import {usePagination} from "../utils/usePagination";
+import PaginationControls from "./PaginationControls";
 
 export default function SubmissionsList({getEndpoint, title, autoRefresh = true}) {
     const [submissions, setSubmissions] = useState([])
     const [selectedSubmission, setSelectedSubmission] = useState({})
     const [popUp, setPopUp] = useState(false)
+    const pagination = usePagination()
+    const {pageSize, offset, setTotalCount, resetPage} = pagination
     const axiosInstance = useContext(AxiosContext)
     const canRejudge = useCanRejudge()
     // Lets an action refresh the list immediately instead of waiting out the poll - and is the
     // only refresh at all on the profile tab, which runs with polling switched off.
     const refetch = useRef(() => {})
 
+    // getEndpoint is recreated every render by the caller, so resolve it to a plain string here -
+    // that's what actually identifies "which list", and switching it should jump back to page 1.
+    const endpoint = getEndpoint()
+
+    useEffect(() => {
+        resetPage()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [endpoint])
+
     useEffect(() => {
         const fetchSubmissions = () => {
-            const endpoint = getEndpoint()
             axiosInstance
-                .get(endpoint)
+                .get(endpoint, {
+                    params: {
+                        offset: offset,
+                        limit: pageSize,
+                    },
+                })
                 .then((response) => {
                     if (response.status === 200) {
                         const submissionsList = Array.isArray(response.data.submissions)
                             ? response.data.submissions
                             : []
                         setSubmissions(submissionsList)
+                        setTotalCount(response.data.totalCount || 0)
                     } else {
                         setSubmissions([])
+                        setTotalCount(0)
                     }
                 })
         }
-        
+
         refetch.current = fetchSubmissions
         fetchSubmissions()
 
@@ -56,9 +76,10 @@ export default function SubmissionsList({getEndpoint, title, autoRefresh = true}
                 clearInterval(interval)
             }
         }
-        
+
         return;
-    }, [getEndpoint, axiosInstance, autoRefresh])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [endpoint, axiosInstance, autoRefresh, offset, pageSize])
 
     const highlightWithLineNumbers = (input, grammar, language) =>
         highlight(input, grammar, language)
@@ -69,7 +90,16 @@ export default function SubmissionsList({getEndpoint, title, autoRefresh = true}
     const loadSubmission = (id) => {
         axiosInstance.get(`/submission/${id}`)
             .then((response) => {
+                // A 401 is resolved rather than rejected (see axiosInstance), with a null body -
+                // treat that the same as a failed load instead of leaving the modal stuck.
+                if (!response.data) {
+                    setPopUp(false)
+                    return
+                }
                 setSelectedSubmission(response.data)
+            })
+            .catch(() => {
+                setPopUp(false)
             })
     }
 
@@ -81,7 +111,8 @@ export default function SubmissionsList({getEndpoint, title, autoRefresh = true}
                status === 'WRONG_ANSWER' ||
                status === 'FAILED' ||
                status === 'PARTIAL' ||
-               status === 'CORRECT'
+               status === 'CORRECT' ||
+               status === 'SYSTEM_ERROR'
     }
     
 
@@ -170,7 +201,7 @@ export default function SubmissionsList({getEndpoint, title, autoRefresh = true}
                                         {submission.username}
                                     </TableCell>
                                     <TableCell align="right" sx={{wordBreak: 'break-word'}}>
-                                        {submission.submissionTime}
+                                        {formatDateTime(submission.submissionTime)}
                                     </TableCell>
                                     <TableCell align="right" sx={{wordBreak: 'break-word'}}>
                                         {submission.language}
@@ -192,6 +223,7 @@ export default function SubmissionsList({getEndpoint, title, autoRefresh = true}
                         </TableBody>
                     </Table>
                 </TableContainer>
+                <PaginationControls pagination={pagination} />
             </Box>
             <Modal open={popUp} onClose={() => setPopUp(false)}>
                 {!selectedSubmission ? (
@@ -229,7 +261,7 @@ export default function SubmissionsList({getEndpoint, title, autoRefresh = true}
                             ენა: {selectedSubmission.language}
                         </Typography>
                         <Typography sx={{fontSize: '10px', fontWeight: '400'}}>
-                            გაშვების დრო: {selectedSubmission.submissionTime}
+                            გაშვების დრო: {formatDateTime(selectedSubmission.submissionTime)}
                         </Typography>
                     </Paper>
                     <Paper elevation={4} sx={{padding: '1rem', marginBottom: '1rem', userSelect: 'contain', WebkitUserSelect: 'contain'}}>

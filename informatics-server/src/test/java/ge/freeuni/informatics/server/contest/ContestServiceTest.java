@@ -17,6 +17,7 @@ import ge.freeuni.informatics.repository.contest.ContestJpaRepository;
 import ge.freeuni.informatics.repository.contest.ContestantResultJpaRepository;
 import ge.freeuni.informatics.repository.contestroom.ContestRoomJpaRepository;
 import ge.freeuni.informatics.repository.submission.SubmissionJpaRepository;
+import ge.freeuni.informatics.server.user.IUserManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -60,6 +61,9 @@ class ContestServiceTest {
 
     @Mock
     private Logger log;
+
+    @Mock
+    private IUserManager userManager;
 
     @InjectMocks
     private ContestService contestService;
@@ -127,6 +131,8 @@ class ContestServiceTest {
         testSubmission.setContest(testContestEntity);
         testSubmission.setScore(100.0f);
         testSubmission.setSubmissionTime(new Date());
+
+        Mockito.lenient().when(userManager.isAdmin(anyLong())).thenReturn(false);
 
         ArgumentCaptor<ContestDTO> contestCaptor = ArgumentCaptor.forClass(ContestDTO.class);
         Mockito.lenient().when(contestManager.updateContest(contestCaptor.capture())).thenAnswer(invocation -> {
@@ -377,15 +383,17 @@ class ContestServiceTest {
         // Arrange - contest is not in liveContests (already ended)
         // Ensure liveContests map remains empty (do not activate)
 
-        when(contestRepository.getReferenceById(1L)).thenReturn(testContestEntity);
+        testContestEntity.setUpsolvingStandings(new ArrayList<>());
+        when(contestRepository.getById(1L, false, false, false, true)).thenReturn(testContestEntity);
 
         // Act
         testSubmission.setScore(100.0f);
         SubmissionEvent event = new SubmissionEvent(testSubmission);
         contestService.addSubmission(event);
 
-        // Assert - upsolving persists via contestManager.updateContest (not contestantResultJpaRepository directly)
-        verify(contestManager).updateContest(any(ContestDTO.class));
+        // Assert - upsolving persists by saving the entity directly (not via contestManager.updateContest,
+        // which would round-trip the whole Contest through a DTO and risk orphaning the other standings collection)
+        verify(contestRepository).saveAndPublish(any(Contest.class), any());
     }
 
     @Test

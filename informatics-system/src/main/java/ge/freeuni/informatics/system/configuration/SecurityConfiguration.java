@@ -44,6 +44,7 @@ public class SecurityConfiguration {
             "/api/languages",
             "/api/custom-test",
             "/api/custom-test/*",
+            "/api/task/*/statement/*",
             "/error",
     };
 
@@ -57,6 +58,17 @@ public class SecurityConfiguration {
             "/api/contest/*/tasks",
             "/api/contest/*/task-names",
             "/api/contest/*"
+    };
+
+    // Endpoints whose own application logic already enforces the real access check (an anonymous
+    // viewer only ever sees an open room, or public profile data with no auth dependency), so
+    // gating them again at this layer would just block the anonymous access they're meant to allow.
+    private static final String[] PUBLIC_ADDRESSES = {
+            "/api/room/*/tasks",
+            "/api/room/*/status",
+            "/api/room/*/submissions",
+            "/api/user/username/*/profile",
+            "/api/user/username/*/submissions",
     };
 
     private static final String[] ALL_ACCOUNT_ADDRESSES = {"/profile"};
@@ -116,6 +128,7 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers(antMatchers(GLOBAL_ADDRESSES)).permitAll()
                         .requestMatchers(antMatchers(GLOBAL_ROOM_CONTEST_ADDRESSES)).permitAll()
+                        .requestMatchers(antMatchers(PUBLIC_ADDRESSES)).permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception

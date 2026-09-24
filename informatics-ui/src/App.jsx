@@ -1,6 +1,7 @@
 import { Box } from '@mui/material'
 import { Route, Routes } from 'react-router-dom'
 import Navbar from './Components/NavBar'
+import Footer from './Components/Footer'
 import Compiler from './Pages/Compiler'
 import Contests from './Pages/Contests'
 import Main from './Pages/Main'
@@ -14,6 +15,8 @@ import EditContest from './Pages/contest/EditContest'
 import Results from './Pages/Results'
 import MySubmissions from './Pages/MySubmissions'
 import ContestSubmissions from './Pages/ContestSubmissions'
+import ArchiveMySubmissions from './Pages/ArchiveMySubmissions'
+import ArchiveStatus from './Pages/ArchiveStatus'
 import NewTaskCard from './Components/newtask/NewTaskCard'
 import Error from './Pages/Error'
 import UserProfile from './Pages/UserProfile'
@@ -26,7 +29,7 @@ function App() {
 	return (
 		<ConfirmDialogProvider>
 			<div className='App'>
-				<Box display='flex' flexDirection='column'>
+				<Box display='flex' flexDirection='column' minHeight='100vh'>
 					<Navbar />
 
 				<Routes>
@@ -42,6 +45,8 @@ function App() {
 					</Route>
 					<Route path='/resetSuccess' element={<ResetSuccess />} />
 					<Route path='/archive' element={<Archive />} />
+					<Route path='/archive/mySubmissions' element={<ArchiveMySubmissions />} />
+					<Route path='/archive/status' element={<ArchiveStatus />} />
 					<Route path='/contests' element={<Contests />} />
 					<Route path='/contest'>
 						<Route path=':contest_id' element={<Contest />} />
@@ -73,6 +78,7 @@ function App() {
 					<Route path='/user/:username' element={<UserProfile />} />
 					<Route element={<Error/>} />
 				</Routes>
+				<Footer />
 			</Box>
 		</div>
 		</ConfirmDialogProvider>

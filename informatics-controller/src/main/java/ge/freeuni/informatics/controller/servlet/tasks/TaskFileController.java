@@ -92,11 +92,9 @@ public class TaskFileController {
     @GetMapping("/task/{taskId}/file/{kind}/{fileName}")
     ResponseEntity<InputStreamResource> getTaskFile(@PathVariable Long taskId,
                                                     @PathVariable TaskFileKind kind,
-                                                    @PathVariable String fileName) {
+                                                    @PathVariable String fileName) throws InformaticsServerException {
         try {
             return fileResponse(taskFileManager.getTaskFile(taskId, kind, fileName));
-        } catch (InformaticsServerException ex) {
-            return ResponseEntity.status(ServletUtils.getResponseCode(ex)).build();
         } catch (IOException ex) {
             return ResponseEntity.internalServerError().build();
         }
@@ -105,14 +103,13 @@ public class TaskFileController {
     @DeleteMapping("/task/{taskId}/file/{kind}/{fileName}")
     ResponseEntity<InformaticsResponse> removeTaskFile(@PathVariable Long taskId,
                                                        @PathVariable TaskFileKind kind,
-                                                       @PathVariable String fileName) {
+                                                       @PathVariable String fileName) throws InformaticsServerException {
         try {
             taskFileManager.removeTaskFile(taskId, kind, fileName);
             return ResponseEntity.ok(new InformaticsResponse(null));
         } catch (InformaticsServerException ex) {
             log.error("Error while deleting task file {} of task {}", fileName, taskId, ex);
-            return ResponseEntity.status(ServletUtils.getResponseCode(ex))
-                    .body(new InformaticsResponse(ex.getCode()));
+            throw ex;
         }
     }
 
@@ -120,14 +117,9 @@ public class TaskFileController {
     ResponseEntity<InformaticsResponse> setFilePublic(@PathVariable Long taskId,
                                                       @PathVariable TaskFileKind kind,
                                                       @PathVariable String fileName,
-                                                      @RequestBody SetPublicTestcasesRequest request) {
-        try {
-            taskFileManager.setFileVisibleToContestants(taskId, kind, fileName, request.status());
-            return ResponseEntity.ok(new InformaticsResponse(null));
-        } catch (InformaticsServerException ex) {
-            return ResponseEntity.status(ServletUtils.getResponseCode(ex))
-                    .body(new InformaticsResponse(ex.getCode()));
-        }
+                                                      @RequestBody SetPublicTestcasesRequest request) throws InformaticsServerException {
+        taskFileManager.setFileVisibleToContestants(taskId, kind, fileName, request.status());
+        return ResponseEntity.ok(new InformaticsResponse(null));
     }
 
     @GetMapping("/task/{taskId}/attachments")
@@ -141,11 +133,9 @@ public class TaskFileController {
     }
 
     @GetMapping("/task/{taskId}/attachment/{fileName}")
-    ResponseEntity<InputStreamResource> getAttachment(@PathVariable Long taskId, @PathVariable String fileName) {
+    ResponseEntity<InputStreamResource> getAttachment(@PathVariable Long taskId, @PathVariable String fileName) throws InformaticsServerException {
         try {
             return fileResponse(taskFileManager.getContestantVisibleFile(taskId, fileName));
-        } catch (InformaticsServerException ex) {
-            return ResponseEntity.status(ServletUtils.getResponseCode(ex)).build();
         } catch (IOException ex) {
             return ResponseEntity.internalServerError().build();
         }

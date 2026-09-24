@@ -7,4 +7,5 @@ public enum TestStatus {
     WRONG_ANSWER,
     PARTIAL,
     CORRECT,
+    SYSTEM_ERROR,
 }

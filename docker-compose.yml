@@ -66,6 +66,12 @@ services:
     container_name: kafka_dev
     profiles:
       - dev
+    volumes:
+        # Without this, every container recreation wipes all topics, partition counts and
+        # consumer group state (KRaft storage defaults to this in-container path), forcing
+        # reconnecting consumers to race topic auto-creation from scratch. See
+        # KAFKA_AUTO_CREATE_TOPICS_ENABLE below for the other half of that failure mode.
+        - ${INFORMATICS_HOME_DIR:-/home/informatics/dev}/data_kafka:/tmp/kafka-logs
     environment:
       # Configure listeners for both docker and host communication
       KAFKA_LISTENERS: CONTROLLER://localhost:9091,HOST://0.0.0.0:9093,DOCKER://0.0.0.0:9092
@@ -83,6 +89,13 @@ services:
 
       # Required for a single node cluster
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+      # Topics must only ever be created by KafkaTopicConfiguration, which sets the partition
+      # count workers depend on. Auto-creation lets whichever client asks first - often an
+      # already-running worker reconnecting after a restart, before core has even started -
+      # create the topic with the broker's 1-partition default, wrongly pinning every
+      # submission to a single worker until someone notices.
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
     networks:
       informatics_dev:
         aliases:

@@ -136,7 +136,7 @@ public class JudgeRecoveryTest {
 
         // Tracking maps are empty, as they would be after a restart.
         deliverCallback(new KafkaCallback(7L, CallbackType.TEST_COMPLETED, "02", "ok",
-                1.0, TestStatus.CORRECT, 0, 10L, 100L, "", s.getJudgeToken()));
+                1.0, TestStatus.CORRECT, 0, 10L, 100L, "", s.getJudgeToken(), "worker-1"));
 
         // The result was accepted rather than dropped, and the submission was finalised.
         assertEquals(2, s.getSubmissionTestResults().size());
@@ -151,7 +151,7 @@ public class JudgeRecoveryTest {
         when(submissionRepository.findById(8L)).thenReturn(Optional.of(s));
 
         deliverCallback(new KafkaCallback(8L, CallbackType.TEST_COMPLETED, "01", "ok",
-                1.0, TestStatus.CORRECT, 0, 10L, 100L, "", s.getJudgeToken()));
+                1.0, TestStatus.CORRECT, 0, 10L, 100L, "", s.getJudgeToken(), "worker-1"));
 
         assertEquals(1, s.getSubmissionTestResults().size(), "must not double-record a result");
         assertEquals(SubmissionStatus.CORRECT, s.getStatus());

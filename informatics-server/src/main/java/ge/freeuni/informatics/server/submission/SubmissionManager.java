@@ -141,7 +141,7 @@ public class SubmissionManager implements ISubmissionManager {
     public SubmissionDTO loadFullSubmission(long id) throws InformaticsServerException {
         Submission submission = submissionRepository.getReferenceById(id);
 
-        long currentUserId = userManager.getAuthenticatedUser().id();
+        long currentUserId = userManager.getAuthenticatedUserIdOrAnonymous();
         Contest contest = submission.getContest();
         if (contest.getStatus() == ContestStatus.LIVE) {
             if (submission.getUser().getId() != currentUserId) {
@@ -177,8 +177,14 @@ public class SubmissionManager implements ISubmissionManager {
         }
     }
 
-    @Override
-    public List<SubmissionDTO> filter(Long userId, Long taskId, Long contestId, Long roomId, Integer offset, Integer limit) throws InformaticsServerException {
+    /**
+     * Resolves the effective contest/room and viewer's admin status for a submissions filter, and
+     * enforces that the viewer is allowed to see that room at all. Shared by {@link #filter} and
+     * {@link #countFilter} so the two can never disagree about which submissions are in scope.
+     */
+    private record FilterScope(Long contestId, Long roomId, boolean viewerIsAdmin) {}
+
+    private FilterScope resolveFilterScope(Long taskId, Long contestId, Long roomId) throws InformaticsServerException {
         if (contestId == null && roomId == null) {
             roomId = GLOBAL_ROOM_ID;
         }
@@ -199,24 +205,32 @@ public class SubmissionManager implements ISubmissionManager {
             throw new InformaticsServerException("contestNotInRoom");
         }
         ContestRoom room = roomManager.getRoom(roomId);
-        long currentUserId = -1L;
-        try {
-            currentUserId = userManager.getAuthenticatedUser().id();
-        } catch (InformaticsServerException ignored) {
-        }
+        long currentUserId = userManager.getAuthenticatedUserIdOrAnonymous();
         if (!room.isMember(currentUserId)) {
             throw InformaticsServerException.PERMISSION_DENIED;
         }
+        return new FilterScope(contestId, roomId, userManager.isAdmin(currentUserId));
+    }
+
+    @Override
+    public List<SubmissionDTO> filter(Long userId, Long taskId, Long contestId, Long roomId, Integer offset, Integer limit) throws InformaticsServerException {
+        FilterScope scope = resolveFilterScope(taskId, contestId, roomId);
         if (offset == null) {
             offset = 0;
         }
         if (limit == null) {
             limit = 20;
         }
-        return submissionRepository.findSubmissions(userId, taskId, contestId, roomId, offset, limit)
+        return submissionRepository.findSubmissions(userId, taskId, scope.contestId(), scope.roomId(), scope.viewerIsAdmin(), offset, limit)
                 .stream()
                 .map(SubmissionDTO::toDtoLight)
                 .toList();
+    }
+
+    @Override
+    public long countFilter(Long userId, Long taskId, Long contestId, Long roomId) throws InformaticsServerException {
+        FilterScope scope = resolveFilterScope(taskId, contestId, roomId);
+        return submissionRepository.countSubmissions(userId, taskId, scope.contestId(), scope.roomId(), scope.viewerIsAdmin());
     }
 
     @Override
@@ -248,8 +262,10 @@ public class SubmissionManager implements ISubmissionManager {
         submission.setSubmissionTestResults(new ArrayList<>(knownResults));
         submission = submissionRepository.save(submission);
 
+        log.info("Submission {} created for task {} by user {}, queueing for judging", submission.getId(), task.getId(), userId);
         judgeIntegration.addSubmission(task, submission);
-        
+        log.info("Submission {} handed off to judge integration", submission.getId());
+
         return submission.getId();
     }
 

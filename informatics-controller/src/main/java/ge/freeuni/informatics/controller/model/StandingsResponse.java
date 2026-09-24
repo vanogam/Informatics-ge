@@ -11,12 +11,22 @@ public class StandingsResponse extends InformaticsResponse {
 
     private Map<String, String> taskNameMap;
 
+    private long totalCount;
+
     public StandingsResponse(String status, String message) {
         super(message);
     }
 
     public List<ContestantResultDTO> getStandings() {
         return standings;
+    }
+
+    public long getTotalCount() {
+        return totalCount;
+    }
+
+    public void setTotalCount(long totalCount) {
+        this.totalCount = totalCount;
     }
 
     public Map<String, String> getTaskNameMap() {

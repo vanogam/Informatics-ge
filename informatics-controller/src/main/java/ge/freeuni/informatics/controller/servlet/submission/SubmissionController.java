@@ -146,10 +146,46 @@ public class SubmissionController {
             List<SubmissionDTO> submissions = submissionManager.filter(user.getId(), null, contestId, roomId, offset, limit);
             SubmissionListResponse response = new SubmissionListResponse("SUCCESS", null);
             response.setSubmissions(submissions);
+            response.setTotalCount(submissionManager.countFilter(user.getId(), null, contestId, roomId));
             return ResponseEntity.ok(response);
         } catch (InformaticsServerException ex) {
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    /**
+     * The current user's own submissions across a room (used by the archive/upsolving "my
+     * submissions" tab, which isn't scoped to a single contest) - mirrors
+     * {@link ge.freeuni.informatics.controller.servlet.contest.ContestController#getSubmissionsList}
+     * but keyed by room instead of contest.
+     */
+    @GetMapping("/room/{roomId}/submissions")
+    public SubmissionListResponse getRoomSubmissionsList(@PathVariable Long roomId, GetSubmissionsRequest request) {
+        SubmissionListResponse response = new SubmissionListResponse("SUCCESS", null);
+        try {
+            Long userId = userManager.getAuthenticatedUser().id();
+            response.setSubmissions(submissionManager.filter(userId, request.getTaskId(), null, roomId, request.getOffset(), request.getLimit()));
+            response.setTotalCount(submissionManager.countFilter(userId, request.getTaskId(), null, roomId));
+        } catch (InformaticsServerException ex) {
+            return new SubmissionListResponse("FAIL", ex.getCode());
+        }
+        return response;
+    }
+
+    /**
+     * Every submission in a room, any contestant - the archive/upsolving "status" tab's
+     * counterpart to {@link ge.freeuni.informatics.controller.servlet.contest.ContestController#getStatus}.
+     */
+    @GetMapping("/room/{roomId}/status")
+    public SubmissionListResponse getRoomStatus(@PathVariable Long roomId, GetSubmissionsRequest request) {
+        SubmissionListResponse response = new SubmissionListResponse("SUCCESS", null);
+        try {
+            response.setSubmissions(submissionManager.filter(null, request.getTaskId(), null, roomId, request.getOffset(), request.getLimit()));
+            response.setTotalCount(submissionManager.countFilter(null, request.getTaskId(), null, roomId));
+        } catch (InformaticsServerException ex) {
+            return new SubmissionListResponse("FAIL", ex.getCode());
+        }
+        return response;
     }
 
     @GetMapping("/user/{userId}/problems/{status}")

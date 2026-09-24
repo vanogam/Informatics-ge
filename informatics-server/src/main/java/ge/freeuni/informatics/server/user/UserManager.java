@@ -93,6 +93,19 @@ public class UserManager implements IUserManager {
     }
 
     @Override
+    public boolean isAdmin(Long userId) {
+        if (userId == null) {
+            return false;
+        }
+        // findById (not getReferenceById/getUser): this is now also called with ids that may not
+        // exist at all - the anonymous sentinel in particular - and a reference proxy throws
+        // EntityNotFoundException on first access instead of just not being admin.
+        return userRepository.findById(userId)
+                .map(user -> UserRole.hasRole(user.getRole(), UserRole.ADMIN))
+                .orElse(false);
+    }
+
+    @Override
     public void createUser(UserDTO userDTO, String password) throws InformaticsServerException {
         User user = UserDTO.fromDTO(userDTO);
         user.setId(null);
@@ -208,6 +221,15 @@ public class UserManager implements IUserManager {
             throw InformaticsServerException.NOT_LOGGED_IN;
         }
         return UserDTO.toDTO(principal.getUser());
+    }
+
+    @Override
+    public long getAuthenticatedUserIdOrAnonymous() {
+        try {
+            return getAuthenticatedUser().id();
+        } catch (InformaticsServerException e) {
+            return ANONYMOUS_USER_ID;
+        }
     }
 
     @Override

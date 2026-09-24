@@ -6,5 +6,6 @@ public enum TestStatus {
     RUNTIME_ERROR,
     WRONG_ANSWER,
     PARTIAL,
-    CORRECT
+    CORRECT,
+    SYSTEM_ERROR
 }

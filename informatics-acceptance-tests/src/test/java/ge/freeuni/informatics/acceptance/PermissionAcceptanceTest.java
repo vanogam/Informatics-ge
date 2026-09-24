@@ -349,7 +349,12 @@ public class PermissionAcceptanceTest extends BaseAcceptanceTest {
 
     private boolean isNonMemberDeniedPath(String path) {
         // Keep this list strict and explicit; non-member checks are business-rule specific.
-        return "/api/submit".equals(path);
+        // These are all @MemberTaskRestricted: a closed room's task content is member-only,
+        // even though anyone with a STUDENT-or-higher role may hold that role in general.
+        return "/api/submit".equals(path)
+                || "/api/task/{taskId}/statement/{language}".equals(path)
+                || "/api/task/{taskId}/attachment/{fileName}".equals(path)
+                || "/api/task/{taskId}/attachments".equals(path);
     }
 
     private boolean isAnonymousAccessible(String path, String method) {
@@ -367,6 +372,13 @@ public class PermissionAcceptanceTest extends BaseAcceptanceTest {
 
         if (!"GET".equals(method)) {
             return false;
+        }
+        if (path.equals("/api/room/{id}/tasks")
+                || path.equals("/api/room/{roomId}/status")
+                || path.equals("/api/room/{roomId}/submissions")
+                || path.equals("/api/user/username/{username}/profile")
+                || path.equals("/api/user/username/{username}/submissions")) {
+            return true;
         }
         return path.startsWith("/api/contest/")
                 && (path.endsWith("/registrants")

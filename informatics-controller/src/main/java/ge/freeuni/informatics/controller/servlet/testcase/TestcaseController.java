@@ -55,7 +55,7 @@ public class TestcaseController {
     }
 
     @GetMapping("/task/{taskId}/testcase/{testKey}")
-    ResponseEntity<InputStreamResource> getSingleTestcase(@PathVariable Long taskId, @PathVariable String testKey) {
+    ResponseEntity<InputStreamResource> getSingleTestcase(@PathVariable Long taskId, @PathVariable String testKey) throws InformaticsServerException {
         try {
             testKey = ServletUtils.sanitizeTestKey(testKey);
             File file = taskManager.getTestcaseZip(taskId, testKey);
@@ -63,30 +63,26 @@ public class TestcaseController {
                     .header("Content-Disposition", "attachment; filename=\"" + file.getName() + "\"")
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
                     .body(new InputStreamResource(new FileInputStream(file)));
-        } catch (InformaticsServerException ex) {
-            return ResponseEntity.status(ServletUtils.getResponseCode(ex)).build();
         } catch (IOException ex) {
             return ResponseEntity.internalServerError().build();
         }
     }
 
     @GetMapping("/task/{taskId}/testcases")
-    ResponseEntity<InputStreamResource> getTestcases(@PathVariable Long taskId) {
+    ResponseEntity<InputStreamResource> getTestcases(@PathVariable Long taskId) throws InformaticsServerException {
         try {
             File file = taskManager.getTestcasesZip(taskId);
             return ResponseEntity.ok()
                     .header("Content-Disposition", "attachment; filename=\"" + file.getName() + "\"")
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
                     .body(new InputStreamResource(new FileInputStream(file)));
-        } catch (InformaticsServerException ex) {
-            return ResponseEntity.status(ServletUtils.getResponseCode(ex)).build();
         } catch (IOException ex) {
             return ResponseEntity.internalServerError().build();
         }
     }
 
     @PostMapping("/task/{taskId}/testcase")
-    ResponseEntity<AddTestcasesResponse> addSingleTestcase(@PathVariable Long taskId, @ModelAttribute AddSingleTestcaseRequest request) {
+    ResponseEntity<AddTestcasesResponse> addSingleTestcase(@PathVariable Long taskId, @ModelAttribute AddSingleTestcaseRequest request) throws InformaticsServerException {
         MultipartFile in = request.getInputFile();
         MultipartFile out = request.getOutputFile();
         long maxPartBytes = maxSingleTestcaseFileMb * 1024L * 1024L;
@@ -100,8 +96,6 @@ public class TestcaseController {
             return ResponseEntity.ok(new AddTestcasesResponse(taskManager.addTestcase(taskId, in.getBytes(), out.getBytes(),
                     in.getOriginalFilename(), out.getOriginalFilename()
             )));
-        } catch (InformaticsServerException ex) {
-            return ResponseEntity.status(ServletUtils.getResponseCode(ex)).build();
         } catch (IOException ex) {
             log.error("Error during file upload", ex);
             return ResponseEntity.internalServerError().build();
@@ -110,40 +104,34 @@ public class TestcaseController {
     }
 
     @PutMapping("/task/{taskId}/testcases/{testKey}/public")
-    ResponseEntity<InformaticsResponse> setPublicTestcases(@PathVariable Long taskId, @PathVariable String testKey, @RequestBody SetPublicTestcasesRequest request) {
+    ResponseEntity<InformaticsResponse> setPublicTestcases(@PathVariable Long taskId, @PathVariable String testKey, @RequestBody SetPublicTestcasesRequest request) throws InformaticsServerException {
         try {
             taskManager.setPublicTestcase(taskId, testKey, request.status());
         } catch (InformaticsServerException ex) {
             log.error("Error during setting public testcases", ex);
-            return ResponseEntity
-                    .status(ServletUtils.getResponseCode(ex))
-                    .body(new InformaticsResponse(ex.getCode()));
+            throw ex;
         }
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/task/{taskId}/testcase/{testKey}")
-    ResponseEntity<InformaticsResponse> deleteSingleTestcase(@PathVariable Long taskId, @PathVariable String testKey) {
+    ResponseEntity<InformaticsResponse> deleteSingleTestcase(@PathVariable Long taskId, @PathVariable String testKey) throws InformaticsServerException {
         try {
             taskManager.removeTestCase(taskId, testKey);
         } catch (InformaticsServerException ex) {
             log.error("Error during deleting testcase", ex);
-            return ResponseEntity
-                    .status(ServletUtils.getResponseCode(ex))
-                    .body(new InformaticsResponse(ex.getCode()));
+            throw ex;
         }
         return ResponseEntity.ok(new InformaticsResponse(null));
     }
 
     @DeleteMapping("/task/{taskId}/testcases")
-    ResponseEntity<InformaticsResponse> deleteTestcases(@PathVariable Long taskId, @RequestBody DeleteTestcasesRequest request) {
+    ResponseEntity<InformaticsResponse> deleteTestcases(@PathVariable Long taskId, @RequestBody DeleteTestcasesRequest request) throws InformaticsServerException {
         try {
             taskManager.removeTestcases(taskId, request.testKeys());
         } catch (InformaticsServerException ex) {
             log.error("Error during deleting testcases", ex);
-            return ResponseEntity
-                    .status(ServletUtils.getResponseCode(ex))
-                    .body(new InformaticsResponse(ex.getCode()));
+            throw ex;
         }
         return ResponseEntity.ok(new InformaticsResponse(null));
     }

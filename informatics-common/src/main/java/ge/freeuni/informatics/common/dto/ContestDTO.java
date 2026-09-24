@@ -4,8 +4,11 @@ import ge.freeuni.informatics.common.model.contest.Contest;
 import ge.freeuni.informatics.common.model.contest.ContestantResult;
 import ge.freeuni.informatics.common.model.contest.ContestStatus;
 import ge.freeuni.informatics.common.model.contest.ScoringType;
+import ge.freeuni.informatics.common.model.task.Task;
+import ge.freeuni.informatics.common.model.user.User;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.TreeSet;
@@ -153,6 +156,11 @@ public class ContestDTO {
         this.upsolvingStandings = upsolvingStandings;
     }
 
+    /**
+     * Maps the contest's own scalar fields only. Never touches a lazy association - a caller that
+     * wants tasks, participants, or standings on the DTO must load them itself (e.g. via
+     * {@code Hibernate.initialize}) and pass them to {@link #toDTO(Contest, List, List, Collection, List)}.
+     */
     public static ContestDTO toDTO(Contest contest) {
         ContestDTO contestDTO = new ContestDTO();
 
@@ -166,37 +174,46 @@ public class ContestDTO {
         contestDTO.setUpsolvingAfterFinish(contest.isUpsolvingAfterFinished());
         contestDTO.setScoringType(contest.getScoringType());
         contestDTO.setVersion(contest.getVersion());
-        try {
-            List<TaskDTO> taskDTOs = TaskDTO.toDTOs(contest.getTasks());
+        return contestDTO;
+    }
+
+    /**
+     * Maps the contest along with its associations, each already fetched by the caller. Any
+     * association passed as {@code null} is left off the DTO rather than fetched here.
+     */
+    public static ContestDTO toDTO(Contest contest,
+                                    List<Task> tasks,
+                                    List<User> participants,
+                                    Collection<ContestantResult> standings,
+                                    List<ContestantResult> upsolvingStandings) {
+        ContestDTO contestDTO = toDTO(contest);
+
+        if (tasks != null) {
+            List<TaskDTO> taskDTOs = TaskDTO.toDTOs(tasks);
             taskDTOs.sort((a, b) -> {
                 Integer orderA = a.order() != null ? a.order() : 0;
                 Integer orderB = b.order() != null ? b.order() : 0;
                 return orderA.compareTo(orderB);
             });
             contestDTO.setTasks(taskDTOs);
-            if (contest.getParticipants() != null) {
-                contestDTO.setParticipants(contest.getParticipants()
-                        .stream()
-                        .map(UserDTO::toDTO)
-                        .collect(Collectors.toList()));
-            }
-        } catch (Exception ignored) {}
-        try {
-            if (contest.getScoringType() != null && contest.getStandings() != null) {
-                contestDTO.setStandings(contest.getStandings()
-                        .stream()
-                        .filter(r -> r.getUpsolvingContest() == null)
-                        .map(ContestantResultDTO::toDTO)
-                        .collect(Collectors.toCollection(TreeSet::new)));
-            }
-        } catch (Exception ignored) {}
-        try {
-            if (contest.getUpsolvingStandings() != null) {
-                contestDTO.setUpsolvingStandings(contest.getUpsolvingStandings()
-                        .stream().map(ContestantResultDTO::toDTO)
-                        .collect(Collectors.toList()));
-            }
-        } catch (Exception ignored) {
+        }
+        if (participants != null) {
+            contestDTO.setParticipants(participants
+                    .stream()
+                    .map(UserDTO::toDTO)
+                    .collect(Collectors.toList()));
+        }
+        if (contest.getScoringType() != null && standings != null) {
+            contestDTO.setStandings(standings
+                    .stream()
+                    .filter(r -> r.getUpsolvingContest() == null)
+                    .map(ContestantResultDTO::toDTO)
+                    .collect(Collectors.toCollection(TreeSet::new)));
+        }
+        if (upsolvingStandings != null) {
+            contestDTO.setUpsolvingStandings(upsolvingStandings
+                    .stream().map(ContestantResultDTO::toDTO)
+                    .collect(Collectors.toList()));
         }
         return contestDTO;
     }

@@ -33,6 +33,12 @@ public interface IContestManager {
 
     List<ContestantResult> getStandings(long contestId, Integer offset, Integer size) throws InformaticsServerException;
 
+    /**
+     * The total number of standings rows {@link #getStandings} would page through for this
+     * contest, ignoring offset/size.
+     */
+    long getStandingsCount(long contestId) throws InformaticsServerException;
+
     boolean isCurrentUserRegistered(long contestId) throws InformaticsServerException;
 
     List<UserSimpleDTO> getRegistrants(long contestId) throws InformaticsServerException;

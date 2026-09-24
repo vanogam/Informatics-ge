@@ -19,7 +19,9 @@ public record KafkaCallback(
          * Echo of the token the task message carried, or null from a worker old enough not to
          * know about it - which is treated as "belongs to the current run".
          */
-        @JsonProperty("judgeToken") Integer judgeToken
+        @JsonProperty("judgeToken") Integer judgeToken,
+        /** Id of the worker that produced this result, or null from a worker old enough not to send it. */
+        @JsonProperty("workerId") String workerId
 ) {
     @JsonCreator
     public KafkaCallback {

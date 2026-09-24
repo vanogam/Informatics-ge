@@ -2,7 +2,7 @@ package ge.informatics.sandbox;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerResponse;
-import com.github.dockerjava.api.command.InspectContainerResponse;
+import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.HostConfig;
 import ge.informatics.sandbox.executors.CommunicationExecutor;
@@ -22,6 +22,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 import static ge.informatics.sandbox.ContainerPaths.submissionBinary;
@@ -124,16 +127,32 @@ public class Sandbox implements AutoCloseable {
         return megabytes * 1024 * 1024;
     }
 
+    /**
+     * Removes a leftover container from this worker's own previous run, keyed by name, so a
+     * crash-restart doesn't collide with the container it left behind.
+     *
+     * <p>The name comes straight off the list response instead of a follow-up inspect: an
+     * inspect that races another worker's own cleanup (its shutdown hook removing its sandbox
+     * concurrently, see {@link JobConsumer#shutdown()}) 404s on a container this worker was
+     * never going to touch, which used to abort startup entirely. The list filter is a substring
+     * match, so containers are still compared by exact name before anything is removed.
+     */
     private void handleExistingContainer(String containerName) {
-        for (Container container : dockerClient.listContainersCmd()
+        List<Container> matches = dockerClient.listContainersCmd()
                 .withShowAll(true)
-                .exec()) {
-            InspectContainerResponse containerInfo = dockerClient.inspectContainerCmd(container.getId()).exec();
-            if (containerInfo.getName().equals("/" + containerName)) {
+                .withNameFilter(Collections.singletonList(containerName))
+                .exec();
+        for (Container container : matches) {
+            if (!Arrays.asList(container.getNames()).contains("/" + containerName)) {
+                continue;
+            }
+            try {
                 dockerClient.removeContainerCmd(container.getId()).withForce(true).exec();
                 log.info("Removed existing container with name: {}", containerName);
-                return;
+            } catch (NotFoundException e) {
+                log.debug("Container {} was already gone", containerName);
             }
+            return;
         }
     }
 
@@ -147,8 +166,8 @@ public class Sandbox implements AutoCloseable {
 
     public void downloadFile(String src, String dest) {
         try (InputStream inputStream = dockerClient.copyArchiveFromContainerCmd(containerId, src)
-                .exec()) {
-            FileOutputStream fos = new FileOutputStream(dest);
+                .exec();
+             FileOutputStream fos = new FileOutputStream(dest)) {
             fos.write(inputStream.readAllBytes());
         } catch (IOException e) {
             log.error("Error while writing file to destination: {}", dest, e);
@@ -547,17 +566,25 @@ public class Sandbox implements AutoCloseable {
         return out.trim();
     }
 
+    /**
+     * Idempotent: a worker's shutdown hook closes the sandbox directly so it cannot outlive a
+     * killed JVM (see {@link ge.informatics.sandbox.JobConsumer#shutdown()}), and the normal poll
+     * loop's {@code finally} closes it too when the hook wasn't needed - both paths must be able
+     * to call this without the second one erroring on an already-closed Docker client.
+     */
     @Override
     public void close() throws Exception {
+        if (containerId == null) {
+            return;
+        }
         try {
-            if (containerId != null) {
-                dockerClient.stopContainerCmd(containerId).exec();
-                dockerClient.removeContainerCmd(containerId).exec();
-                log.info("Docker container destroyed");
-            }
+            dockerClient.stopContainerCmd(containerId).exec();
+            dockerClient.removeContainerCmd(containerId).exec();
+            log.info("Docker container destroyed");
         } catch (Exception e) {
             log.error("Failed to destroy Docker container", e);
         } finally {
+            containerId = null;
             dockerClient.close();
         }
     }

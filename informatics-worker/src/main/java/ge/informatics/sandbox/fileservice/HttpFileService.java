@@ -41,7 +41,9 @@ public class HttpFileService implements FileService {
             }
             fileOutputStream.close();
             File file = new File(localUrl);
-            sandbox.uploadTar(new FileInputStream(file), destinationPath);
+            try (FileInputStream fis = new FileInputStream(file)) {
+                sandbox.uploadTar(fis, destinationPath);
+            }
             file.delete();
             log.info("File downloaded successfully");
         } catch (IOException e) {

@@ -3,7 +3,6 @@ package ge.freeuni.informatics.controller.servlet.admin;
 import ge.freeuni.informatics.common.dto.WorkerDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.controller.model.*;
-import ge.freeuni.informatics.controller.servlet.ServletUtils;
 import ge.freeuni.informatics.server.annotation.AdminRestricted;
 import ge.freeuni.informatics.server.submission.ISubmissionManager;
 import ge.freeuni.informatics.server.annotation.WorkerRestricted;
@@ -125,13 +124,6 @@ public class AdminController {
             log.error("Error getting workers list", ex);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new WorkersResponse("internalError"));
         }
-    }
-
-    @ExceptionHandler(InformaticsServerException.class)
-    public ResponseEntity<InformaticsResponse> handleInformaticsServerException(InformaticsServerException ex) {
-        return ResponseEntity
-                .status(ServletUtils.getResponseCode(ex))
-                .body(new InformaticsResponse(ex.getCode()));
     }
 
 }

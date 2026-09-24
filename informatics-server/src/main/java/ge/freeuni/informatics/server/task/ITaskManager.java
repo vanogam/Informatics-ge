@@ -23,9 +23,21 @@ public interface ITaskManager {
 
     List<TaskInfo> getUpsolvingTasks(long roomId, Integer offset, Integer limit) throws InformaticsServerException;
 
+    /**
+     * The total number of tasks {@link #getUpsolvingTasks} would page through for this room,
+     * ignoring offset/limit.
+     */
+    long getUpsolvingTasksCount(long roomId) throws InformaticsServerException;
+
     Map<String, String> fillTaskNames(Long contestId);
 
     List<TaskInfo> getContestTasks(long contestId, int offset, int limit) throws InformaticsServerException;
+
+    /**
+     * The total number of tasks {@link #getContestTasks} would page through for this contest,
+     * ignoring offset/limit.
+     */
+    long getContestTasksCount(long contestId) throws InformaticsServerException;
 
     void removeTask(long taskId, long testId);
 

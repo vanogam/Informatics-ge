@@ -471,6 +471,10 @@ public class ContestAcceptanceTest extends BaseAcceptanceTest {
         assertThat(upS2).isNotNull();
         assertThat(upS1.totalScore()).isEqualTo(100.0f);
         assertThat(upS2.totalScore()).isEqualTo(100.0f);
+        // ContestDTO.toDTO has no username lookup of its own, so this only holds if the
+        // server enriches upsolving standings with usernames the same way it does for live ones.
+        assertThat(upS1.username()).isEqualTo("student1");
+        assertThat(upS2.username()).isEqualTo("student2");
     }
 
     private static ContestantResultDTO findByContestantId(List<ContestantResultDTO> list, Long contestantId) {

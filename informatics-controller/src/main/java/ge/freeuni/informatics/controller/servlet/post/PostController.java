@@ -73,15 +73,9 @@ public class PostController {
     }
 
     @PutMapping(value = "/post/{postId}")
-    ResponseEntity<InformaticsResponse> savePost(@PathVariable Long postId, @RequestBody PostDTO postDTO) {
-        try {
-            postsManager.savePost(postDTO);
-            return ResponseEntity.ok(new InformaticsResponse(null));
-        } catch (InformaticsServerException ex) {
-            return ResponseEntity
-                    .status(ServletUtils.getResponseCode(ex))
-                    .body(new InformaticsResponse(ex.getCode()));
-        }
+    ResponseEntity<InformaticsResponse> savePost(@PathVariable Long postId, @RequestBody PostDTO postDTO) throws InformaticsServerException {
+        postsManager.savePost(postDTO);
+        return ResponseEntity.ok(new InformaticsResponse(null));
     }
 
     @PostMapping(value = "/post/{postId}/image")
@@ -114,13 +108,9 @@ public class PostController {
     }
 
     @DeleteMapping(value = "/posts/{postId}")
-    ResponseEntity<Void> deletePost(@PathVariable Long postId) {
-        try {
-            postsManager.deletePost(postId);
-            return ResponseEntity.ok().build();
-        } catch (InformaticsServerException ex) {
-            return ResponseEntity.status(ServletUtils.getResponseCode(ex)).build();
-        }
+    ResponseEntity<Void> deletePost(@PathVariable Long postId) throws InformaticsServerException {
+        postsManager.deletePost(postId);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping(value = "/posts/{postId}/comment")
@@ -134,13 +124,9 @@ public class PostController {
     }
 
     @DeleteMapping(value = "/posts/comments/{commentId}")
-    ResponseEntity<Void> deleteComment(@PathVariable Long commentId) {
-        try {
-            postsManager.deleteComment(commentId);
-            return ResponseEntity.ok().build();
-        } catch (InformaticsServerException ex) {
-            return ResponseEntity.status(ServletUtils.getResponseCode(ex)).build();
-        }
+    ResponseEntity<Void> deleteComment(@PathVariable Long commentId) throws InformaticsServerException {
+        postsManager.deleteComment(commentId);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping(value = "/posts/{postId}/comments")

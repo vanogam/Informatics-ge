@@ -183,9 +183,10 @@ public class WorkerManager implements IWorkerManager {
     public void updateHeartbeat(String workerId, Long jobsProcessed, Boolean isWorking) {
         Optional<Worker> workerOpt = workerRepository.findByWorkerId(workerId);
         Worker worker;
-        
+
         if (workerOpt.isPresent()) {
             worker = workerOpt.get();
+            WorkerStatus previousStatus = worker.getStatus();
             worker.setLastHeartbeat(new Date());
             if (isWorking != null && isWorking) {
                 worker.setStatus(WorkerStatus.WORKING);
@@ -194,6 +195,11 @@ public class WorkerManager implements IWorkerManager {
             }
             if (jobsProcessed != null) {
                 worker.setJobsProcessed(jobsProcessed);
+            }
+            if (previousStatus != worker.getStatus()) {
+                log.info("Worker {} heartbeat: {} -> {}, jobsProcessed={}", workerId, previousStatus, worker.getStatus(), worker.getJobsProcessed());
+            } else {
+                log.debug("Worker {} heartbeat: {}, jobsProcessed={}", workerId, worker.getStatus(), worker.getJobsProcessed());
             }
         } else {
             worker = new Worker();
@@ -206,8 +212,9 @@ public class WorkerManager implements IWorkerManager {
                 worker.setStatus(WorkerStatus.ONLINE);
             }
             worker.setJobsProcessed(jobsProcessed != null ? jobsProcessed : 0L);
+            log.info("First heartbeat from previously unknown worker {}, registering as {}", workerId, worker.getStatus());
         }
-        
+
         workerRepository.save(worker);
     }
 
@@ -219,7 +226,9 @@ public class WorkerManager implements IWorkerManager {
         
         for (Worker worker : workers) {
             long timeSinceLastHeartbeat = now.getTime() - worker.getLastHeartbeat().getTime();
-            if (timeSinceLastHeartbeat > HEARTBEAT_TIMEOUT_MS) {
+            if (timeSinceLastHeartbeat > HEARTBEAT_TIMEOUT_MS && worker.getStatus() != WorkerStatus.OFFLINE) {
+                log.warn("Worker {} marked OFFLINE: no heartbeat for {}ms (timeout {}ms)",
+                        worker.getWorkerId(), timeSinceLastHeartbeat, HEARTBEAT_TIMEOUT_MS);
                 worker.setStatus(WorkerStatus.OFFLINE);
                 workerRepository.save(worker);
             }

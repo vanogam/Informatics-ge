@@ -1,8 +1,26 @@
 <configuration>
     <property name="LOG_DIR" value="/logs" />
 
+    <!-- Gets every level from our own packages (see the ge.freeuni.informatics logger below)
+         plus INFO+ from everything else that reaches root. -->
+    <appender name="DEBUG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/informatics.debug.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- Daily log rotation -->
+            <fileNamePattern>${LOG_DIR}/informatics.debug-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory> <!-- Keep logs for 30 days -->
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Same content as DEBUG_FILE, minus DEBUG - the clean/production log. -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_DIR}/informatics.log</file>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- Daily log rotation -->
             <fileNamePattern>${LOG_DIR}/informatics-%d{yyyy-MM-dd}.log</fileNamePattern>
@@ -13,7 +31,12 @@
         </encoder>
     </appender>
 
+    <!-- Only our own code is enabled for DEBUG; third-party loggers stay at root's INFO so this
+         doesn't turn into a Spring/Hibernate/Kafka firehose. -->
+    <logger name="ge.freeuni.informatics" level="debug" />
+
     <root level="info">
+        <appender-ref ref="DEBUG_FILE" />
         <appender-ref ref="FILE" />
     </root>
 </configuration>

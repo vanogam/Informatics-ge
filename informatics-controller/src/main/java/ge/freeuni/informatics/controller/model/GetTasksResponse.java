@@ -8,6 +8,8 @@ public class GetTasksResponse extends InformaticsResponse {
 
     List<TaskInfo> tasks;
 
+    long totalCount;
+
     public  GetTasksResponse() {}
 
     public GetTasksResponse(String message) {
@@ -20,5 +22,13 @@ public class GetTasksResponse extends InformaticsResponse {
 
     public void setTasks(List<TaskInfo> tasks) {
         this.tasks = tasks;
+    }
+
+    public long getTotalCount() {
+        return totalCount;
+    }
+
+    public void setTotalCount(long totalCount) {
+        this.totalCount = totalCount;
     }
 }

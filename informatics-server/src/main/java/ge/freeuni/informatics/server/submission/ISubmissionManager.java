@@ -17,6 +17,12 @@ public interface ISubmissionManager {
 
     List<SubmissionDTO> filter(Long userId, Long taskId, Long contestId, Long roomId, Integer offset, Integer limit) throws InformaticsServerException;
 
+    /**
+     * The total number of submissions {@link #filter} would page through for the same filters,
+     * ignoring offset/limit - what a pagination control needs to compute the last page.
+     */
+    long countFilter(Long userId, Long taskId, Long contestId, Long roomId) throws InformaticsServerException;
+
     Long addSubmission(SubmissionDTO submission) throws InformaticsServerException;
 
     /**

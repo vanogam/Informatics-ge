@@ -18,21 +18,25 @@ export default function UserProfile() {
     const [targetUsername, setTargetUsername] = useState(null)
 
     useEffect(() => {
-        axiosInstance.get('/user')
-            .then((currentUserResponse) => {
-                const currentUsername = currentUserResponse.data.username
-                setCurrentUserUsername(currentUsername)
-                
-                const resolvedTargetUsername = username || currentUsername
-                setTargetUsername(resolvedTargetUsername)
-                
-                return Promise.all([
-                    axiosInstance.get(`/user/username/${resolvedTargetUsername}`),
-                    axiosInstance.get(`/user/username/${resolvedTargetUsername}/profile`)
-                ])
-            })
+        setLoading(true)
+        setTargetUsername(username)
+
+        // Who's logged in (if anyone) only decides whether to show "my own profile" affordances
+        // like the password-change tab - it must not gate loading the profile itself, or an
+        // anonymous visitor could never view anyone's public profile page.
+        axiosInstance.get('/user') // interceptor already silences 401s for this endpoint
+            .then((response) => setCurrentUserUsername(response.data.username))
+            .catch(() => setCurrentUserUsername(null))
+
+        Promise.all([
+            // Carries the viewed user's email, so unlike the profile/submissions endpoints it's
+            // still auth-gated server-side; ignoreErrors keeps an expected anonymous 401 from
+            // popping the global "please log in" toast. The name line is skipped when this fails.
+            axiosInstance.get(`/user/username/${username}`, {ignoreErrors: true}).catch(() => null),
+            axiosInstance.get(`/user/username/${username}/profile`)
+        ])
             .then(([userResponse, profileResponse]) => {
-                setUser(userResponse.data)
+                setUser(userResponse?.data ?? null)
                 setProfile(profileResponse.data)
                 setLoading(false)
             })

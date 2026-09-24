@@ -15,6 +15,8 @@ import { AxiosContext } from '../utils/axiosInstance'
 import { getScoreRowBackground, getScoreRowHoverBackground } from '../styles/scoreColors'
 import ContestNavigationBar from '../Components/ContestNavigationBar'
 import getMessage from '../Components/lang'
+import { usePagination } from '../utils/usePagination'
+import PaginationControls from '../Components/PaginationControls'
 
 function handleContestResponse(response, setProblems){
 	var curTasks = []
@@ -54,20 +56,27 @@ export default function Archive(){
 	const axiosInstance = useContext(AxiosContext)
 	const navigate = useNavigate()
 	const [problems , setProblems] = useState([])
+	const pagination = usePagination()
+	const {offset, pageSize, setTotalCount} = pagination
 	useEffect(() => {
 		axiosInstance
 			.get('/room/1/tasks', {
 				params:{
-					offset : 0 , 
-					limit: 100
+					offset: offset,
+					limit: pageSize
 				}
 			})
-			.then((response) =>  handleContestResponse(response, setProblems))
+			.then((response) => {
+				handleContestResponse(response, setProblems)
+				setTotalCount(response.data.totalCount || 0)
+			})
 			.catch((error) => {
 				console.error('Error loading archive tasks:', error)
 				setProblems([])
+				setTotalCount(0)
 			})
-	}, [axiosInstance])
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [axiosInstance, offset, pageSize])
 
     return (
        <main>
@@ -138,6 +147,7 @@ export default function Archive(){
 					</TableBody>
 				</Table>
 				</TableContainer>
+				<PaginationControls pagination={pagination} />
 			</Container>
 		</main>
 	)

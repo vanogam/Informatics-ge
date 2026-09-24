@@ -24,7 +24,13 @@ public class LocalFileService implements FileService {
             if (shouldArchive) {
                 sandbox.uploadTar(compressFile(file, destinationName), destinationPath);
             } else {
-                sandbox.uploadTar(new FileInputStream(file), destinationPath);
+                // uploadTar() PUTs the stream synchronously and returns only once the request
+                // is done, so it's safe to close right after - docker-java's own exec never
+                // closes the stream it's handed, and without this every test run of a
+                // non-output submission leaked one file descriptor.
+                try (FileInputStream fis = new FileInputStream(file)) {
+                    sandbox.uploadTar(fis, destinationPath);
+                }
             }
         } catch (IOException e) {
             throw new RuntimeException("Failed to compress file: " + file.getAbsolutePath(), e);

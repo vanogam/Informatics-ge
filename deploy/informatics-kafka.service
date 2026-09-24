@@ -10,9 +10,17 @@ Restart=always
 EnvironmentFile=/home/informatics/app/config/.env
 
 ExecStartPre=-/usr/bin/docker rm -f kafka
+# The apache/kafka image runs as uid 1000, but a bind mount Docker creates on first use is
+# root-owned - without this, the broker crash-loops on a permission-denied writing its own
+# storage the moment the host directory doesn't already exist with the right owner.
+ExecStartPre=/usr/bin/mkdir -p ${INFORMATICS_HOME_DIR}/data_kafka
+# Reassigning ownership to a different uid needs root, which the informatics user (see User=
+# above) doesn't have - the leading + runs just this line unsandboxed instead of as that user.
+ExecStartPre=+/usr/bin/chown -R 1000:1000 ${INFORMATICS_HOME_DIR}/data_kafka
 
 ExecStart=/usr/bin/docker run \
   --name kafka \
+  -v ${INFORMATICS_HOME_DIR}/data_kafka:/tmp/kafka-logs \
   -e KAFKA_LISTENERS=CONTROLLER://localhost:9091,HOST://0.0.0.0:9093,DOCKER://0.0.0.0:9092 \
   -e KAFKA_ADVERTISED_LISTENERS=HOST://localhost:9093,DOCKER://kafka:9092 \
   -e KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,DOCKER:PLAINTEXT,HOST:PLAINTEXT \
@@ -22,6 +30,7 @@ ExecStart=/usr/bin/docker run \
   -e KAFKA_CONTROLLER_QUORUM_VOTERS=1@localhost:9091 \
   -e KAFKA_INTER_BROKER_LISTENER_NAME=DOCKER \
   -e KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1 \
+  -e KAFKA_AUTO_CREATE_TOPICS_ENABLE=false \
   --network informatics \
   --network-alias kafka \
   apache/kafka:latest

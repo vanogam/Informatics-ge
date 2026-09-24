@@ -8,6 +8,8 @@ public class SubmissionListResponse extends InformaticsResponse {
 
     List<SubmissionDTO> submissions;
 
+    long totalCount;
+
     public SubmissionListResponse(String status, String message) {
         super(message);
     }
@@ -18,5 +20,13 @@ public class SubmissionListResponse extends InformaticsResponse {
 
     public void setSubmissions(List<SubmissionDTO> submissions) {
         this.submissions = submissions;
+    }
+
+    public long getTotalCount() {
+        return totalCount;
+    }
+
+    public void setTotalCount(long totalCount) {
+        this.totalCount = totalCount;
     }
 }

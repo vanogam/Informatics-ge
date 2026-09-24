@@ -6,7 +6,6 @@ import ge.freeuni.informatics.common.Language;
 import ge.freeuni.informatics.common.dto.AddTestcasesResult;
 import ge.freeuni.informatics.common.dto.TaskDTO;
 import ge.freeuni.informatics.common.dto.TestcaseDTO;
-import ge.freeuni.informatics.common.dto.UserDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.contest.Contest;
 import ge.freeuni.informatics.common.model.contest.ContestantResult;
@@ -26,6 +25,7 @@ import ge.freeuni.informatics.server.annotation.TeacherContestRestricted;
 import ge.freeuni.informatics.server.annotation.TeacherTaskRestricted;
 import ge.freeuni.informatics.server.contestroom.IContestRoomManager;
 import ge.freeuni.informatics.server.user.IUserManager;
+import ge.freeuni.informatics.utils.ArrayUtils;
 import ge.freeuni.informatics.utils.FileUtils;
 import jakarta.persistence.EntityNotFoundException;
 import org.hibernate.Hibernate;
@@ -100,11 +100,15 @@ public class TaskManager implements ITaskManager {
         return contest.getTasks().stream().map(Task::getTitle).toList();
     }
 
-    @Override
-    public List<TaskInfo> getUpsolvingTasks(long roomId, Integer offset, Integer limit) throws InformaticsServerException {
+    /**
+     * The full, unpaged upsolving task list a viewer is allowed to see for a room - shared by
+     * {@link #getUpsolvingTasks} and {@link #getUpsolvingTasksCount} so paging and counting can
+     * never disagree about which tasks are in scope.
+     */
+    private List<TaskInfo> buildUpsolvingTasks(long roomId) throws InformaticsServerException {
         ContestRoom room = roomManager.getRoom(roomId);
-        UserDTO currentUser = userManager.getAuthenticatedUser();
-        if (!room.isMember(currentUser.id())) {
+        long currentUserId = userManager.getAuthenticatedUserIdOrAnonymous();
+        if (!room.isMember(currentUserId)) {
             throw InformaticsServerException.PERMISSION_DENIED;
         }
         List<Contest> contests = contestRepository.findUpsolvingContests(roomId, new Date());
@@ -117,7 +121,7 @@ public class TaskManager implements ITaskManager {
             for (Task task : contest.getTasks()) {
                 TaskDTO taskDTO = TaskDTO.toDTO(task);
                 ContestantResult contestantResult = contest.getUpsolvingStandings().stream()
-                        .filter(res -> res.getContestantId() == currentUser.id())
+                        .filter(res -> res.getContestantId() == currentUserId)
                         .findFirst().orElse(null);
                 Float score = null;
                 if (contestantResult != null && contestantResult.getTaskResults() != null) {
@@ -134,6 +138,16 @@ public class TaskManager implements ITaskManager {
     }
 
     @Override
+    public List<TaskInfo> getUpsolvingTasks(long roomId, Integer offset, Integer limit) throws InformaticsServerException {
+        return ArrayUtils.getPage(buildUpsolvingTasks(roomId), offset, limit);
+    }
+
+    @Override
+    public long getUpsolvingTasksCount(long roomId) throws InformaticsServerException {
+        return buildUpsolvingTasks(roomId).size();
+    }
+
+    @Override
     @MemberContestRestricted
     public Map<String, String> fillTaskNames(Long contestId) {
         Contest contest = contestRepository.getReferenceById(contestId);
@@ -147,13 +161,16 @@ public class TaskManager implements ITaskManager {
                 ));
     }
 
-    @Override
-    @MemberContestRestricted
-    public List<TaskInfo> getContestTasks(long contestId, int offset, int limit) throws InformaticsServerException {
+    /**
+     * The full, unpaged task list a viewer is allowed to see for a contest - shared by
+     * {@link #getContestTasks} and {@link #getContestTasksCount} so paging and counting can never
+     * disagree about which tasks are in scope.
+     */
+    private List<TaskInfo> buildContestTasks(long contestId) throws InformaticsServerException {
         Contest contest = contestRepository.getReferenceById(contestId);
         ContestRoom room = roomManager.getRoom(contest.getRoomId());
-        UserDTO currentUser = userManager.getAuthenticatedUser();
-        if (!room.isMember(currentUser.id())) {
+        long currentUserId = userManager.getAuthenticatedUserIdOrAnonymous();
+        if (!room.isMember(currentUserId)) {
             throw InformaticsServerException.PERMISSION_DENIED;
         }
         List<TaskInfo> result = new ArrayList<>();
@@ -164,7 +181,7 @@ public class TaskManager implements ITaskManager {
             TaskDTO taskDTO = TaskDTO.toDTO(task);
             ContestantResult contestantResult = contest.getStandings()
                     .stream()
-                    .filter(res -> res.getContestantId() == currentUser.id())
+                    .filter(res -> res.getContestantId() == currentUserId)
                     .findFirst()
                     .orElse(null);
             Float maxScore = computeMaxScore(task);
@@ -175,6 +192,18 @@ public class TaskManager implements ITaskManager {
             }
         }
         return result;
+    }
+
+    @Override
+    @MemberContestRestricted
+    public List<TaskInfo> getContestTasks(long contestId, int offset, int limit) throws InformaticsServerException {
+        return ArrayUtils.getPage(buildContestTasks(contestId), offset, limit);
+    }
+
+    @Override
+    @MemberContestRestricted
+    public long getContestTasksCount(long contestId) throws InformaticsServerException {
+        return buildContestTasks(contestId).size();
     }
 
     private Float computeMaxScore(Task task) {

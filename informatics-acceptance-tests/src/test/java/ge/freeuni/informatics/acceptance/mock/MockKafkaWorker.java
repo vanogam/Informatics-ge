@@ -123,7 +123,8 @@ public class MockKafkaWorker {
                     submissionId,
                     CallbackType.COMPILATION_STARTED,
                     null, null, null, null, null, null, null, null,
-                    task.judgeToken()
+                    task.judgeToken(),
+                    "mock-worker"
             ));
             
             // Simulate compilation time
@@ -134,10 +135,11 @@ public class MockKafkaWorker {
                 sendCallback(new KafkaCallback(
                         submissionId,
                         CallbackType.COMPILATION_FAILED,
-                        null, 
+                        null,
                         "error: expected ';' before '}' token", // compilation error message
                         null, null, null, null, null, null,
-                        task.judgeToken()
+                        task.judgeToken(),
+                        "mock-worker"
                 ));
                 log.info("=== MOCK WORKER === Compilation failed for submission {}", submissionId);
             } else {
@@ -146,7 +148,8 @@ public class MockKafkaWorker {
                         submissionId,
                         CallbackType.COMPILATION_COMPLETED,
                         null, null, null, null, null, null, null, null,
-                        task.judgeToken()
+                        task.judgeToken(),
+                        "mock-worker"
                 ));
                 log.info("=== MOCK WORKER === Compilation completed for submission {}", submissionId);
             }
@@ -235,7 +238,8 @@ public class MockKafkaWorker {
                     "Test outcome",
                     // Echoed like a real worker: the core drops results whose token no longer
                     // matches the submission's current judging run.
-                    task.judgeToken()
+                    task.judgeToken(),
+                    "mock-worker"
             ));
             
             log.info("=== MOCK WORKER === Test {} for submission {}: {} (score: {})", 

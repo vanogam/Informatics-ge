@@ -41,6 +41,8 @@ NONE | POST    /api/register                                           -> UserCo
 STUDENT | GET     /api/room/{id}/tasks                                    -> TaskController#getTasks
 TEACHER | POST    /api/room/{roomId}/post                                 -> PostController#addPostDraft
 STUDENT | GET     /api/room/{roomId}/posts                                -> PostController#getPosts
+STUDENT | GET     /api/room/{roomId}/status                               -> SubmissionController#getRoomStatus
+STUDENT | GET     /api/room/{roomId}/submissions                          -> SubmissionController#getRoomSubmissionsList
 STUDENT | GET     /api/submission/{id}                                    -> ContestController#getSubmission
 STUDENT | POST    /api/submit                                             -> SubmissionController#submit
 STUDENT | POST    /api/submit/output                                      -> SubmissionController#submitOutput

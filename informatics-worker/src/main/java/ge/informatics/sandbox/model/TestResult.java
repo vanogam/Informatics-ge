@@ -19,6 +19,9 @@ public class TestResult {
     /** Which judging run this result belongs to; see {@link #setJudgeToken(Integer)}. */
     private Integer judgeToken;
 
+    /** Id of the worker that produced this result; see {@link #setWorkerId(String)}. */
+    private String workerId;
+
     public TestResult(CallbackType messageType,
                       String testcaseKey,
                       String message,
@@ -80,6 +83,17 @@ public class TestResult {
      */
     public void setJudgeToken(Integer judgeToken) {
         this.judgeToken = judgeToken;
+    }
+
+    public String getWorkerId() {
+        return workerId;
+    }
+
+    /**
+     * Stamped just before the callback is sent, same as {@link #setJudgeToken(Integer)}.
+     */
+    public void setWorkerId(String workerId) {
+        this.workerId = workerId;
     }
 
     public CallbackType getMessageType() {

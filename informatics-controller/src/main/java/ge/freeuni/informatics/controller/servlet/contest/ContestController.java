@@ -145,38 +145,20 @@ public class ContestController {
     }
 
     @DeleteMapping("/contest/{contestId}")
-    public ResponseEntity<InformaticsResponse> deleteContest(@PathVariable Long contestId) {
-        try {
-            contestManager.deleteContest(contestId);
-        } catch (InformaticsServerException ex) {
-            return ResponseEntity
-                    .status(ServletUtils.getResponseCode(ex))
-                    .body(new InformaticsResponse(ex.getCode()));
-        }
+    public ResponseEntity<InformaticsResponse> deleteContest(@PathVariable Long contestId) throws InformaticsServerException {
+        contestManager.deleteContest(contestId);
         return ResponseEntity.ok(new InformaticsResponse(null));
     }
 
     @PostMapping("/contest/{contestId}/register")
-    public ResponseEntity<InformaticsResponse> register(@PathVariable Long contestId) {
-        try {
-            contestManager.registerUser(contestId);
-        } catch (InformaticsServerException ex) {
-            return ResponseEntity
-                    .status(ServletUtils.getResponseCode(ex))
-                    .body(new InformaticsResponse(ex.getCode()));
-        }
+    public ResponseEntity<InformaticsResponse> register(@PathVariable Long contestId) throws InformaticsServerException {
+        contestManager.registerUser(contestId);
         return ResponseEntity.ok(new InformaticsResponse(null));
     }
 
     @PostMapping("/contest/{contestId}/unregister")
-    public ResponseEntity<InformaticsResponse> unregister(@PathVariable String contestId) {
-        try {
-            contestManager.unregisterUser(Long.parseLong(contestId));
-        } catch (InformaticsServerException ex) {
-            return ResponseEntity
-                    .status(ServletUtils.getResponseCode(ex))
-                    .body(new InformaticsResponse(ex.getCode()));
-        }
+    public ResponseEntity<InformaticsResponse> unregister(@PathVariable String contestId) throws InformaticsServerException {
+        contestManager.unregisterUser(Long.parseLong(contestId));
         return ResponseEntity.ok(new InformaticsResponse(null));
     }
 
@@ -187,6 +169,7 @@ public class ContestController {
             List<ContestantResultDTO> result = contestService.getStandings(contestId, request.getOffset(), request.getLimit());
             response.setTaskNameMap(taskManager.fillTaskNames(contestId));
             response.setStandings(result);
+            response.setTotalCount(contestService.getStandingsCount(contestId));
         } catch (InformaticsServerException ex) {
             return new StandingsResponse("FAIL", ex.getCode());
         }
@@ -201,12 +184,14 @@ public class ContestController {
             request.setLimit(defaultPageSize);
         }
         try {
-            response.setSubmissions(submissionManager.filter(userManager.getAuthenticatedUser().id(),
+            Long userId = userManager.getAuthenticatedUser().id();
+            response.setSubmissions(submissionManager.filter(userId,
                     request.getTaskId(),
                     Long.parseLong(contestId),
                     null,
                     request.getOffset(),
                     request.getLimit()));
+            response.setTotalCount(submissionManager.countFilter(userId, request.getTaskId(), Long.parseLong(contestId), null));
         } catch (InformaticsServerException ex) {
             return new SubmissionListResponse("FAIL", ex.getCode());
         }
@@ -224,6 +209,7 @@ public class ContestController {
                     null,
                     request.getOffset(),
                     request.getLimit()));
+            response.setTotalCount(submissionManager.countFilter(null, request.getTaskId(), Long.parseLong(contestId), null));
         } catch (InformaticsServerException ex) {
             return new SubmissionListResponse("FAIL", ex.getCode());
         }
@@ -231,12 +217,8 @@ public class ContestController {
     }
 
     @GetMapping("/submission/{id}")
-    public ResponseEntity<SubmissionDTO> getSubmission(@PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(submissionManager.loadFullSubmission(id));
-        } catch (InformaticsServerException e) {
-            return ResponseEntity.internalServerError().build();
-        }
+    public ResponseEntity<SubmissionDTO> getSubmission(@PathVariable Long id) throws InformaticsServerException {
+        return ResponseEntity.ok(submissionManager.loadFullSubmission(id));
     }
 
     public Date convertToDate(LocalDateTime dateToConvert) {

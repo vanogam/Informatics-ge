@@ -6,7 +6,6 @@ import ge.freeuni.informatics.common.dto.UserProfileDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.user.User;
 import ge.freeuni.informatics.controller.model.*;
-import ge.freeuni.informatics.controller.servlet.ServletUtils;
 import ge.freeuni.informatics.server.user.IUserManager;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -136,38 +135,20 @@ public class UserController {
     }
 
     @GetMapping("/recover/verify/{link}")
-    public ResponseEntity<InformaticsResponse> verifyLink(@PathVariable String link) {
-        try {
-            userManager.verifyRecoveryQuery(link);
-        } catch (InformaticsServerException ex) {
-            return ResponseEntity
-                    .status(ServletUtils.getResponseCode(ex))
-                    .body(new InformaticsResponse(ex.getCode()));
-        }
+    public ResponseEntity<InformaticsResponse> verifyLink(@PathVariable String link) throws InformaticsServerException {
+        userManager.verifyRecoveryQuery(link);
         return ResponseEntity.ok(new InformaticsResponse(null));
     }
 
     @PostMapping("/recover/request")
-    public ResponseEntity<InformaticsResponse> requestRecovery(@RequestBody AddRecoveryRequest request) {
-        try {
-            userManager.addPasswordRecoveryQuery(request.getUsername());
-        } catch (InformaticsServerException ex) {
-            return ResponseEntity
-                    .status(ServletUtils.getResponseCode(ex))
-                    .body(new InformaticsResponse(ex.getCode()));
-        }
+    public ResponseEntity<InformaticsResponse> requestRecovery(@RequestBody AddRecoveryRequest request) throws InformaticsServerException {
+        userManager.addPasswordRecoveryQuery(request.getUsername());
         return ResponseEntity.ok(new InformaticsResponse(null));
     }
 
     @PostMapping("/recover/update-password/{link}")
-    public ResponseEntity<InformaticsResponse> recover(@PathVariable String link, @RequestBody RecoverPasswordRequest request) {
-        try {
-            userManager.recoverPassword(link, request.getNewPassword());
-        } catch (InformaticsServerException ex) {
-            return ResponseEntity
-                    .status(ServletUtils.getResponseCode(ex))
-                    .body(new InformaticsResponse(ex.getCode()));
-        }
+    public ResponseEntity<InformaticsResponse> recover(@PathVariable String link, @RequestBody RecoverPasswordRequest request) throws InformaticsServerException {
+        userManager.recoverPassword(link, request.getNewPassword());
         return ResponseEntity.ok(new InformaticsResponse(null));
     }
 

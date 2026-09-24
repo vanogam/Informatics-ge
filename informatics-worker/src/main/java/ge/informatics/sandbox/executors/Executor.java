@@ -85,7 +85,7 @@ public interface Executor {
                     .build();
         }
 
-        evaluate(client, containerId, builder);
+        evaluateOrSystemError(client, containerId, builder);
         // Attach contestant output snapshot (first 1000 chars) to the result
         String outcome = retrieveOutcome(client, containerId);
         builder.withOutcome(outcome);
@@ -130,6 +130,24 @@ public interface Executor {
         return metrics;
     }
 
+
+    /**
+     * Runs {@link #evaluate} and turns a broken checker or manager (a crash, a timeout, an
+     * unreadable score) into a {@link TestStatus#SYSTEM_ERROR} verdict on this one test, rather
+     * than letting the exception abort the whole submission: the contestant's other tests still
+     * deserve a verdict, and this one still deserves a place in the breakdown instead of
+     * vanishing from it.
+     */
+    default void evaluateOrSystemError(DockerClient client, String containerId, TestResult.Builder builder)
+            throws InterruptedException {
+        try {
+            evaluate(client, containerId, builder);
+        } catch (RuntimeException e) {
+            builder.withStatus(TestStatus.SYSTEM_ERROR)
+                    .withScore(0.0)
+                    .withMessage(e.getMessage());
+        }
+    }
 
     default void evaluate(DockerClient client, String containerId, TestResult.Builder builder) throws InterruptedException {
         Utils.CommandResult result = executeCommandSync(

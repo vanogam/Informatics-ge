@@ -23,9 +23,7 @@ RUN adduser --disabled-password --gecos '' contestant && \
     chmod 770 /sandbox/fifo && \
     usermod -aG contestant checker && \
     apt-get update && \
-    apt-get install -y time && \
-    apt-get install -y procps && \
-    apt-get install -y g++ make && \
-    apt-get install -y python3 && \
+    apt-get install -y --no-install-recommends time procps g++ make python3 && \
+    rm -rf /var/lib/apt/lists/* && \
     chown contestant:contestant /usr/bin/time && \
     chmod 555 /usr/bin/time

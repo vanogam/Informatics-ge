@@ -12,6 +12,7 @@ import ge.freeuni.informatics.common.model.submission.SubmissionKind;
 import ge.freeuni.informatics.common.model.submission.SubmissionStatus;
 import ge.freeuni.informatics.common.model.submission.SubmissionTestResult;
 import ge.freeuni.informatics.common.model.submission.SubtaskScores;
+import ge.freeuni.informatics.common.model.submission.TestStatus;
 import ge.freeuni.informatics.common.model.task.Task;
 import ge.freeuni.informatics.common.model.task.TaskScoreType;
 import ge.freeuni.informatics.common.model.task.TestKeys;
@@ -288,6 +289,7 @@ public class JudgeIntegration implements IJudgeIntegration{
             String message = objectMapper.writeValueAsString(kafkaTask);
             log.debug("Publishing compilation message: {}", message);
             kafkaProducerService.sendMessage("submission-topic", message);
+            log.info("Queued compilation for submission {}", submission.getId());
         } catch (IOException e) {
             log.error("Failed to serialize compilation kafka message", e);
             throw new InformaticsServerException("serializationError", e);
@@ -385,7 +387,7 @@ public class JudgeIntegration implements IJudgeIntegration{
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             KafkaCallback callback = objectMapper.readValue(message, KafkaCallback.class);
-            log.info("`Received callback for submission`: {}, {}, {}", callback.submissionId(), callback.messageType(), callback.testcaseKey());
+            log.info("`Received callback for submission`: {}, {}, {}, worker={}", callback.submissionId(), callback.messageType(), callback.testcaseKey(), callback.workerId());
 
             // If this callback is not for a regular submission (e.g., custom test run),
             // ignore it here and let other listeners handle it.
@@ -672,7 +674,12 @@ public class JudgeIntegration implements IJudgeIntegration{
         }
 
         float testScoreSum = submission.getSubmissionTestResults().stream().map(SubmissionTestResult::getScore).reduce(0f, (sum, result) -> sum + result);
-        if (testScoreSum == 0f) {
+        // A checker or manager that crashed on even one test taints the whole verdict: the
+        // contestant's actual result for that test was never established, so nothing else about
+        // this submission (partial credit included) can be trusted either.
+        if (submission.getSubmissionTestResults().stream().anyMatch(res -> res.getTestStatus() == TestStatus.SYSTEM_ERROR)) {
+            submission.setStatus(SubmissionStatus.SYSTEM_ERROR);
+        } else if (testScoreSum == 0f) {
             submission.setStatus(SubmissionStatus.FAILED);
         } else if (submission.getSubmissionTestResults().stream().allMatch(res -> res.getScore() == 1f)) {
             submission.setStatus(SubmissionStatus.CORRECT);
@@ -719,3 +726,4 @@ public class JudgeIntegration implements IJudgeIntegration{
         eventPublisher.publishEvent(new SubmissionEvent(submission, rejudged));
     }
 }
+

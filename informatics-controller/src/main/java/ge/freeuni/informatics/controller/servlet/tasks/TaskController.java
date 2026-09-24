@@ -41,6 +41,7 @@ public class TaskController {
             List<TaskInfo> taskInfos = taskManager.getUpsolvingTasks(id, request.getOffset(), request.getLimit());
             GetTasksResponse response = new GetTasksResponse(null);
             response.setTasks(taskInfos);
+            response.setTotalCount(taskManager.getUpsolvingTasksCount(id));
             return ResponseEntity.ok(response);
         } catch (InformaticsServerException ex) {
             return ResponseEntity.badRequest().body(new GetTasksResponse(ex.getCode()));
@@ -56,6 +57,7 @@ public class TaskController {
             List<TaskInfo> taskInfos = taskManager.getContestTasks(id, request.getOffset(), request.getLimit());
             GetTasksResponse response = new GetTasksResponse();
             response.setTasks(taskInfos);
+            response.setTotalCount(taskManager.getContestTasksCount(id));
             return ResponseEntity.ok(response);
         } catch (InformaticsServerException ex) {
             return ResponseEntity.badRequest().body(new GetTasksResponse(ex.getCode()));
@@ -80,7 +82,7 @@ public class TaskController {
     }
 
     @PostMapping("/task")
-    ResponseEntity<?> saveTask(@RequestBody AddTaskRequest request) {
+    ResponseEntity<?> saveTask(@RequestBody AddTaskRequest request) throws InformaticsServerException {
         TaskDTO taskDTO = new TaskDTO(
                 request.taskId(),
                 Long.valueOf(request.contestId()),
@@ -105,20 +107,14 @@ public class TaskController {
             return ResponseEntity.ok(taskManager.addTask(request.contestId(), taskDTO));
         } catch (InformaticsServerException ex) {
             log.error("Error while saving the task", ex);
-            // The body carries the error code the UI translates; without it the toast is blank.
-            return ResponseEntity.status(ServletUtils.getResponseCode(ex))
-                    .body(new InformaticsResponse(ex.getCode()));
+            throw ex;
         }
     }
 
     @PostMapping("/task/{taskId}/statement")
-    ResponseEntity<Void> uploadStatement(@PathVariable Long taskId, @RequestBody AddStatementRequest request) {
-        try {
-            taskManager.addStatement(taskId, request.statement(), request.language());
-            return ResponseEntity.ok().build();
-        } catch (InformaticsServerException ex) {
-            return ResponseEntity.status(ServletUtils.getResponseCode(ex)).build();
-        }
+    ResponseEntity<Void> uploadStatement(@PathVariable Long taskId, @RequestBody AddStatementRequest request) throws InformaticsServerException {
+        taskManager.addStatement(taskId, request.statement(), request.language());
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping(value = "/task/{taskId}/statement/{language}")
@@ -138,13 +134,13 @@ public class TaskController {
     }
 
     @PutMapping("/contest/{contestId}/tasks/order")
-    ResponseEntity<Void> updateTaskOrder(@PathVariable Long contestId, @RequestBody UpdateTaskOrderRequest request) {
+    ResponseEntity<Void> updateTaskOrder(@PathVariable Long contestId, @RequestBody UpdateTaskOrderRequest request) throws InformaticsServerException {
         try {
             taskManager.updateTaskOrder(contestId, request.taskIds());
             return ResponseEntity.ok().build();
         } catch (InformaticsServerException ex) {
             log.error("Error while updating task order", ex);
-            return ResponseEntity.status(ServletUtils.getResponseCode(ex)).build();
+            throw ex;
         }
     }
 }

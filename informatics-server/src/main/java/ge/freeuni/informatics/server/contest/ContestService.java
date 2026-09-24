@@ -23,6 +23,7 @@ import ge.freeuni.informatics.utils.ArrayUtils;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.TaskScheduler;
@@ -69,6 +70,9 @@ public class ContestService {
     @Autowired
     private PlatformTransactionManager transactionManager;
 
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
+
     private static final Duration SYNC_INTERVAL = Duration.ofSeconds(30);
 
     private final ConcurrentHashMap<Long, LiveContestState> liveContests = new ConcurrentHashMap<>();
@@ -91,7 +95,7 @@ public class ContestService {
                         true,
                         true)
                 .stream()
-                .map(ContestDTO::toDTO)
+                .map(ContestService::toFullDTO)
                 .toList();
         List<ContestDTO> liveContests = contestRepository.findContests(null,
                         null,
@@ -107,21 +111,50 @@ public class ContestService {
                         true)
                 .stream()
                 .filter(contest -> contest.getStartDate() != null)
-                .map(ContestDTO::toDTO)
+                .map(ContestService::toFullDTO)
                 .toList();
         scheduleFutureContests(futureContests);
         manageLiveContests(liveContests);
     }
 
+    /**
+     * DTO conversion for a contest whose tasks/participants/standings/upsolvingStandings were all
+     * just Hibernate.initialize'd by the caller (e.g. the load-flagged findContests overload).
+     */
+    private static ContestDTO toFullDTO(Contest contest) {
+        return ContestDTO.toDTO(contest, contest.getTasks(), contest.getParticipants(),
+                contest.getStandings(), contest.getUpsolvingStandings());
+    }
+
     public List<ContestantResultDTO> getStandings(long contestId, Integer offset, Integer size) throws InformaticsServerException {
         LiveContestState state = liveContests.get(contestId);
         if (state != null) {
-            return ArrayUtils.getPage(state.getStandingsSnapshot(), offset, size);
+            boolean viewerIsAdmin = userManager.isAdmin(userManager.getAuthenticatedUserIdOrAnonymous());
+            List<ContestantResultDTO> standings = state.getStandingsSnapshot().stream()
+                    .filter(r -> viewerIsAdmin || !userManager.isAdmin(r.contestantId()))
+                    .toList();
+            return ArrayUtils.getPage(standings, offset, size);
         } else {
             return contestManager.getStandings(contestId, offset, size)
                     .stream()
                     .map(res -> ContestantResultDTO.toDTO(res, getUsername(res.getContestantId())))
                     .toList();
+        }
+    }
+
+    /**
+     * The total number of standings rows {@link #getStandings} would page through, ignoring
+     * offset/size - what a pagination control needs to compute the last page.
+     */
+    public long getStandingsCount(long contestId) throws InformaticsServerException {
+        LiveContestState state = liveContests.get(contestId);
+        if (state != null) {
+            boolean viewerIsAdmin = userManager.isAdmin(userManager.getAuthenticatedUserIdOrAnonymous());
+            return state.getStandingsSnapshot().stream()
+                    .filter(r -> viewerIsAdmin || !userManager.isAdmin(r.contestantId()))
+                    .count();
+        } else {
+            return contestManager.getStandingsCount(contestId);
         }
     }
 
@@ -184,6 +217,8 @@ public class ContestService {
     @EventListener
     public void addSubmission(SubmissionEvent event) throws InformaticsServerException {
         Submission submission = (Submission) event.getSource();
+        // Admin scores are still recorded - getStandings only hides them from non-admin viewers -
+        // so an admin trying a task out shows up in standings for other staff, not for contestants.
         long contestId = submission.getContest().getId();
         LiveContestState state = liveContests.get(contestId);
         if (state == null) {
@@ -333,12 +368,20 @@ public class ContestService {
     }
 
     private void addUpsolvingSubmission(Submission submission, boolean rejudged) throws InformaticsServerException {
-        Contest contest = contestRepository.getReferenceById(submission.getContest().getId());
-        ContestDTO contestDTO = ContestDTO.toDTO(contest);
-
-        if (contestDTO.getUpsolvingStandings() == null) {
-            contestDTO.setUpsolvingStandings(new ArrayList<>());
-        }
+        // Loads upsolvingStandings inside its own transaction so the collection is genuinely
+        // initialized here, rather than toDTO silently treating an un-fetched association as
+        // empty - which would then get saved back and, via orphanRemoval, delete every other
+        // contestant's upsolving results for this contest.
+        //
+        // `standings` is deliberately left untouched (still an uninitialized lazy proxy): a
+        // ContestantResult row created for upsolving carries *both* the contest and
+        // upsolvingContest FK, so it is (by FK) a member of the `standings` collection too. Were
+        // that collection loaded and then saved back containing only the DTO's live-only subset,
+        // Hibernate would read the missing upsolving rows as orphaned and delete them - or, the
+        // other way around, saving it as null would orphan the live rows instead. Never reading
+        // it at all is what keeps this save from touching it either way.
+        Contest contest = contestRepository.getById(submission.getContest().getId(), false, false, false, true);
+        ContestDTO contestDTO = ContestDTO.toDTO(contest, null, null, null, contest.getUpsolvingStandings());
 
         if (rejudged) {
             replayTaskIntoStandings(contestDTO.getUpsolvingStandings(), scoredSubmissionsForReplay(submission),
@@ -347,8 +390,19 @@ public class ContestService {
             applySubmissionToStandings(contestDTO.getUpsolvingStandings(), submission, contestDTO, false);
         }
 
+        List<ContestantResult> updatedUpsolvingResults = contestDTO.getUpsolvingStandings().stream()
+                .map(res -> ContestantResultDTO.fromDTO(res, contest))
+                .toList();
+        updatedUpsolvingResults.forEach(r -> r.setUpsolvingContest(contest));
+
+        // contest is a managed entity, and upsolvingStandings has orphanRemoval - Hibernate
+        // requires the collection instance it already loaded to be mutated in place (not replaced
+        // with a new List), or it treats the original as dereferenced and refuses to flush.
+        contest.getUpsolvingStandings().clear();
+        contest.getUpsolvingStandings().addAll(updatedUpsolvingResults);
+
         // Upsolving persists immediately since there's no concurrency concern
-        contestManager.updateContest(contestDTO);
+        contestRepository.saveAndPublish(contest, eventPublisher);
     }
 
     private void syncContestStandings(long contestId) {

@@ -6,9 +6,11 @@ import ge.informatics.sandbox.kafka.CallbackProducer;
 import ge.informatics.sandbox.model.*;
 import org.apache.kafka.clients.consumer.CommitFailedException;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,12 +34,18 @@ public class JobConsumer {
     private final KafkaConsumer<String, String> consumer;
     private final Sandbox sandbox;
     private final HeartbeatSender heartbeatSender;
-    public boolean running = true;
+    private final String workerId;
+    // Read by the poll loop, written by the shutdown hook on a different thread.
+    public volatile boolean running = true;
 
     public JobConsumer(String bootstrapServers, String groupId, String id, String serverUrl) {
         Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
+        // Every worker is its own JVM, so Kafka's default id-generation counter (consumer-<group>-1)
+        // starts fresh in each one - without this, every worker shares the literal same client.id,
+        // making them indistinguishable in broker logs, metrics, and any client-id-based quota.
+        props.put(ConsumerConfig.CLIENT_ID_CONFIG, "consumer-" + id);
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
@@ -53,6 +61,7 @@ public class JobConsumer {
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
 
         consumer = new KafkaConsumer<>(props);
+        workerId = id;
         sandbox = new Sandbox(id);
         
         // Initialize heartbeat sender if server URL is provided
@@ -76,7 +85,20 @@ public class JobConsumer {
 
     public void listenToSubmissionTopic() {
         String topic = "submission-topic";
-        consumer.subscribe(Collections.singletonList(topic));
+        // Rebalances happen silently otherwise, which hides a real failure mode: a worker that
+        // never gets any partition assigned (e.g. more consumers than partitions, or stuck in a
+        // rebalance loop) looks identical in the logs to one that is correctly idle.
+        consumer.subscribe(Collections.singletonList(topic), new ConsumerRebalanceListener() {
+            @Override
+            public void onPartitionsRevoked(java.util.Collection<TopicPartition> partitions) {
+                log.info("Partitions revoked: {}", partitions);
+            }
+
+            @Override
+            public void onPartitionsAssigned(java.util.Collection<TopicPartition> partitions) {
+                log.info("Partitions assigned: {}", partitions);
+            }
+        });
 
         log.info("Listening to topic: {}", topic);
 
@@ -223,9 +245,26 @@ public class JobConsumer {
     }
 
     private void sendCallback(TestResult result) {
+        result.setWorkerId(workerId);
         CallbackProducer producer = new CallbackProducer(System.getenv("KAFKA_BOOTSTRAP_SERVERS"));
         producer.sendTestResult(result);
         producer.close();
+    }
+
+    /**
+     * Closes the sandbox container right away rather than waiting for the poll loop to notice
+     * {@link #running} went false. The container is stopped by {@code docker stop} on a grace
+     * timeout (10s by default); the poll loop can easily be blocked longer than that inside a
+     * compile or test run, so waiting for it to unwind on its own routinely lost the race to
+     * SIGKILL and left the sandbox container running with nothing left to stop it.
+     */
+    public void shutdown() {
+        running = false;
+        try {
+            sandbox.close();
+        } catch (Exception e) {
+            log.error("Failed to close sandbox during shutdown", e);
+        }
     }
 
     public static void main(String[] args) {
@@ -242,7 +281,7 @@ public class JobConsumer {
         // was received, and must not double-close what listenToSubmissionTopic already closed.
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             log.info("JVM shutting down, stopping worker...");
-            consumer.running = false;
+            consumer.shutdown();
         }));
 
         try {

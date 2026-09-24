@@ -47,7 +47,7 @@ public class OutputOnlyExecutor implements Executor {
                 .withTimeMillis(0)
                 .withMemoryKB(0);
 
-        evaluate(client, containerId, builder);
+        evaluateOrSystemError(client, containerId, builder);
         builder.withOutcome(retrieveOutcome(client, containerId));
         return builder.build();
     }

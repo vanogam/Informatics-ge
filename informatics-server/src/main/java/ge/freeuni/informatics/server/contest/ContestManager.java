@@ -1,5 +1,6 @@
 package ge.freeuni.informatics.server.contest;
 
+import ge.freeuni.informatics.common.dto.ContestantResultDTO;
 import ge.freeuni.informatics.common.dto.ContestDTO;
 import ge.freeuni.informatics.common.dto.UserDTO;
 import ge.freeuni.informatics.common.dto.UserSimpleDTO;
@@ -70,7 +71,8 @@ public class ContestManager implements IContestManager {
         Contest contest = ContestDTO.fromDTO(contestDTO);
         contest.setStandings(new ArrayList<>());
         contest = contestRepository.saveAndPublish(contest, eventPublisher);
-        return ContestDTO.toDTO(contest);
+        return ContestDTO.toDTO(contest, contest.getTasks(), contest.getParticipants(),
+                contest.getStandings(), contest.getUpsolvingStandings());
     }
 
     @Override
@@ -80,12 +82,33 @@ public class ContestManager implements IContestManager {
                                  boolean loadStandings,
                                  boolean loadUpsolvingStandings
     ) throws InformaticsServerException {
-        return ContestDTO.toDTO(getContestInternal(contestId,
+        Contest contest = getContestInternal(contestId,
                 loadParticipants,
                 loadTasks,
                 loadStandings,
                 loadUpsolvingStandings
-        ));
+        );
+        ContestDTO contestDTO = ContestDTO.toDTO(contest,
+                loadTasks ? contest.getTasks() : null,
+                loadParticipants ? contest.getParticipants() : null,
+                loadStandings ? contest.getStandings() : null,
+                loadUpsolvingStandings ? contest.getUpsolvingStandings() : null);
+        if (loadUpsolvingStandings) {
+            // ContestDTO.toDTO has no username lookup of its own (it lives in informatics-common,
+            // with no access to IUserManager), so every contestant comes back with a null
+            // username unless resolved here - the same way ContestService.getStandings() does
+            // for the live leaderboard.
+            contestDTO.setUpsolvingStandings(contest.getUpsolvingStandings()
+                    .stream()
+                    .map(res -> ContestantResultDTO.toDTO(res, getUsername(res.getContestantId())))
+                    .toList());
+        }
+        return contestDTO;
+    }
+
+    private String getUsername(Long userId) {
+        User user = userManager.getUser(userId);
+        return user == null ? null : user.getUsername();
     }
 
     @MemberTaskRestricted
@@ -122,8 +145,12 @@ public class ContestManager implements IContestManager {
     }
 
     @Override
-    public ContestDTO updateContest(ContestDTO contest) {
-        return ContestDTO.toDTO(contestRepository.saveAndPublish(ContestDTO.fromDTO(contest), eventPublisher));
+    public ContestDTO updateContest(ContestDTO contestDTO) {
+        // fromDTO builds the entity straight from the DTO's own fields, so its collections are
+        // plain (already-loaded) lists rather than lazy proxies - safe to read back directly.
+        Contest contest = contestRepository.saveAndPublish(ContestDTO.fromDTO(contestDTO), eventPublisher);
+        return ContestDTO.toDTO(contest, contest.getTasks(), contest.getParticipants(),
+                contest.getStandings(), contest.getUpsolvingStandings());
     }
 
     @TeacherContestRestricted
@@ -137,6 +164,8 @@ public class ContestManager implements IContestManager {
         Contest contest = contestRepository.getReferenceById(contestId);
         updateContest(contest, contestDTO);
         contest = contestRepository.saveAndPublish(contest, eventPublisher);
+        // Only scalar fields were changed above; the caller doesn't need tasks/participants/
+        // standings echoed back on an edit, so they're never touched (they're still lazy here).
         return ContestDTO.toDTO(contest);
     }
 
@@ -214,24 +243,39 @@ public class ContestManager implements IContestManager {
         contestRepository.save(contest);
     }
 
-    @Override
-    public List<ContestantResult> getStandings(long contestId, Integer offset, Integer size) throws InformaticsServerException {
+    /**
+     * The full, unpaged standings a viewer is allowed to see for a contest - shared by
+     * {@link #getStandings} and {@link #getStandingsCount} so paging and counting can never
+     * disagree about which rows are in scope.
+     */
+    private List<ContestantResult> getFilteredStandings(long contestId) throws InformaticsServerException {
         Contest contest = contestRepository.getReferenceById(contestId);
         ContestRoom room = contestRoomManager.getRoom(contest.getRoomId());
-        long userId = userManager.getAuthenticatedUser().id();
+        long userId = userManager.getAuthenticatedUserIdOrAnonymous();
         if (!room.isMember(userId)) {
             throw InformaticsServerException.PERMISSION_DENIED;
         }
-        List<ContestantResult> fullStandings = contest.getStandings().stream()
+        boolean viewerIsAdmin = userManager.isAdmin(userId);
+        return contest.getStandings().stream()
                 .filter(r -> r.getUpsolvingContest() == null)
+                .filter(r -> viewerIsAdmin || !userManager.isAdmin(r.getContestantId()))
                 .toList();
-        return ArrayUtils.getPage(fullStandings, offset, size);
+    }
+
+    @Override
+    public List<ContestantResult> getStandings(long contestId, Integer offset, Integer size) throws InformaticsServerException {
+        return ArrayUtils.getPage(getFilteredStandings(contestId), offset, size);
+    }
+
+    @Override
+    public long getStandingsCount(long contestId) throws InformaticsServerException {
+        return getFilteredStandings(contestId).size();
     }
 
     @Override
     public boolean isCurrentUserRegistered(long contestId) throws InformaticsServerException {
         Contest contest = contestRepository.getReferenceById(contestId);
-        long userId = userManager.getAuthenticatedUser().id();
+        long userId = userManager.getAuthenticatedUserIdOrAnonymous();
         return contest.getParticipants().stream().map(User::getId).anyMatch(id -> id == userId);
     }
 

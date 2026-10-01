@@ -60,7 +60,7 @@ export default function ContestForm({contestData, setContestData, handleSubmit, 
                     setContestData((prevData) => ({...prevData, startDate: date || null}))
                 }
                 inputFormat={'DD/MM/YYYY HH:mm'}
-                renderInput={(params) => <TextField variant='outlined' {...params} error={!contestData.startDate}/>}
+                renderInput={(params) => <TextField variant='outlined' {...params} error={!contestData.startDate !== !contestData.duration}/>}
             />
             <TextField
                 select

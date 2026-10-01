@@ -2,10 +2,13 @@ package ge.freeuni.informatics.controller.servlet.admin;
 
 import ge.freeuni.informatics.common.dto.WorkerDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
+import ge.freeuni.informatics.common.model.submission.SubmissionStatus;
 import ge.freeuni.informatics.controller.model.*;
+import ge.freeuni.informatics.controller.servlet.ServletUtils;
 import ge.freeuni.informatics.server.annotation.AdminRestricted;
 import ge.freeuni.informatics.server.submission.ISubmissionManager;
 import ge.freeuni.informatics.server.annotation.WorkerRestricted;
+import ge.freeuni.informatics.server.task.ITaskManager;
 import ge.freeuni.informatics.server.user.IUserManager;
 import ge.freeuni.informatics.server.worker.IWorkerManager;
 import org.slf4j.Logger;
@@ -24,13 +27,15 @@ public class AdminController {
     final IWorkerManager workerManager;
     final IUserManager userManager;
     final ISubmissionManager submissionManager;
+    final ITaskManager taskManager;
 
     @Autowired
     public AdminController(IWorkerManager workerManager, IUserManager userManager,
-                           ISubmissionManager submissionManager, Logger log) {
+                           ISubmissionManager submissionManager, ITaskManager taskManager, Logger log) {
         this.workerManager = workerManager;
         this.userManager = userManager;
         this.submissionManager = submissionManager;
+        this.taskManager = taskManager;
         this.log = log;
     }
 
@@ -80,6 +85,41 @@ public class AdminController {
                 : "internalError";
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new InformaticsResponse(errorMessage));
         }
+    }
+
+    /**
+     * Every submission across every contest and room, for the admin "all submissions" view - the
+     * only submissions listing not scoped to one contest, room or user.
+     */
+    @GetMapping("/submissions")
+    @AdminRestricted
+    public ResponseEntity<SubmissionListResponse> getAllSubmissions(AdminSubmissionListRequest request) throws InformaticsServerException {
+        SubmissionListResponse response = new SubmissionListResponse("SUCCESS", null);
+        String username = ServletUtils.blankToNull(request.getUsername());
+        String language = ServletUtils.blankToNull(request.getLanguage());
+        SubmissionStatus status = ServletUtils.parseSubmissionStatus(request.getStatus());
+        Integer offset = request.getOffset() == null ? 0 : request.getOffset();
+        Integer limit = request.getLimit() == null ? 20 : request.getLimit();
+        response.setSubmissions(submissionManager.filterAdmin(username, request.getTaskId(), request.getContestId(),
+                language, status, offset, limit));
+        response.setTotalCount(submissionManager.countFilterAdmin(username, request.getTaskId(), request.getContestId(),
+                language, status));
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Every task across every contest, for the admin submissions filter's problem dropdown - the
+     * only task listing not scoped to one contest or room.
+     */
+    @GetMapping("/tasks")
+    @AdminRestricted
+    public ResponseEntity<GetTasksResponse> getAllTasks(@RequestParam(required = false) String title, PagingRequest request) {
+        Integer offset = request.getOffset() == null ? 0 : request.getOffset();
+        Integer limit = request.getLimit() == null ? 20 : request.getLimit();
+        GetTasksResponse response = new GetTasksResponse();
+        response.setTasks(taskManager.getAllTasks(title, offset, limit));
+        response.setTotalCount(taskManager.getAllTasksCount(title));
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/workers")

@@ -31,6 +31,8 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.io.IOException;
 import java.util.*;
@@ -87,6 +89,28 @@ public class JudgeIntegration implements IJudgeIntegration{
 
     @Value("${ge.freeuni.informatics.judge.recovery.enabled:true}")
     private boolean recoveryEnabled;
+
+    /**
+     * Publishes a Kafka message only once the enclosing transaction has committed, so a worker can
+     * never answer faster than the judge-token update it is answering to becomes visible to the
+     * callback listener's own transaction. Without this, {@link #isStaleJudgeRun} reads the
+     * pre-update token and drops the very callback the message it just sent was meant to produce.
+     *
+     * <p>Outside a transaction (e.g. no caller has opened one) there is nothing to wait for, so the
+     * message goes out immediately.
+     */
+    private void publishAfterCommit(Runnable publish) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            publish.run();
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                publish.run();
+            }
+        });
+    }
 
     private String truncateToLength(String value, int maxLength) {
         if (value == null) {
@@ -288,8 +312,10 @@ public class JudgeIntegration implements IJudgeIntegration{
         try {
             String message = objectMapper.writeValueAsString(kafkaTask);
             log.debug("Publishing compilation message: {}", message);
-            kafkaProducerService.sendMessage("submission-topic", message);
-            log.info("Queued compilation for submission {}", submission.getId());
+            publishAfterCommit(() -> {
+                kafkaProducerService.sendMessage("submission-topic", message);
+                log.info("Queued compilation for submission {}", submission.getId());
+            });
         } catch (IOException e) {
             log.error("Failed to serialize compilation kafka message", e);
             throw new InformaticsServerException("serializationError", e);
@@ -371,9 +397,11 @@ public class JudgeIntegration implements IJudgeIntegration{
             try {
                 String message = objectMapper.writeValueAsString(kafkaTask);
                 log.debug("Kafka message: {}", message);
-                kafkaProducerService.sendMessage("submission-topic",
-                        submission.getId() + ":" + testcase.getKey(), message);
-                log.info("Sent submission to Kafka: {}", submission.getId());
+                String key = submission.getId() + ":" + testcase.getKey();
+                publishAfterCommit(() -> {
+                    kafkaProducerService.sendMessage("submission-topic", key, message);
+                    log.info("Sent submission to Kafka: {}", submission.getId());
+                });
             } catch (IOException e) {
                 log.error("Failed to serialize KafkaTask: {}", e.getMessage());
                 throw new InformaticsServerException("serializationError", e);

@@ -21,7 +21,9 @@ import NewTaskCard from './Components/newtask/NewTaskCard'
 import Error from './Pages/Error'
 import UserProfile from './Pages/UserProfile'
 import AddPost from "./Pages/AddPost";
-import AdminPanel from "./Pages/AdminPanel";
+import AdminWorkers from "./Pages/admin/AdminWorkers";
+import AdminSubmissions from "./Pages/admin/AdminSubmissions";
+import AdminUsers from "./Pages/admin/AdminUsers";
 import { ConfirmDialogProvider } from './utils/ConfirmDialogContext'
 
 function App() {
@@ -74,7 +76,9 @@ function App() {
 					<Route path='/task/:taskId' element={<NewTaskCard />} />\
 					<Route path='/room/:room_id/post' element={<AddPost />} />
 					<Route path='/room/:room_id/post/:post_id' element={<AddPost />} />
-					<Route path='/admin' element={<AdminPanel />} />
+					<Route path='/admin' element={<AdminWorkers />} />
+					<Route path='/admin/submissions' element={<AdminSubmissions />} />
+					<Route path='/admin/users' element={<AdminUsers />} />
 					<Route path='/user/:username' element={<UserProfile />} />
 					<Route element={<Error/>} />
 				</Routes>

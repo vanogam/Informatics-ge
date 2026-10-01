@@ -7,6 +7,7 @@ import ge.freeuni.informatics.common.dto.UserProblemDTO;
 import ge.freeuni.informatics.common.dto.SubmissionDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.submission.RejudgeAction;
+import ge.freeuni.informatics.common.model.submission.SubmissionStatus;
 import ge.freeuni.informatics.common.model.user.ProblemAttemptStatus;
 
 import java.util.List;
@@ -15,13 +16,29 @@ public interface ISubmissionManager {
 
     SubmissionDTO loadFullSubmission(long id) throws InformaticsServerException;
 
-    List<SubmissionDTO> filter(Long userId, Long taskId, Long contestId, Long roomId, Integer offset, Integer limit) throws InformaticsServerException;
+    List<SubmissionDTO> filter(Long userId, Long taskId, Long contestId, Long roomId,
+                               String username, String language, SubmissionStatus status,
+                               Integer offset, Integer limit) throws InformaticsServerException;
 
     /**
      * The total number of submissions {@link #filter} would page through for the same filters,
      * ignoring offset/limit - what a pagination control needs to compute the last page.
      */
-    long countFilter(Long userId, Long taskId, Long contestId, Long roomId) throws InformaticsServerException;
+    long countFilter(Long userId, Long taskId, Long contestId, Long roomId,
+                     String username, String language, SubmissionStatus status) throws InformaticsServerException;
+
+    /**
+     * Every submission across every contest/room matching the given filters, with no scope
+     * restriction - only reachable through an {@code @AdminRestricted} endpoint, since it skips
+     * the room-membership check {@link #filter} otherwise enforces.
+     */
+    List<SubmissionDTO> filterAdmin(String username, Long taskId, Long contestId,
+                                    String language, SubmissionStatus status,
+                                    Integer offset, Integer limit) throws InformaticsServerException;
+
+    /** The total count {@link #filterAdmin} would page through, ignoring offset/limit. */
+    long countFilterAdmin(String username, Long taskId, Long contestId,
+                          String language, SubmissionStatus status) throws InformaticsServerException;
 
     Long addSubmission(SubmissionDTO submission) throws InformaticsServerException;
 

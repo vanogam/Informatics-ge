@@ -213,7 +213,9 @@ public class SubmissionManager implements ISubmissionManager {
     }
 
     @Override
-    public List<SubmissionDTO> filter(Long userId, Long taskId, Long contestId, Long roomId, Integer offset, Integer limit) throws InformaticsServerException {
+    public List<SubmissionDTO> filter(Long userId, Long taskId, Long contestId, Long roomId,
+                                      String username, String language, SubmissionStatus status,
+                                      Integer offset, Integer limit) throws InformaticsServerException {
         FilterScope scope = resolveFilterScope(taskId, contestId, roomId);
         if (offset == null) {
             offset = 0;
@@ -221,16 +223,48 @@ public class SubmissionManager implements ISubmissionManager {
         if (limit == null) {
             limit = 20;
         }
-        return submissionRepository.findSubmissions(userId, taskId, scope.contestId(), scope.roomId(), scope.viewerIsAdmin(), offset, limit)
+        return submissionRepository.findSubmissions(userId, taskId, scope.contestId(), scope.roomId(),
+                        username, language, status, scope.viewerIsAdmin(), offset, limit)
                 .stream()
                 .map(SubmissionDTO::toDtoLight)
                 .toList();
     }
 
     @Override
-    public long countFilter(Long userId, Long taskId, Long contestId, Long roomId) throws InformaticsServerException {
+    public long countFilter(Long userId, Long taskId, Long contestId, Long roomId,
+                            String username, String language, SubmissionStatus status) throws InformaticsServerException {
         FilterScope scope = resolveFilterScope(taskId, contestId, roomId);
-        return submissionRepository.countSubmissions(userId, taskId, scope.contestId(), scope.roomId(), scope.viewerIsAdmin());
+        return submissionRepository.countSubmissions(userId, taskId, scope.contestId(), scope.roomId(),
+                username, language, status, scope.viewerIsAdmin());
+    }
+
+    /**
+     * No {@link #resolveFilterScope} here on purpose: the admin all-submissions view is not
+     * scoped to any one room, and its own room's membership check would otherwise reject every
+     * request. Safe only because every caller is already gated by {@code @AdminRestricted}.
+     */
+    @Override
+    public List<SubmissionDTO> filterAdmin(String username, Long taskId, Long contestId,
+                                           String language, SubmissionStatus status,
+                                           Integer offset, Integer limit) throws InformaticsServerException {
+        if (offset == null) {
+            offset = 0;
+        }
+        if (limit == null) {
+            limit = 20;
+        }
+        return submissionRepository.findSubmissions(null, taskId, contestId, null,
+                        username, language, status, true, offset, limit)
+                .stream()
+                .map(SubmissionDTO::toDtoLight)
+                .toList();
+    }
+
+    @Override
+    public long countFilterAdmin(String username, Long taskId, Long contestId,
+                                 String language, SubmissionStatus status) throws InformaticsServerException {
+        return submissionRepository.countSubmissions(null, taskId, contestId, null,
+                username, language, status, true);
     }
 
     @Override

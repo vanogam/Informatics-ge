@@ -170,6 +170,30 @@ const langDictionary = {
 		'language': 'ენა',
 		'LANG_CPP': 'C++ (GNU G++20 12.2 -O2)',
 		'LANG_PYTHON': 'Python 3 (Python 3.11.2)',
+		'LANG_OUTPUT': 'ტექსტი',
+
+		// მცდელობების ფილტრები
+		'filterUsername': 'მომხმარებელი',
+		'filterContest': 'შეჯიბრი',
+		'filterProblem': 'ამოცანა',
+		'filterLanguage': 'ენა',
+		'filterStatus': 'სტატუსი',
+		'filterAll': 'ყველა',
+		'clearFilters': 'ფილტრების გასუფთავება',
+		'noResults': 'შედეგები არ მოიძებნა',
+
+		'STATUS_FILTER_IN_QUEUE': 'რიგშია',
+		'STATUS_FILTER_COMPILING': 'კომპილაცია',
+		'STATUS_FILTER_RUNNING': 'მუშავდება',
+		'STATUS_FILTER_SYSTEM_ERROR': 'სისტემური შეცდომა',
+		'STATUS_FILTER_COMPILATION_ERROR': 'კომპილაციის შეცდომა',
+		'STATUS_FILTER_TIME_LIMIT_EXCEEDED': 'დროის ლიმიტი',
+		'STATUS_FILTER_MEMORY_LIMIT_EXCEEDED': 'მეხსიერების ლიმიტი',
+		'STATUS_FILTER_RUNTIME_ERROR': 'გაშვების შეცდომა',
+		'STATUS_FILTER_WRONG_ANSWER': 'არასწორი პასუხი',
+		'STATUS_FILTER_FAILED': 'წარუმატებელი',
+		'STATUS_FILTER_PARTIAL': 'ნაწილობრივი',
+		'STATUS_FILTER_CORRECT': 'სწორია',
 
 		'editor': 'რედაქტორი',
 		'statement': 'პირობა',
@@ -195,6 +219,12 @@ const langDictionary = {
 		'invalidRejudgeRequest': 'გადასინჯვის მოთხოვნა არასწორია',
 
 		'imageSizeHint': 'სურათის ზომის მითითება შესაძლებელია ასე: ![სათაური|400](...) — 400 პიქსელი, ან ![სათაური|50%](...) — სვეტის ნახევარი.',
+
+		// ადმინისტრირება
+		'adminWorkers': 'ვორკერები',
+		'adminSubmissions': 'ყველა მცდელობა',
+		'adminUsers': 'მომხმარებლები',
+		'adminUsersComingSoon': 'მომხმარებლების მართვა მალე დაემატება',
 	}
 }
 

@@ -1,18 +1,26 @@
 package ge.freeuni.informatics.controller.model;
 
-public class GetSubmissionsRequest extends PagingRequest {
+/** Filters for the admin "all submissions" view - nothing here is fixed by the page, unlike the
+ *  contest/room/user scoped submission lists. */
+public class AdminSubmissionListRequest extends PagingRequest {
+
+    private String username;
 
     private Long taskId;
 
-    /** Narrows a room-wide listing (the archive) down to one of the contests within it. */
     private Long contestId;
-
-    /** Exact match, applied only where the page lets the viewer search across users. */
-    private String username;
 
     private String language;
 
     private String status;
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
 
     public Long getTaskId() {
         return taskId;
@@ -28,14 +36,6 @@ public class GetSubmissionsRequest extends PagingRequest {
 
     public void setContestId(Long contestId) {
         this.contestId = contestId;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
     }
 
     public String getLanguage() {

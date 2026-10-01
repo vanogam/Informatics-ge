@@ -1,6 +1,7 @@
 package ge.freeuni.informatics.controller.servlet;
 
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
+import ge.freeuni.informatics.common.model.submission.SubmissionStatus;
 
 public class ServletUtils {
 
@@ -9,6 +10,23 @@ public class ServletUtils {
             throw InformaticsServerException.INVALID_TEST_KEY;
         }
         return key.replaceAll("[^a-zA-Z0-9_]", "_");
+    }
+
+    /** A blank filter value means "no filter", not "match the empty string". */
+    public static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value;
+    }
+
+    /** Blank/unrecognized values fall back to null (no filter) rather than rejecting the request. */
+    public static SubmissionStatus parseSubmissionStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+        try {
+            return SubmissionStatus.valueOf(status);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     public static int getResponseCode(InformaticsServerException ex) {

@@ -4,6 +4,7 @@ import ge.freeuni.informatics.common.dto.ContestDTO;
 import ge.freeuni.informatics.common.dto.ContestantResultDTO;
 import ge.freeuni.informatics.common.dto.SubmissionDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
+import ge.freeuni.informatics.common.model.submission.SubmissionStatus;
 import ge.freeuni.informatics.controller.model.*;
 import ge.freeuni.informatics.controller.servlet.ServletUtils;
 import ge.freeuni.informatics.server.contest.ContestService;
@@ -72,7 +73,9 @@ public class ContestController {
             request.setOffset(0);
         }
         try {
-            response.setContests(contestManager.getContests(Long.valueOf(request.getRoomId()), null, null, null, null, request.getOffset(), request.getLimit()));
+            Long roomId = request.getRoomId() == null ? null : Long.valueOf(request.getRoomId());
+            response.setContests(contestManager.getContests(roomId, ServletUtils.blankToNull(request.getName()),
+                    null, null, null, request.getOffset(), request.getLimit()));
         } catch (InformaticsServerException e) {
             response.setMessage(e.getMessage());
             return ResponseEntity.badRequest().body(response);
@@ -185,13 +188,19 @@ public class ContestController {
         }
         try {
             Long userId = userManager.getAuthenticatedUser().id();
+            String language = ServletUtils.blankToNull(request.getLanguage());
+            SubmissionStatus status = ServletUtils.parseSubmissionStatus(request.getStatus());
             response.setSubmissions(submissionManager.filter(userId,
                     request.getTaskId(),
                     Long.parseLong(contestId),
                     null,
+                    null,
+                    language,
+                    status,
                     request.getOffset(),
                     request.getLimit()));
-            response.setTotalCount(submissionManager.countFilter(userId, request.getTaskId(), Long.parseLong(contestId), null));
+            response.setTotalCount(submissionManager.countFilter(userId, request.getTaskId(), Long.parseLong(contestId), null,
+                    null, language, status));
         } catch (InformaticsServerException ex) {
             return new SubmissionListResponse("FAIL", ex.getCode());
         }
@@ -203,13 +212,20 @@ public class ContestController {
                                                      GetSubmissionsRequest request) {
         SubmissionListResponse response = new SubmissionListResponse("SUCCESS", null);
         try {
+            String username = ServletUtils.blankToNull(request.getUsername());
+            String language = ServletUtils.blankToNull(request.getLanguage());
+            SubmissionStatus status = ServletUtils.parseSubmissionStatus(request.getStatus());
             response.setSubmissions(submissionManager.filter(null,
                     request.getTaskId(),
                     Long.parseLong(contestId),
                     null,
+                    username,
+                    language,
+                    status,
                     request.getOffset(),
                     request.getLimit()));
-            response.setTotalCount(submissionManager.countFilter(null, request.getTaskId(), Long.parseLong(contestId), null));
+            response.setTotalCount(submissionManager.countFilter(null, request.getTaskId(), Long.parseLong(contestId), null,
+                    username, language, status));
         } catch (InformaticsServerException ex) {
             return new SubmissionListResponse("FAIL", ex.getCode());
         }

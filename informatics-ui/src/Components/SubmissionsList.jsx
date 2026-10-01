@@ -1,6 +1,7 @@
 import {useContext, useRef, useState} from 'react'
 import Editor from 'react-simple-code-editor'
 import {highlight, languages} from 'prismjs/components/prism-core'
+import {useNavigate} from 'react-router-dom'
 
 import Box from '@mui/material/Box'
 import Modal from '@mui/material/Modal'
@@ -23,7 +24,19 @@ import RejudgeActions, {useCanRejudge} from "./RejudgeActions";
 import {usePagination} from "../utils/usePagination";
 import PaginationControls from "./PaginationControls";
 
-export default function SubmissionsList({getEndpoint, title, autoRefresh = true}) {
+const truncateSx = {
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+}
+
+const clickableCellSx = {
+    ...truncateSx,
+    cursor: 'pointer',
+    '&:hover': {textDecoration: 'underline'},
+}
+
+export default function SubmissionsList({getEndpoint, title, autoRefresh = true, filters = {}}) {
     const [submissions, setSubmissions] = useState([])
     const [selectedSubmission, setSelectedSubmission] = useState({})
     const [popUp, setPopUp] = useState(false)
@@ -31,6 +44,7 @@ export default function SubmissionsList({getEndpoint, title, autoRefresh = true}
     const {pageSize, offset, setTotalCount, resetPage} = pagination
     const axiosInstance = useContext(AxiosContext)
     const canRejudge = useCanRejudge()
+    const navigate = useNavigate()
     // Lets an action refresh the list immediately instead of waiting out the poll - and is the
     // only refresh at all on the profile tab, which runs with polling switched off.
     const refetch = useRef(() => {})
@@ -38,19 +52,29 @@ export default function SubmissionsList({getEndpoint, title, autoRefresh = true}
     // getEndpoint is recreated every render by the caller, so resolve it to a plain string here -
     // that's what actually identifies "which list", and switching it should jump back to page 1.
     const endpoint = getEndpoint()
+    // filters is likewise recreated every render by the caller; serialize it so effects only react
+    // to an actual change in its values, not to a new object with the same content.
+    const filtersKey = JSON.stringify(filters)
 
     useEffect(() => {
         resetPage()
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [endpoint])
+    }, [endpoint, filtersKey])
 
     useEffect(() => {
         const fetchSubmissions = () => {
+            // An unset filter is an empty string (so a controlled <Select> always has a value) -
+            // sending it as-is would bind to e.g. a Long taskId param and fail with a 400, so only
+            // the filters actually chosen are ever forwarded.
+            const activeFilters = Object.fromEntries(
+                Object.entries(filters).filter(([, filterValue]) => filterValue !== '' && filterValue != null)
+            )
             axiosInstance
                 .get(endpoint, {
                     params: {
                         offset: offset,
                         limit: pageSize,
+                        ...activeFilters,
                     },
                 })
                 .then((response) => {
@@ -79,7 +103,7 @@ export default function SubmissionsList({getEndpoint, title, autoRefresh = true}
 
         return;
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [endpoint, axiosInstance, autoRefresh, offset, pageSize])
+    }, [endpoint, axiosInstance, autoRefresh, offset, pageSize, filtersKey])
 
     const highlightWithLineNumbers = (input, grammar, language) =>
         highlight(input, grammar, language)
@@ -169,57 +193,73 @@ export default function SubmissionsList({getEndpoint, title, autoRefresh = true}
                     >
                         <TableHead>
                             <TableRow>
-                                <TableCell sx={{wordBreak: 'break-word'}}>ამოცანა</TableCell>
-                                <TableCell align="right" sx={{wordBreak: 'break-word', width: '12%'}}>მომხარებელი</TableCell>
-                                <TableCell align="right" sx={{wordBreak: 'break-word', width: '14%'}}>გაშვების დრო</TableCell>
-                                <TableCell align="right" sx={{wordBreak: 'break-word', width: '8%'}}>ენა</TableCell>
-                                <TableCell align="right" sx={{wordBreak: 'break-word', width: '7%'}}>ქულა</TableCell>
-                                <TableCell align="right" sx={{wordBreak: 'break-word', width: '28%'}}>სტატუსი</TableCell>
+                                <TableCell sx={truncateSx}>ამოცანა</TableCell>
+                                <TableCell align="right" sx={{...truncateSx, width: '12%'}}>მომხარებელი</TableCell>
+                                <TableCell align="right" sx={{...truncateSx, width: '14%'}}>გაშვების დრო</TableCell>
+                                <TableCell align="right" sx={{...truncateSx, width: '8%'}}>ენა</TableCell>
+                                <TableCell align="right" sx={{...truncateSx, width: '7%'}}>ქულა</TableCell>
+                                <TableCell align="right" sx={{...truncateSx, width: '28%'}}>სტატუსი</TableCell>
                                 {canRejudge && <TableCell align="right" sx={{width: '10%'}}/>}
                             </TableRow>
                         </TableHead>
 
                         <TableBody>
-                            {submissions.map((submission) => (
-                                <TableRow
-                                    onClick={() => {
-                                        setSelectedSubmission(null)
-                                        loadSubmission(submission.id)
-                                        setPopUp(true)
-                                    }}
-                                    key={submission.id}
-                                    sx={{
-                                        '&:last-child td, &:last-child th': {border: 0},
-                                        cursor: 'pointer',
-                                        '&:hover': {backgroundColor: '#eee'},
-                                    }}
-                                >
-                                    <TableCell component="th" scope="row" sx={{wordBreak: 'break-word'}}>
-                                        {submission.taskName}
-                                    </TableCell>
-                                    <TableCell align="right" sx={{wordBreak: 'break-word'}}>
-                                        {submission.username}
-                                    </TableCell>
-                                    <TableCell align="right" sx={{wordBreak: 'break-word'}}>
-                                        {formatDateTime(submission.submissionTime)}
-                                    </TableCell>
-                                    <TableCell align="right" sx={{wordBreak: 'break-word'}}>
-                                        {submission.language}
-                                    </TableCell>
-                                    <TableCell align="right" sx={{wordBreak: 'break-word'}}>
-                                        {roundScore(submission.score)}
-                                    </TableCell>
-                                    <TableCell align="right" sx={{wordBreak: 'break-word'}}>
-                                        {getMessage('ka', `SUBMISSION_STATUS_${submission.status}`, submission.currentTest)}
-                                    </TableCell>
-                                    {canRejudge && (
-                                        <TableCell align="right">
-                                            <RejudgeActions submission={submission}
-                                                            onDone={() => refetch.current()}/>
+                            {submissions.map((submission) => {
+                                const openDetails = () => {
+                                    setSelectedSubmission(null)
+                                    loadSubmission(submission.id)
+                                    setPopUp(true)
+                                }
+                                return (
+                                    <TableRow
+                                        key={submission.id}
+                                        sx={{
+                                            '&:last-child td, &:last-child th': {border: 0},
+                                            '&:hover': {backgroundColor: '#eee'},
+                                        }}
+                                    >
+                                        <TableCell
+                                            component="th"
+                                            scope="row"
+                                            title={submission.taskName}
+                                            sx={clickableCellSx}
+                                            onClick={() => navigate(`/contest/${submission.contestId}/problem/${submission.taskId}`)}
+                                        >
+                                            {submission.taskName}
                                         </TableCell>
-                                    )}
-                                </TableRow>
-                            ))}
+                                        <TableCell
+                                            align="right"
+                                            title={submission.username}
+                                            sx={clickableCellSx}
+                                            onClick={() => navigate(`/user/${submission.username}`)}
+                                        >
+                                            {submission.username}
+                                        </TableCell>
+                                        <TableCell align="right" sx={clickableCellSx} onClick={openDetails}>
+                                            {formatDateTime(submission.submissionTime)}
+                                        </TableCell>
+                                        <TableCell align="right" sx={clickableCellSx} onClick={openDetails}>
+                                            {submission.language}
+                                        </TableCell>
+                                        <TableCell align="right" sx={clickableCellSx} onClick={openDetails}>
+                                            {roundScore(submission.score)}
+                                        </TableCell>
+                                        <TableCell
+                                            align="right"
+                                            title={getMessage('ka', `SUBMISSION_STATUS_${submission.status}`, submission.currentTest)}
+                                            sx={truncateSx}
+                                        >
+                                            {getMessage('ka', `SUBMISSION_STATUS_${submission.status}`, submission.currentTest)}
+                                        </TableCell>
+                                        {canRejudge && (
+                                            <TableCell align="right">
+                                                <RejudgeActions submission={submission}
+                                                                onDone={() => refetch.current()}/>
+                                            </TableCell>
+                                        )}
+                                    </TableRow>
+                                )
+                            })}
                         </TableBody>
                     </Table>
                 </TableContainer>

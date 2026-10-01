@@ -49,15 +49,17 @@ public class TaskController {
     }
 
     @GetMapping("/contest/{id}/tasks")
-    ResponseEntity<GetTasksResponse> getContestTasks(@PathVariable Long id, PagingRequest request) {
+    ResponseEntity<GetTasksResponse> getContestTasks(@PathVariable Long id,
+                                                     @RequestParam(required = false) String title,
+                                                     PagingRequest request) {
         try {
             if (request == null) {
                 request = new PagingRequest();
             }
-            List<TaskInfo> taskInfos = taskManager.getContestTasks(id, request.getOffset(), request.getLimit());
+            List<TaskInfo> taskInfos = taskManager.getContestTasks(id, title, request.getOffset(), request.getLimit());
             GetTasksResponse response = new GetTasksResponse();
             response.setTasks(taskInfos);
-            response.setTotalCount(taskManager.getContestTasksCount(id));
+            response.setTotalCount(taskManager.getContestTasksCount(id, title));
             return ResponseEntity.ok(response);
         } catch (InformaticsServerException ex) {
             return ResponseEntity.badRequest().body(new GetTasksResponse(ex.getCode()));

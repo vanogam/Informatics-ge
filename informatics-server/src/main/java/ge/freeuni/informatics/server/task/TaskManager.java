@@ -119,6 +119,11 @@ public class TaskManager implements ITaskManager {
             }
             String contestName = contest.getName();
             for (Task task : contest.getTasks()) {
+                // See the matching guard in buildContestTasks: a task can outlive the contest its
+                // own contest_id pointed at while still sitting in this contest's task list.
+                if (task.getContest() == null) {
+                    continue;
+                }
                 TaskDTO taskDTO = TaskDTO.toDTO(task);
                 ContestantResult contestantResult = contest.getUpsolvingStandings().stream()
                         .filter(res -> res.getContestantId() == currentUserId)
@@ -175,6 +180,10 @@ public class TaskManager implements ITaskManager {
         }
         List<TaskInfo> result = new ArrayList<>();
         List<Task> sortedTasks = contest.getTasks().stream()
+                // A task can outlive the contest its own contest_id pointed at (e.g. that contest
+                // was deleted) while still sitting in this contest's task list; TaskDTO.toDTO
+                // assumes a non-null contest, so such a task can't be rendered here at all.
+                .filter(task -> task.getContest() != null)
                 .sorted(Comparator.comparing(task -> task.getOrder() != null ? task.getOrder() : 0))
                 .toList();
         for (Task task : sortedTasks) {
@@ -196,14 +205,36 @@ public class TaskManager implements ITaskManager {
 
     @Override
     @MemberContestRestricted
-    public List<TaskInfo> getContestTasks(long contestId, int offset, int limit) throws InformaticsServerException {
-        return ArrayUtils.getPage(buildContestTasks(contestId), offset, limit);
+    public List<TaskInfo> getContestTasks(long contestId, String title, int offset, int limit) throws InformaticsServerException {
+        return ArrayUtils.getPage(filterByTitle(buildContestTasks(contestId), title), offset, limit);
     }
 
     @Override
     @MemberContestRestricted
-    public long getContestTasksCount(long contestId) throws InformaticsServerException {
-        return buildContestTasks(contestId).size();
+    public long getContestTasksCount(long contestId, String title) throws InformaticsServerException {
+        return filterByTitle(buildContestTasks(contestId), title).size();
+    }
+
+    private static List<TaskInfo> filterByTitle(List<TaskInfo> tasks, String title) {
+        if (title == null || title.isBlank()) {
+            return tasks;
+        }
+        String needle = title.toLowerCase(Locale.ROOT);
+        return tasks.stream()
+                .filter(info -> info.getTask().title() != null && info.getTask().title().toLowerCase(Locale.ROOT).contains(needle))
+                .toList();
+    }
+
+    @Override
+    public List<TaskInfo> getAllTasks(String title, int offset, int limit) {
+        return taskRepository.searchTasks(title, offset, limit).stream()
+                .map(task -> new TaskInfo(TaskDTO.toDTO(task), null, task.getContest().getName()))
+                .toList();
+    }
+
+    @Override
+    public long getAllTasksCount(String title) {
+        return taskRepository.countSearchTasks(title);
     }
 
     private Float computeMaxScore(Task task) {
@@ -385,7 +416,6 @@ public class TaskManager implements ITaskManager {
             Files.copy(Paths.get(testcase.getInputFileAddress()), zos);
             zos.closeEntry();
             zos.putNextEntry(new ZipEntry(List.of(testcase.getOutputFileAddress().split("/")).getLast()));
-            Files.copy(Paths.get(testcase.getOutputFileAddress()), zos);
             Files.copy(Paths.get(testcase.getOutputFileAddress()), zos);
             zos.closeEntry();
     }

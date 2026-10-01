@@ -138,7 +138,7 @@ class TaskControllerTest {
         List<TaskInfo> taskInfos = new ArrayList<>();
         taskInfos.add(new TaskInfo(testTaskDTO, 85.5f));
 
-        when(taskManager.getContestTasks(eq(1L), anyInt(), anyInt())).thenReturn(taskInfos);
+        when(taskManager.getContestTasks(eq(1L), any(), anyInt(), anyInt())).thenReturn(taskInfos);
 
         mockMvc.perform(get("/api/contest/1/tasks")
                         .param("offset", "0")

@@ -31,13 +31,26 @@ public interface ITaskManager {
 
     Map<String, String> fillTaskNames(Long contestId);
 
-    List<TaskInfo> getContestTasks(long contestId, int offset, int limit) throws InformaticsServerException;
+    /** @param title case-insensitive substring match against the task title; null/blank matches every task. */
+    List<TaskInfo> getContestTasks(long contestId, String title, int offset, int limit) throws InformaticsServerException;
 
     /**
-     * The total number of tasks {@link #getContestTasks} would page through for this contest,
-     * ignoring offset/limit.
+     * The total number of tasks {@link #getContestTasks} would page through for this contest and
+     * title filter, ignoring offset/limit.
      */
-    long getContestTasksCount(long contestId) throws InformaticsServerException;
+    long getContestTasksCount(long contestId, String title) throws InformaticsServerException;
+
+    /**
+     * Every task across every contest, for the admin submissions filter - the only task listing
+     * not scoped to one contest or room. Reachable only through an {@code @AdminRestricted}
+     * endpoint, since unlike {@link #getContestTasks} it carries no membership check of its own.
+     *
+     * @param title case-insensitive substring match against the task title; null/blank matches every task.
+     */
+    List<TaskInfo> getAllTasks(String title, int offset, int limit);
+
+    /** The total count {@link #getAllTasks} would page through for this title filter, ignoring offset/limit. */
+    long getAllTasksCount(String title);
 
     void removeTask(long taskId, long testId);
 

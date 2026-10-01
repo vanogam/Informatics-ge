@@ -39,8 +39,10 @@ export default function EditContest() {
             setContestData((prevData) => ({
                 ...prevData,
                 contestName: contest.name,
-                startDate: dayjs(contest.startDate),
-                duration: dayjs(contest.endDate).diff(dayjs(contest.startDate), 'minute'),
+                startDate: contest.startDate ? dayjs(contest.startDate) : null,
+                duration: contest.startDate && contest.endDate
+                    ? dayjs(contest.endDate).diff(dayjs(contest.startDate), 'minute')
+                    : '',
                 archive: contest.upsolving,
                 autoArchive: contest.upsolvingAfterFinish,
                 scoringType: contest.scoringType || 'BEST_SUBMISSION',
@@ -96,6 +98,10 @@ export default function EditContest() {
     }
 
     const handleAddContest = () => {
+        if (!!contestData.startDate !== !!contestData.duration) {
+            toast.error(getMessage('ka', 'startDateAndDurationError'))
+            return
+        }
         const requestParams = {
             name: contestData.contestName,
             startDate: contestData.startDate?.format('DD/MM/YYYY HH:mm'),
@@ -110,6 +116,8 @@ export default function EditContest() {
         axiosInstance.put(`/contest/${params.contest_id}`, requestParams).then(() => {
             setSaved(true)
             toast.success(getMessage('ka', 'saved'))
+        }).catch(() => {
+            toast.error('ვერ შეინახა')
         })
     }
 

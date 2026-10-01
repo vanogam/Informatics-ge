@@ -21,9 +21,9 @@ import {
 } from '@mui/material'
 import DeleteIcon from '@mui/icons-material/Delete'
 import { useState, useEffect, useContext } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { AuthContext } from '../store/authentication'
-import { AxiosContext } from '../utils/axiosInstance'
+import AdminNavigationBar from '../../Components/AdminNavigationBar'
+import { useRequireAdmin } from '../../utils/useRequireAdmin'
+import { AxiosContext } from '../../utils/axiosInstance'
 
 function formatUptime(seconds) {
 	if (!seconds) return '0s'
@@ -31,13 +31,13 @@ function formatUptime(seconds) {
 	const hours = Math.floor((seconds % 86400) / 3600)
 	const minutes = Math.floor((seconds % 3600) / 60)
 	const secs = seconds % 60
-	
+
 	const parts = []
 	if (days > 0) parts.push(`${days}d`)
 	if (hours > 0) parts.push(`${hours}h`)
 	if (minutes > 0) parts.push(`${minutes}m`)
 	if (secs > 0 || parts.length === 0) parts.push(`${secs}s`)
-	
+
 	return parts.join(' ')
 }
 
@@ -54,10 +54,9 @@ function formatDate(dateString) {
 	})
 }
 
-export default function AdminPanel() {
+export default function AdminWorkers() {
 	const axiosInstance = useContext(AxiosContext)
-	const authContext = useContext(AuthContext)
-	const navigate = useNavigate()
+	const { ready } = useRequireAdmin()
 	const [workers, setWorkers] = useState([])
 	const [loading, setLoading] = useState(true)
 	const [error, setError] = useState(null)
@@ -82,12 +81,8 @@ export default function AdminPanel() {
 			})
 			.catch((error) => {
 				console.error('Error fetching workers:', error)
-				if (error.response?.status === 403) {
+				if (error.response?.status === 403 || error.response?.status === 401) {
 					setError('You do not have permission to access this page')
-					navigate('/')
-				} else if (error.response?.status === 401) {
-					setError('Please log in to access this page')
-					navigate('/')
 				} else {
 					setError('Failed to load workers. Please try again later.')
 				}
@@ -153,63 +148,54 @@ export default function AdminPanel() {
 	}
 
 	useEffect(() => {
-		// Wait for auth context to load before checking
-		if (authContext.authLoading) {
-			return
-		}
-
-		// Check if user is admin
-		if (!authContext.isLoggedIn || !authContext.role || !authContext.role.includes('ADMIN')) {
-			navigate('/')
+		if (!ready) {
 			return
 		}
 
 		fetchWorkers()
-		
+
 		// Auto-refresh every 5 seconds
 		const interval = setInterval(() => {
 			fetchWorkers()
 		}, 5000)
 
 		return () => clearInterval(interval)
-	}, [authContext.isLoggedIn, authContext.role, authContext.authLoading, navigate])
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [ready])
 
-	if (authContext.authLoading || loading) {
+	if (!ready || loading) {
 		return (
-			<Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-				<CircularProgress />
-			</Box>
+			<>
+				<AdminNavigationBar />
+				<Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+					<CircularProgress />
+				</Box>
+			</>
 		)
 	}
 
 	if (error) {
 		return (
-			<Container maxWidth="lg">
-				<Typography variant="h6" color="error" align="center" mt="2rem">
-					{error}
-				</Typography>
-			</Container>
+			<>
+				<AdminNavigationBar />
+				<Container maxWidth="lg">
+					<Typography variant="h6" color="error" align="center" mt="2rem">
+						{error}
+					</Typography>
+				</Container>
+			</>
 		)
 	}
 
 	return (
 		<main>
+			<AdminNavigationBar />
 			<Typography
 				variant="h6"
 				fontWeight="bold"
 				mt="1rem"
 				align="center"
 				sx={{ color: '#452c54', fontWeight: 'bold' }}
-			>
-				ადმინისტრატორის პანელი
-			</Typography>
-			<Typography
-				paragraph
-				align="center"
-				pt="0.5rem"
-				pb="1rem"
-				borderBottom="2px dashed #aaa"
-				sx={{ color: '#281d2e' }}
 			>
 				ვორკერების სტატუსი და მეტრიკები
 			</Typography>
@@ -334,4 +320,3 @@ export default function AdminPanel() {
 		</main>
 	)
 }
-

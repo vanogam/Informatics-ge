@@ -6,6 +6,7 @@ import ge.freeuni.informatics.common.dto.SubmissionDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.CodeLanguage;
 import ge.freeuni.informatics.common.model.submission.SubmissionKind;
+import ge.freeuni.informatics.common.model.submission.SubmissionStatus;
 import ge.freeuni.informatics.common.model.user.ProblemAttemptStatus;
 import ge.freeuni.informatics.common.model.user.User;
 import ge.freeuni.informatics.controller.model.*;
@@ -119,12 +120,16 @@ public class SubmissionController {
     @GetMapping("/user/{userId}/submissions")
     public ResponseEntity<List<SubmissionDTO>> getUserSubmissions(
             @PathVariable Long userId,
+            @RequestParam(required = false) Long taskId,
             @RequestParam(required = false) Long contestId,
             @RequestParam(required = false) Long roomId,
+            @RequestParam(required = false) String language,
+            @RequestParam(required = false) String status,
             @RequestParam(required = false, defaultValue = "0") Integer offset,
             @RequestParam(required = false, defaultValue = "20") Integer limit) {
         try {
-            List<SubmissionDTO> submissions = submissionManager.filter(userId, null, contestId, roomId, offset, limit);
+            List<SubmissionDTO> submissions = submissionManager.filter(userId, taskId, contestId, roomId,
+                    null, ServletUtils.blankToNull(language), ServletUtils.parseSubmissionStatus(status), offset, limit);
             return ResponseEntity.ok(submissions);
         } catch (InformaticsServerException ex) {
             return ResponseEntity.badRequest().build();
@@ -134,8 +139,11 @@ public class SubmissionController {
     @GetMapping("/user/username/{username}/submissions")
     public ResponseEntity<SubmissionListResponse> getUserSubmissionsByUsername(
             @PathVariable String username,
+            @RequestParam(required = false) Long taskId,
             @RequestParam(required = false) Long contestId,
             @RequestParam(required = false) Long roomId,
+            @RequestParam(required = false) String language,
+            @RequestParam(required = false) String status,
             @RequestParam(required = false, defaultValue = "0") Integer offset,
             @RequestParam(required = false, defaultValue = "20") Integer limit) {
         try {
@@ -143,10 +151,14 @@ public class SubmissionController {
             if (user == null) {
                 return ResponseEntity.notFound().build();
             }
-            List<SubmissionDTO> submissions = submissionManager.filter(user.getId(), null, contestId, roomId, offset, limit);
+            String languageFilter = ServletUtils.blankToNull(language);
+            SubmissionStatus statusFilter = ServletUtils.parseSubmissionStatus(status);
+            List<SubmissionDTO> submissions = submissionManager.filter(user.getId(), taskId, contestId, roomId,
+                    null, languageFilter, statusFilter, offset, limit);
             SubmissionListResponse response = new SubmissionListResponse("SUCCESS", null);
             response.setSubmissions(submissions);
-            response.setTotalCount(submissionManager.countFilter(user.getId(), null, contestId, roomId));
+            response.setTotalCount(submissionManager.countFilter(user.getId(), taskId, contestId, roomId,
+                    null, languageFilter, statusFilter));
             return ResponseEntity.ok(response);
         } catch (InformaticsServerException ex) {
             return ResponseEntity.badRequest().build();
@@ -164,8 +176,12 @@ public class SubmissionController {
         SubmissionListResponse response = new SubmissionListResponse("SUCCESS", null);
         try {
             Long userId = userManager.getAuthenticatedUser().id();
-            response.setSubmissions(submissionManager.filter(userId, request.getTaskId(), null, roomId, request.getOffset(), request.getLimit()));
-            response.setTotalCount(submissionManager.countFilter(userId, request.getTaskId(), null, roomId));
+            String language = ServletUtils.blankToNull(request.getLanguage());
+            SubmissionStatus status = ServletUtils.parseSubmissionStatus(request.getStatus());
+            response.setSubmissions(submissionManager.filter(userId, request.getTaskId(), request.getContestId(), roomId,
+                    null, language, status, request.getOffset(), request.getLimit()));
+            response.setTotalCount(submissionManager.countFilter(userId, request.getTaskId(), request.getContestId(), roomId,
+                    null, language, status));
         } catch (InformaticsServerException ex) {
             return new SubmissionListResponse("FAIL", ex.getCode());
         }
@@ -180,8 +196,13 @@ public class SubmissionController {
     public SubmissionListResponse getRoomStatus(@PathVariable Long roomId, GetSubmissionsRequest request) {
         SubmissionListResponse response = new SubmissionListResponse("SUCCESS", null);
         try {
-            response.setSubmissions(submissionManager.filter(null, request.getTaskId(), null, roomId, request.getOffset(), request.getLimit()));
-            response.setTotalCount(submissionManager.countFilter(null, request.getTaskId(), null, roomId));
+            String username = ServletUtils.blankToNull(request.getUsername());
+            String language = ServletUtils.blankToNull(request.getLanguage());
+            SubmissionStatus status = ServletUtils.parseSubmissionStatus(request.getStatus());
+            response.setSubmissions(submissionManager.filter(null, request.getTaskId(), request.getContestId(), roomId,
+                    username, language, status, request.getOffset(), request.getLimit()));
+            response.setTotalCount(submissionManager.countFilter(null, request.getTaskId(), request.getContestId(), roomId,
+                    username, language, status));
         } catch (InformaticsServerException ex) {
             return new SubmissionListResponse("FAIL", ex.getCode());
         }

@@ -4,6 +4,7 @@ import { Box, Typography, Card, CardContent, Tabs, Tab, CircularProgress } from 
 import { AxiosContext } from '../utils/axiosInstance'
 import { AuthContext } from '../store/authentication'
 import SubmissionsList from '../Components/SubmissionsList'
+import SubmissionFilters, {EMPTY_FILTERS} from '../Components/SubmissionFilters'
 import ChangePassword from '../Components/ChangePassword'
 
 export default function UserProfile() {
@@ -16,6 +17,7 @@ export default function UserProfile() {
     const [tabValue, setTabValue] = useState(0)
     const [currentUserUsername, setCurrentUserUsername] = useState(null)
     const [targetUsername, setTargetUsername] = useState(null)
+    const [submissionFilters, setSubmissionFilters] = useState(EMPTY_FILTERS)
 
     useEffect(() => {
         setLoading(true)
@@ -120,10 +122,16 @@ export default function UserProfile() {
 
                     {tabValue === 1 && resolvedTargetUsername && (
                         <Box sx={{minWidth: 0, width: '100%'}}>
+                            <SubmissionFilters
+                                value={submissionFilters}
+                                onChange={setSubmissionFilters}
+                                showContest
+                            />
                             <SubmissionsList
                                 getEndpoint={() => `/user/username/${resolvedTargetUsername}/submissions`}
                                 title=""
                                 autoRefresh={false}
+                                filters={submissionFilters}
                             />
                         </Box>
                     )}

@@ -352,6 +352,7 @@ public class PermissionAcceptanceTest extends BaseAcceptanceTest {
         // These are all @MemberTaskRestricted: a closed room's task content is member-only,
         // even though anyone with a STUDENT-or-higher role may hold that role in general.
         return "/api/submit".equals(path)
+                || "/api/task/{id}".equals(path)
                 || "/api/task/{taskId}/statement/{language}".equals(path)
                 || "/api/task/{taskId}/attachment/{fileName}".equals(path)
                 || "/api/task/{taskId}/attachments".equals(path);
@@ -616,6 +617,9 @@ public class PermissionAcceptanceTest extends BaseAcceptanceTest {
         path = path.replace("{fileName}", "grader.cpp");
         path = path.replace("{key}", "custom-test-key");
         path = path.replace("{link}", "invalid-link");
+        path = path.replace("{jobId}", "1");
+        path = path.replace("{runId}", "1");
+        path = path.replace("{comparisonId}", "1");
 
         if (path.contains("/contest/{id}")) {
             path = path.replace("{id}", String.valueOf(contest.getId()));

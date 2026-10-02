@@ -29,7 +29,7 @@ public interface ITaskManager {
      */
     long getUpsolvingTasksCount(long roomId) throws InformaticsServerException;
 
-    Map<String, String> fillTaskNames(Long contestId);
+    Map<String, String> fillTaskNames(Long contestId) throws InformaticsServerException;
 
     /** @param title case-insensitive substring match against the task title; null/blank matches every task. */
     List<TaskInfo> getContestTasks(long contestId, String title, int offset, int limit) throws InformaticsServerException;

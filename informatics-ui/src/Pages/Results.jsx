@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import {
 	Container,
 	Typography,
@@ -25,6 +25,11 @@ const INCLUDE_UPSOLVING_STORAGE_PREFIX = 'informatics.includeUpsolving.'
 // Upsolving-only rows (contestants with no live standings entry) get this tint instead of a
 // place number, so they read as clearly separate from the ranked live standings.
 const UPSOLVING_ONLY_ROW_COLOR = '#fdf3d7'
+
+const clickableUsernameSx = {
+	cursor: 'pointer',
+	'&:hover': { textDecoration: 'underline' },
+}
 
 const readStoredIncludeUpsolving = (contestId) => {
 	try {
@@ -84,6 +89,7 @@ const buildResult = (contestantId, username, liveTaskResults, upTaskResults, inc
 
 export default function Results() {
 	const axiosInstance = useContext(AxiosContext)
+	const navigate = useNavigate()
 	const { contest_id } = useParams()
 	const [results, setResults] = useState([])
 	const [upsolvingOnlyResults, setUpsolvingOnlyResults] = useState([])
@@ -325,7 +331,17 @@ export default function Results() {
 											sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
 										>
 											<TableCell align='center'>{page * pageSize + index + 1}</TableCell>
-											<TableCell component='th' scope='row'>
+											<TableCell
+												component='th'
+												scope='row'
+												title={result.username}
+												sx={result.username !== 'deleted' ? clickableUsernameSx : undefined}
+												onClick={
+													result.username !== 'deleted'
+														? () => navigate(`/user/${result.username}`)
+														: undefined
+												}
+											>
 												{result.username}
 											</TableCell>
 											<TableCell
@@ -363,7 +379,17 @@ export default function Results() {
 											}}
 										>
 											<TableCell align='center'>—</TableCell>
-											<TableCell component='th' scope='row'>
+											<TableCell
+												component='th'
+												scope='row'
+												title={result.username}
+												sx={result.username !== 'deleted' ? clickableUsernameSx : undefined}
+												onClick={
+													result.username !== 'deleted'
+														? () => navigate(`/user/${result.username}`)
+														: undefined
+												}
+											>
 												{result.username}
 											</TableCell>
 											<TableCell

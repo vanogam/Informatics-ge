@@ -36,6 +36,9 @@ export default function AdminNavigationBar() {
                     <Button component={NavLink} to="/admin/users" sx={linkSx}>
                         {getMessage('ka', 'adminUsers')}
                     </Button>
+                    <Button component={NavLink} to="/admin/plagiarism" sx={linkSx}>
+                        {getMessage('ka', 'adminPlagiarism')}
+                    </Button>
                 </Box>
             </Toolbar>
         </AppBar>

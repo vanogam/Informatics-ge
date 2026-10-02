@@ -53,6 +53,7 @@ class TestcaseControllerTest {
 
         // Create standalone MockMvc
         mockMvc = MockMvcBuilders.standaloneSetup(testcaseController)
+                .setControllerAdvice(new ge.freeuni.informatics.controller.servlet.GlobalExceptionHandler())
                 .setMessageConverters(
                         new org.springframework.http.converter.json.MappingJackson2HttpMessageConverter(objectMapper),
                         new org.springframework.http.converter.ResourceHttpMessageConverter()

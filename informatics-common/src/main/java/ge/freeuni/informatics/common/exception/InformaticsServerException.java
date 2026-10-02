@@ -21,6 +21,7 @@ public class InformaticsServerException extends Exception {
     public static final InformaticsServerException RECOVERY_REQUEST_TOO_OLD = new InformaticsServerException("recoveryRequestTooOld", ExceptionType.VALIDATION_ERROR);
     public static final InformaticsServerException USER_NOT_FOUND = new InformaticsServerException("userNotFound", ExceptionType.NOT_FOUND);
     public static final InformaticsServerException INCORRECT_PASSWORD = new InformaticsServerException("incorrectPassword", ExceptionType.VALIDATION_ERROR);
+    public static final InformaticsServerException INVALID_USER_DETAILS = new InformaticsServerException("invalidUserDetails", ExceptionType.VALIDATION_ERROR);
 
     // Room related exceptions
     public static final InformaticsServerException ROOM_MISMATCH = new InformaticsServerException("roomMismatch", ExceptionType.VALIDATION_ERROR);
@@ -57,6 +58,12 @@ public class InformaticsServerException extends Exception {
     /** Nothing in the upload could be matched to a test, so there is nothing to judge. */
     public static final InformaticsServerException NO_MATCHING_OUTPUTS = new InformaticsServerException("noMatchingOutputs", ExceptionType.VALIDATION_ERROR);
     public static final InformaticsServerException OUTPUT_TOO_LARGE = new InformaticsServerException("outputTooLarge", ExceptionType.VALIDATION_ERROR);
+
+    // Plagiarism check related exceptions
+    public static final InformaticsServerException INVALID_PLAGIARISM_SCOPE = new InformaticsServerException("invalidPlagiarismScope", ExceptionType.VALIDATION_ERROR);
+    public static final InformaticsServerException PLAGIARISM_JOB_NOT_FOUND = new InformaticsServerException("plagiarismJobNotFound", ExceptionType.NOT_FOUND);
+    public static final InformaticsServerException PLAGIARISM_RUN_NOT_FOUND = new InformaticsServerException("plagiarismRunNotFound", ExceptionType.NOT_FOUND);
+    public static final InformaticsServerException PLAGIARISM_COMPARISON_NOT_FOUND = new InformaticsServerException("plagiarismComparisonNotFound", ExceptionType.NOT_FOUND);
 
     public InformaticsServerException(String code, ExceptionType exceptionType) {
         super();

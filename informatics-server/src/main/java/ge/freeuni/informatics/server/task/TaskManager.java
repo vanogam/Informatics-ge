@@ -154,7 +154,7 @@ public class TaskManager implements ITaskManager {
 
     @Override
     @MemberContestRestricted
-    public Map<String, String> fillTaskNames(Long contestId) {
+    public Map<String, String> fillTaskNames(Long contestId) throws InformaticsServerException {
         Contest contest = contestRepository.getReferenceById(contestId);
         return contest.getTasks().stream()
                 .sorted(Comparator.comparing(task -> task.getOrder() != null ? task.getOrder() : 0))

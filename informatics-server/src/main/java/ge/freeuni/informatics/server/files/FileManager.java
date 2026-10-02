@@ -139,6 +139,17 @@ public class FileManager {
         }
     }
 
+    /**
+     * A source submission's own code, read straight off disk. Unrestricted because every caller
+     * ({@link ge.freeuni.informatics.server.submission.SubmissionManager#loadFullSubmission} and
+     * the admin-only plagiarism check) already enforces its own permission check before calling
+     * this.
+     */
+    public String readSourceFile(long taskId, String fileName) throws IOException {
+        Path path = Paths.get(submissionDirectory.replace(":taskId", String.valueOf(taskId))).resolve(fileName);
+        return Files.readString(path);
+    }
+
     @TeacherTaskRestricted
     public String saveFileForStatement(long taskId, byte[] fileContent) throws IOException, InformaticsServerException {
         String statementDir = statementDirectory.replace(":taskId", String.valueOf(taskId));

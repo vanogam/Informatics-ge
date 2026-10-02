@@ -18,6 +18,9 @@
         <class>ge.freeuni.informatics.common.model.submission.Submission</class>
         <class>ge.freeuni.informatics.common.model.customtest.CustomTestRun</class>
         <class>ge.freeuni.informatics.common.model.worker.Worker</class>
+        <class>ge.freeuni.informatics.common.model.plagiarism.PlagiarismJob</class>
+        <class>ge.freeuni.informatics.common.model.plagiarism.PlagiarismRun</class>
+        <class>ge.freeuni.informatics.common.model.plagiarism.PlagiarismComparison</class>
         <properties>
             <!-- hibernate.hbm2ddl.auto is set from spring.jpa.hibernate.ddl-auto via DatasourceConfiguration -->
         </properties>

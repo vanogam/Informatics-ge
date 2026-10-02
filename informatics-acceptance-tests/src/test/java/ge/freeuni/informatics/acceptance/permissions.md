@@ -1,4 +1,12 @@
+ADMIN   | GET     /api/admin/plagiarism/comparisons/{comparisonId}        -> PlagiarismController#getComparisonDetail
+ADMIN   | GET     /api/admin/plagiarism/eligible-users                    -> PlagiarismController#getEligibleUsers
+ADMIN   | GET     /api/admin/plagiarism/jobs                              -> PlagiarismController#getJobs
+ADMIN   | POST    /api/admin/plagiarism/jobs                              -> PlagiarismController#startJob
+ADMIN   | GET     /api/admin/plagiarism/jobs/{jobId}                      -> PlagiarismController#getJob
+ADMIN   | GET     /api/admin/plagiarism/runs/{runId}/comparisons          -> PlagiarismController#getComparisons
+ADMIN   | GET     /api/admin/submissions                                  -> AdminController#getAllSubmissions
 ADMIN   | POST    /api/admin/submissions/rejudge                          -> AdminController#rejudgeSubmissions
+ADMIN   | GET     /api/admin/tasks                                        -> AdminController#getAllTasks
 ADMIN   | DELETE  /api/admin/workers                                      -> AdminController#stopAllWorkers
 ADMIN   | GET     /api/admin/workers                                      -> AdminController#getWorkers
 ADMIN   | POST    /api/admin/workers                                      -> AdminController#addWorkerInstances
@@ -70,6 +78,7 @@ TEACHER | POST    /api/task/{taskId}/testcases                            -> Tes
 TEACHER | PUT     /api/task/{taskId}/testcases/{testKey}/public           -> TestcaseController#setPublicTestcases
 STUDENT | GET     /api/user                                               -> UserController#getUser
 STUDENT | POST    /api/user/change-password                               -> UserController#changePassword
+STUDENT | PUT     /api/user/profile                                       -> UserController#updateProfile
 STUDENT | GET     /api/user/username/{username}                           -> UserController#getUserByUsername
 STUDENT | GET     /api/user/username/{username}/profile                   -> UserController#getUserProfileByUsername
 STUDENT | GET     /api/user/username/{username}/submissions               -> SubmissionController#getUserSubmissionsByUsername

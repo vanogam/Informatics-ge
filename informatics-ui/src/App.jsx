@@ -24,6 +24,9 @@ import AddPost from "./Pages/AddPost";
 import AdminWorkers from "./Pages/admin/AdminWorkers";
 import AdminSubmissions from "./Pages/admin/AdminSubmissions";
 import AdminUsers from "./Pages/admin/AdminUsers";
+import AdminPlagiarism from "./Pages/admin/AdminPlagiarism";
+import PlagiarismJobDetail from "./Pages/admin/PlagiarismJobDetail";
+import PlagiarismCompare from "./Pages/admin/PlagiarismCompare";
 import { ConfirmDialogProvider } from './utils/ConfirmDialogContext'
 
 function App() {
@@ -79,6 +82,9 @@ function App() {
 					<Route path='/admin' element={<AdminWorkers />} />
 					<Route path='/admin/submissions' element={<AdminSubmissions />} />
 					<Route path='/admin/users' element={<AdminUsers />} />
+					<Route path='/admin/plagiarism' element={<AdminPlagiarism />} />
+					<Route path='/admin/plagiarism/compare/:comparisonId' element={<PlagiarismCompare />} />
+					<Route path='/admin/plagiarism/:jobId' element={<PlagiarismJobDetail />} />
 					<Route path='/user/:username' element={<UserProfile />} />
 					<Route element={<Error/>} />
 				</Routes>

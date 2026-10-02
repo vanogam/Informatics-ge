@@ -225,6 +225,55 @@ const langDictionary = {
 		'adminSubmissions': 'ყველა მცდელობა',
 		'adminUsers': 'მომხმარებლები',
 		'adminUsersComingSoon': 'მომხმარებლების მართვა მალე დაემატება',
+
+		// პლაგიატის შემოწმება
+		'adminPlagiarism': 'პლაგიატი',
+		'plagiarismNewCheck': 'ახალი შემოწმება',
+		'plagiarismScopeContest': 'შეჯიბრი',
+		'plagiarismScopeTask': 'ამოცანა',
+		'plagiarismSelectContest': 'აირჩიეთ შეჯიბრი',
+		'plagiarismSelectTask': 'აირჩიეთ ამოცანა',
+		'plagiarismSelectUsers': 'მომხმარებლები (არჩევითი)',
+		'plagiarismUsersHint': 'თუ არცერთს არ აირჩევთ, შემოწმდება ყველას ნამუშევარი',
+		'plagiarismStartCheck': 'შემოწმების დაწყება',
+		'plagiarismStartError': 'შემოწმების დაწყება ვერ მოხერხდა',
+
+		'plagiarismJobsTitle': 'შემოწმებები',
+		'plagiarismScopeColumn': 'მოცულობა',
+		'plagiarismStatusColumn': 'სტატუსი',
+		'plagiarismCreatedColumn': 'შექმნის დრო',
+		'plagiarismFinishedColumn': 'დასრულების დრო',
+		'plagiarismRunsColumn': 'გაშვებები',
+		'plagiarismComparisonsColumn': 'შედარებები',
+		'plagiarismView': 'ნახვა',
+		'plagiarismNoJobs': 'შემოწმებები არ მოიძებნა',
+
+		'PLAGIARISM_STATUS_PENDING': 'რიგშია',
+		'PLAGIARISM_STATUS_RUNNING': 'მუშავდება',
+		'PLAGIARISM_STATUS_COMPLETED': 'დასრულებულია',
+		'PLAGIARISM_STATUS_FAILED': 'ვერ შესრულდა',
+
+		'plagiarismJobDetailTitle': 'შემოწმების დეტალები',
+		'plagiarismBackToJobs': 'შემოწმებებთან დაბრუნება',
+		'plagiarismTaskColumn': 'ამოცანა',
+		'plagiarismLanguageColumn': 'ენა',
+		'plagiarismSubmissionCountColumn': 'ნამუშევრები',
+		'plagiarismErrorColumn': 'შეცდომა',
+		'plagiarismViewReport': 'ანგარიშის ნახვა',
+		'plagiarismNoRuns': 'გაშვებები არ მოიძებნა',
+
+		'plagiarismComparisonsTitle': 'შედარებები',
+		'plagiarismUserAColumn': 'მომხმარებელი A',
+		'plagiarismUserBColumn': 'მომხმარებელი B',
+		'plagiarismSimilarityColumn': 'მსგავსება',
+		'plagiarismCompareAction': 'შედარება',
+		'plagiarismNoComparisons': 'შედარებები არ მოიძებნა',
+		'plagiarismCompareTitle': 'კოდის შედარება',
+
+		'invalidPlagiarismScope': 'აირჩიეთ შეჯიბრი ან ამოცანა',
+		'plagiarismJobNotFound': 'შემოწმება ვერ მოიძებნა',
+		'plagiarismRunNotFound': 'გაშვება ვერ მოიძებნა',
+		'plagiarismComparisonNotFound': 'შედარება ვერ მოიძებნა',
 	}
 }
 

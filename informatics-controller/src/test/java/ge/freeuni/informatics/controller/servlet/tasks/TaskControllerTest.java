@@ -68,6 +68,7 @@ class TaskControllerTest {
         
         // Create standalone MockMvc
         mockMvc = MockMvcBuilders.standaloneSetup(taskController)
+                .setControllerAdvice(new ge.freeuni.informatics.controller.servlet.GlobalExceptionHandler())
                 .setMessageConverters(new org.springframework.http.converter.json.MappingJackson2HttpMessageConverter(objectMapper))
                 .build();
         

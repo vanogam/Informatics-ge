@@ -15,6 +15,9 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     Optional<Task> findFirstByCode(String code);
 
+    /** Every task of a contest, without going through {@code Contest.getTasks()}'s lazy collection. */
+    List<Task> findByContestId(Long contestId);
+
     /**
      * Every task across every contest whose title matches, for the admin submissions filter's
      * problem search - capped and searched at the database rather than loaded whole, since the

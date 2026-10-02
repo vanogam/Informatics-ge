@@ -65,5 +65,26 @@
             <artifactId>docker-java-transport-httpclient5</artifactId>
             <version>3.5.0</version>
         </dependency>
+        <!--
+            JPlag: plagiarism detection used by the admin "Plagiarism" check. Pinned to 6.2.0
+            rather than the newer 6.3.0: 6.3.0's jars are compiled for Java 25 (class file
+            version 69), which this project's Java 21 toolchain can't load, while 6.2.0 targets
+            Java 21 (class file version 65) and exposes the identical API used here.
+        -->
+        <dependency>
+            <groupId>de.jplag</groupId>
+            <artifactId>jplag</artifactId>
+            <version>6.2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>de.jplag</groupId>
+            <artifactId>cpp</artifactId>
+            <version>6.2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>de.jplag</groupId>
+            <artifactId>python-3</artifactId>
+            <version>6.2.0</version>
+        </dependency>
     </dependencies>
 </project>

@@ -100,12 +100,8 @@ public class UserController {
     }
 
     @GetMapping("/user")
-    public ResponseEntity<UserDTO> getUser() {
-        try {
-            return ResponseEntity.ok(userManager.getAuthenticatedUser());
-        } catch (InformaticsServerException e) {
-            return null;
-        }
+    public ResponseEntity<UserDTO> getUser() throws InformaticsServerException {
+        return ResponseEntity.ok(userManager.getAuthenticatedUser());
     }
 
     @GetMapping("/user/{userId}")
@@ -153,35 +149,25 @@ public class UserController {
     }
 
     @GetMapping("/user/{userId}/profile")
-    public ResponseEntity<UserProfileDTO> getUserProfile(@PathVariable Long userId) {
-        try {
-            UserProfileDTO profile = userManager.getUserProfile(userId);
-            return ResponseEntity.ok(profile);
-        } catch (InformaticsServerException ex) {
-            return ResponseEntity.badRequest().build();
-        }
+    public ResponseEntity<UserProfileDTO> getUserProfile(@PathVariable Long userId) throws InformaticsServerException {
+        return ResponseEntity.ok(userManager.getUserProfile(userId));
     }
 
     @GetMapping("/user/username/{username}/profile")
-    public ResponseEntity<UserProfileDTO> getUserProfileByUsername(@PathVariable String username) {
-        try {
-            UserProfileDTO profile = userManager.getUserProfileByUsername(username);
-            return ResponseEntity.ok(profile);
-        } catch (InformaticsServerException ex) {
-            return ResponseEntity.badRequest().build();
-        }
+    public ResponseEntity<UserProfileDTO> getUserProfileByUsername(@PathVariable String username) throws InformaticsServerException {
+        return ResponseEntity.ok(userManager.getUserProfileByUsername(username));
     }
 
     @PostMapping("/user/change-password")
-    public ResponseEntity<InformaticsResponse> changePassword(@RequestBody ChangePasswordRequest request) {
-        InformaticsResponse response = new InformaticsResponse();
-        try {
-            userManager.changePassword(request.getOldPassword(), request.getNewPassword());
-            return ResponseEntity.ok(response);
-        } catch (InformaticsServerException ex) {
-            response.setMessage(ex.getCode());
-            return ResponseEntity.badRequest().body(response);
-        }
+    public ResponseEntity<InformaticsResponse> changePassword(@RequestBody ChangePasswordRequest request) throws InformaticsServerException {
+        userManager.changePassword(request.getOldPassword(), request.getNewPassword());
+        return ResponseEntity.ok(new InformaticsResponse());
+    }
+
+    @PutMapping("/user/profile")
+    public ResponseEntity<InformaticsResponse> updateProfile(@RequestBody UpdateProfileRequest request) throws InformaticsServerException {
+        userManager.updateProfile(request.getEmail(), request.getFirstName(), request.getLastName());
+        return ResponseEntity.ok(new InformaticsResponse());
     }
 
 }

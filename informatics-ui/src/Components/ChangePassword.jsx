@@ -59,7 +59,7 @@ export default function ChangePassword() {
     }
 
     return (
-        <Box sx={{ maxWidth: '500px', margin: '0 auto', padding: '2rem' }}>
+        <Box>
             <Typography variant="h6" gutterBottom>
                 პაროლის შეცვლა
             </Typography>
@@ -101,7 +101,7 @@ export default function ChangePassword() {
                     disabled={loading}
                     sx={{ marginTop: '1rem' }}
                 >
-                    {loading ? 'მიმდინარეობს...' : 'პაროლის შეცვლა'}
+                    {loading ? 'მიმდინარეობს...' : 'პაროლის განახლება'}
                 </Button>
             </Box>
         </Box>

@@ -44,4 +44,7 @@ public interface IUserManager {
     UserProfileDTO getUserProfileByUsername(String username) throws InformaticsServerException;
 
     void changePassword(String oldPassword, String newPassword) throws InformaticsServerException;
+
+    /** Updates the authenticated user's email/first/last name. The username cannot be changed here. */
+    void updateProfile(String email, String firstName, String lastName) throws InformaticsServerException;
 }

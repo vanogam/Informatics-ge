@@ -1,11 +1,11 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { Box, Typography, Card, CardContent, Tabs, Tab, CircularProgress } from '@mui/material'
+import { Box, Typography, Card, CardContent, Tabs, Tab, CircularProgress, Button } from '@mui/material'
 import { AxiosContext } from '../utils/axiosInstance'
 import { AuthContext } from '../store/authentication'
 import SubmissionsList from '../Components/SubmissionsList'
 import SubmissionFilters, {EMPTY_FILTERS} from '../Components/SubmissionFilters'
-import ChangePassword from '../Components/ChangePassword'
+import EditProfileDialog from '../Components/EditProfileDialog'
 
 export default function UserProfile() {
     const { username } = useParams()
@@ -18,13 +18,14 @@ export default function UserProfile() {
     const [currentUserUsername, setCurrentUserUsername] = useState(null)
     const [targetUsername, setTargetUsername] = useState(null)
     const [submissionFilters, setSubmissionFilters] = useState(EMPTY_FILTERS)
+    const [editOpen, setEditOpen] = useState(false)
 
     useEffect(() => {
         setLoading(true)
         setTargetUsername(username)
 
         // Who's logged in (if anyone) only decides whether to show "my own profile" affordances
-        // like the password-change tab - it must not gate loading the profile itself, or an
+        // like the edit-profile button - it must not gate loading the profile itself, or an
         // anonymous visitor could never view anyone's public profile page.
         axiosInstance.get('/user') // interceptor already silences 401s for this endpoint
             .then((response) => setCurrentUserUsername(response.data.username))
@@ -90,23 +91,29 @@ export default function UserProfile() {
                     <Tabs value={tabValue} onChange={handleTabChange}>
                         <Tab label="Information" />
                         <Tab label="მცდელობები" />
-                        {isOwnProfile && <Tab label="პაროლის შეცვლა" />}
                     </Tabs>
                 </Box>
                 <Box sx={{ padding: '1rem' }}>
                     {tabValue === 0 && (
                         <Card elevation={0}>
                             <CardContent>
-                                {user && (
-                                    <>
-                                        <Typography variant="h4" component="h1" gutterBottom>
-                                            {profile.username}
-                                        </Typography>
-                                        <Typography variant="h5" component="h2" gutterBottom>
-                                            {`${user.firstName} ${user.lastName}`}
-                                        </Typography>
-                                    </>
-                                )}
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                    {user && (
+                                        <Box>
+                                            <Typography variant="h4" component="h1" gutterBottom>
+                                                {profile.username}
+                                            </Typography>
+                                            <Typography variant="h5" component="h2" gutterBottom>
+                                                {`${user.firstName} ${user.lastName}`}
+                                            </Typography>
+                                        </Box>
+                                    )}
+                                    {isOwnProfile && (
+                                        <Button variant="outlined" onClick={() => setEditOpen(true)}>
+                                            რედაქტირება
+                                        </Button>
+                                    )}
+                                </Box>
                                 <Typography variant="body1" color="text.secondary" sx={{ marginTop: '1rem' }}>
                                     <strong>ამოხსნილი ამოცანები:</strong> {profile.solvedProblemsCount}
                                 </Typography>
@@ -135,12 +142,20 @@ export default function UserProfile() {
                             />
                         </Box>
                     )}
-
-                    {tabValue === 2 && isOwnProfile && (
-                        <ChangePassword />
-                    )}
                 </Box>
             </Card>
+
+            {isOwnProfile && (
+                <EditProfileDialog
+                    open={editOpen}
+                    onClose={() => setEditOpen(false)}
+                    user={user}
+                    onSaved={(updated) => {
+                        setUser((prev) => ({ ...prev, ...updated }))
+                        setEditOpen(false)
+                    }}
+                />
+            )}
         </Box>
     )
 }

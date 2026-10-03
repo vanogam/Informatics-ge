@@ -260,6 +260,64 @@ public class PasswordAcceptanceTest extends BaseAcceptanceTest {
     }
 
     @Test
+    @DisplayName("Update profile: email, first and last name are changed, username is untouched")
+    void testUpdateProfile() {
+        testDataFactory.createStudent("profileuser", "pass123");
+
+        givenUser("profileuser", "pass123")
+                .body(Map.of(
+                        "email", "updated@test.com",
+                        "firstName", "Updated",
+                        "lastName", "Name"
+                ))
+                .when()
+                .put("/user/profile")
+                .then()
+                .statusCode(200);
+
+        User updated = userRepository.getFirstByUsername("profileuser");
+        assertThat(updated.getUsername()).isEqualTo("profileuser");
+        assertThat(updated.getEmail()).isEqualTo("updated@test.com");
+        assertThat(updated.getFirstName()).isEqualTo("Updated");
+        assertThat(updated.getLastName()).isEqualTo("Name");
+    }
+
+    @Test
+    @DisplayName("Update profile rejects blank fields")
+    void testUpdateProfileRejectsBlankFields() {
+        testDataFactory.createStudent("blankprofileuser", "pass123");
+
+        givenUser("blankprofileuser", "pass123")
+                .body(Map.of(
+                        "email", "",
+                        "firstName", "Still",
+                        "lastName", "Blank"
+                ))
+                .when()
+                .put("/user/profile")
+                .then()
+                .statusCode(400);
+
+        User unchanged = userRepository.getFirstByUsername("blankprofileuser");
+        assertThat(unchanged.getFirstName()).isNotEqualTo("Still");
+    }
+
+    @Test
+    @DisplayName("Update profile requires authentication")
+    void testUpdateProfileRequiresAuth() {
+        givenAnonymousWithCsrf()
+                .body(Map.of(
+                        "email", "anon@test.com",
+                        "firstName", "Anon",
+                        "lastName", "User"
+                ))
+                .when()
+                .put("/user/profile")
+                .then()
+                .statusCode(401);
+    }
+
+    @Test
     @DisplayName("Duplicate username registration is rejected")
     void testDuplicateUsernameRejected() {
         testDataFactory.createStudent("dupeuser", "pass1");

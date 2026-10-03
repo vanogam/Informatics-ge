@@ -346,4 +346,24 @@ public class UserManager implements IUserManager {
         user.setPassword(BCRYPT.encode(newPassword));
         userRepository.save(user);
     }
+
+    @Override
+    public void updateProfile(String email, String firstName, String lastName) throws InformaticsServerException {
+        if (email == null || email.isBlank()
+                || firstName == null || firstName.isBlank()
+                || lastName == null || lastName.isBlank()) {
+            throw InformaticsServerException.INVALID_USER_DETAILS;
+        }
+
+        UserDTO currentUser = getAuthenticatedUser();
+        User user = userRepository.getFirstByUsername(currentUser.username());
+        if (user == null) {
+            throw InformaticsServerException.USER_NOT_FOUND;
+        }
+
+        user.setEmail(email.trim());
+        user.setFirstName(firstName.trim());
+        user.setLastName(lastName.trim());
+        userRepository.save(user);
+    }
 }

@@ -29,7 +29,11 @@ public record TaskDTO(
         String outputTemplate,
         Map<Language, String> statements,
         List<TestcaseDTO> testcases,
-        Integer order
+        Integer order,
+        /** Informational only: {@link #fromDTO} ignores it, since editing a task preserves the existing value. */
+        Boolean editorialVisible,
+        /** Informational only: {@link #fromDTO} ignores it, since editing a task preserves the existing value. */
+        Boolean solutionVisible
 ) {
 
     public static Task fromDTO(TaskDTO taskDTO) {
@@ -84,7 +88,9 @@ public record TaskDTO(
                 task.getTestcases() == null ? null : task.getTestcases().stream()
                         .map(tc -> new TestcaseDTO(tc.getKey(), tc.isPublicTestcase(), tc.getInputSnippet(), tc.getOutputSnippet()))
                         .toList(),
-                task.getOrder()
+                task.getOrder(),
+                task.getEditorialVisible(),
+                task.getSolutionVisible()
         );
     }
 

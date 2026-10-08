@@ -200,6 +200,30 @@ const langDictionary = {
         'saved': 'ცვლილება შენახულია',
 		'statementSaved': 'პირობა შენახულია',
 		'markdownPlaceholder': 'აკრიფეთ ტექსტი...',
+
+		// გარჩევა და ამოხსნა
+		'editorial': 'გარჩევა',
+		'solution': 'ამოხსნა',
+		'editorialSaved': 'გარჩევა შენახულია',
+		'solutionSaved': 'ამოხსნა შენახულია',
+		'showEditorial': 'გარჩევის ჩვენება (მხოლოდ აფსოლვინგში)',
+		'showSolution': 'ამოხსნის ჩვენება (მხოლოდ აფსოლვინგში)',
+		'addLanguage': 'ენის დამატება',
+
+		// თეგები
+		'tags': 'თეგები',
+		'addTag': 'თეგის დამატება',
+		'filterByTag': 'თეგით ფილტრი',
+		'allTags': 'ყველა',
+		'customLanguage': 'სხვა ენა',
+		'customLanguageName': 'ენის სახელი',
+		'removeLanguage': 'წაშლა',
+		'chooseSolutionLanguage': 'აირჩიეთ ენა',
+		'noEditorialAvailable': 'ამ ამოცანას გარჩევა არ აქვს',
+		'noSolutionAvailable': 'ამ ამოცანას ამოხსნა არ აქვს',
+		'SOLUTION_LANG_CPP': 'C++',
+		'SOLUTION_LANG_JAVA': 'Java',
+		'SOLUTION_LANG_PYTHON': 'Python',
 		// გადასინჯვა (rejudge)
 		'rejudgeRecompile': 'თავიდან კომპილაცია, გაშვება და შეფასება',
 		'rejudgeRerun': 'ტესტების თავიდან გაშვება და შეფასება',

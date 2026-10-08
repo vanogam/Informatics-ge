@@ -33,15 +33,17 @@ public class TaskController {
     String defaultLanguage;
 
     @GetMapping("/room/{id}/tasks")
-    ResponseEntity<GetTasksResponse> getTasks(@PathVariable Long id, PagingRequest request) {
+    ResponseEntity<GetTasksResponse> getTasks(@PathVariable Long id,
+                                              @RequestParam(required = false) String tag,
+                                              PagingRequest request) {
         try {
             if (request == null) {
                 request = new PagingRequest();
             }
-            List<TaskInfo> taskInfos = taskManager.getUpsolvingTasks(id, request.getOffset(), request.getLimit());
+            List<TaskInfo> taskInfos = taskManager.getUpsolvingTasks(id, request.getOffset(), request.getLimit(), tag);
             GetTasksResponse response = new GetTasksResponse(null);
             response.setTasks(taskInfos);
-            response.setTotalCount(taskManager.getUpsolvingTasksCount(id));
+            response.setTotalCount(taskManager.getUpsolvingTasksCount(id, tag));
             return ResponseEntity.ok(response);
         } catch (InformaticsServerException ex) {
             return ResponseEntity.badRequest().body(new GetTasksResponse(ex.getCode()));
@@ -103,6 +105,8 @@ public class TaskController {
                 request.outputTemplate(),
                 new HashMap<>(),
                 new ArrayList<>(),
+                null,
+                null,
                 null
         );
         try {
@@ -133,6 +137,83 @@ public class TaskController {
         } catch (InformaticsServerException ex) {
             return ResponseEntity.status(ServletUtils.getResponseCode(ex)).body(new StatementResponse(ex.getCode()));
         }
+    }
+
+    @PostMapping("/task/{taskId}/editorial")
+    ResponseEntity<Void> uploadEditorial(@PathVariable Long taskId, @RequestBody AddEditorialRequest request) throws InformaticsServerException {
+        taskManager.addEditorial(taskId, request.editorial(), request.language());
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/task/{taskId}/editorial/{language}")
+    ResponseEntity<EditorialResponse> getEditorial(@PathVariable(required = false) Language language,
+                                                    @PathVariable Long taskId) throws InformaticsServerException {
+        if (language == null) {
+            language = Language.valueOf(defaultLanguage);
+        }
+        return ResponseEntity.ok(new EditorialResponse(taskManager.getEditorial(taskId, language)));
+    }
+
+    @PutMapping("/task/{taskId}/editorial/visible")
+    ResponseEntity<Void> setEditorialVisible(@PathVariable Long taskId, @RequestBody SetVisibleRequest request) throws InformaticsServerException {
+        taskManager.setEditorialVisible(taskId, request.visible());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/task/{taskId}/solution")
+    ResponseEntity<Void> uploadSolution(@PathVariable Long taskId, @RequestBody AddSolutionRequest request) throws InformaticsServerException {
+        taskManager.addSolution(taskId, request.code(), request.language());
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/task/{taskId}/solution/languages")
+    ResponseEntity<SolutionLanguagesResponse> getSolutionLanguages(@PathVariable Long taskId) throws InformaticsServerException {
+        return ResponseEntity.ok(new SolutionLanguagesResponse(taskManager.getSolutionLanguages(taskId)));
+    }
+
+    @GetMapping("/task/{taskId}/solution/{language}")
+    ResponseEntity<SolutionResponse> getSolution(@PathVariable Long taskId, @PathVariable String language) throws InformaticsServerException {
+        return ResponseEntity.ok(new SolutionResponse(taskManager.getSolution(taskId, language), language));
+    }
+
+    @DeleteMapping("/task/{taskId}/solution/{language}")
+    ResponseEntity<Void> removeSolution(@PathVariable Long taskId, @PathVariable String language) throws InformaticsServerException {
+        taskManager.removeSolution(taskId, language);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/task/{taskId}/solution/visible")
+    ResponseEntity<Void> setSolutionVisible(@PathVariable Long taskId, @RequestBody SetVisibleRequest request) throws InformaticsServerException {
+        taskManager.setSolutionVisible(taskId, request.visible());
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/task/{taskId}/materials")
+    ResponseEntity<TaskMaterialsResponse> getMaterialsAvailability(@PathVariable Long taskId) throws InformaticsServerException {
+        var materials = taskManager.getMaterialsAvailability(taskId);
+        return ResponseEntity.ok(new TaskMaterialsResponse(materials.editorialAvailable(), materials.solutionLanguages()));
+    }
+
+    @GetMapping("/task/{taskId}/tags")
+    ResponseEntity<TagsResponse> getTags(@PathVariable Long taskId) throws InformaticsServerException {
+        return ResponseEntity.ok(new TagsResponse(taskManager.getTags(taskId)));
+    }
+
+    @PostMapping("/task/{taskId}/tags")
+    ResponseEntity<Void> addTag(@PathVariable Long taskId, @RequestBody AddTagRequest request) throws InformaticsServerException {
+        taskManager.addTag(taskId, request.tag());
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/task/{taskId}/tags/{tag}")
+    ResponseEntity<Void> removeTag(@PathVariable Long taskId, @PathVariable String tag) throws InformaticsServerException {
+        taskManager.removeTag(taskId, tag);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/tags")
+    ResponseEntity<TagsResponse> getAllTags() {
+        return ResponseEntity.ok(new TagsResponse(taskManager.getAllTagNames()));
     }
 
     @PutMapping("/contest/{contestId}/tasks/order")

@@ -10,6 +10,8 @@ import ResetPassword from './Pages/ResetPassword'
 import Archive from './Pages/Archive'
 import Contest from './Pages/Contest'
 import Problem from './Pages/Problem'
+import ProblemEditorial from './Pages/ProblemEditorial'
+import ProblemSolution from './Pages/ProblemSolution'
 import NewContest from './Pages/contest/NewContest'
 import EditContest from './Pages/contest/EditContest'
 import Results from './Pages/Results'
@@ -64,6 +66,14 @@ function App() {
 					<Route
 						path='/contest/:contest_id/problem/:problem_id'
 						element={<Problem />}
+					/>
+					<Route
+						path='/contest/:contest_id/problem/:problem_id/editorial'
+						element={<ProblemEditorial />}
+					/>
+					<Route
+						path='/contest/:contest_id/problem/:problem_id/solution'
+						element={<ProblemSolution />}
 					/>
 					<Route
 						path='/contest/:contest_id/mySubmissions'

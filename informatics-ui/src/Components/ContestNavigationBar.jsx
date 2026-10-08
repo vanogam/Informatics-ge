@@ -1,5 +1,7 @@
 import { Box, Button, AppBar, Toolbar } from '@mui/material'
 import { useParams, useLocation, NavLink } from 'react-router-dom'
+import { useContext, useEffect, useState } from 'react'
+import { AxiosContext } from '../utils/axiosInstance'
 import getMessage from './lang'
 
 /**
@@ -15,11 +17,30 @@ import getMessage from './lang'
 export default function ContestNavigationBar() {
     const { contest_id, problem_id } = useParams()
     const location = useLocation()
+    const axiosInstance = useContext(AxiosContext)
 
     // Determine if we're on a problem statement page or task list page
     const isProblemPage = !!problem_id
     const isArchivePage = location.pathname.startsWith('/archive')
     const isUpsolving = isArchivePage || location.pathname.includes('/upsolving')
+
+    // Editorial/solution availability is decided server-side (visibility checkbox plus whether
+    // the task's contest is actually in upsolving mode), since a problem page is reachable
+    // through the same URL whether the contestant got here from a live contest or the archive.
+    const [editorialAvailable, setEditorialAvailable] = useState(false)
+    const [solutionLanguages, setSolutionLanguages] = useState([])
+
+    useEffect(() => {
+        if (!isProblemPage) {
+            return
+        }
+        axiosInstance.get(`/task/${problem_id}/materials`)
+            .then((response) => {
+                setEditorialAvailable(!!response.data.editorialAvailable)
+                setSolutionLanguages(response.data.solutionLanguages || [])
+            })
+            .catch(_ => {})
+    }, [problem_id])
 
     if (!contest_id && !isArchivePage) {
         return null
@@ -30,7 +51,9 @@ export default function ContestNavigationBar() {
     const mySubmissionsPath = isUpsolving ? `/archive/mySubmissions` : `${contestBasePath}/mySubmissions`
     const allSubmissionsPath = isUpsolving ? `/archive/status` : `${contestBasePath}/submissions`
     const standingsPath = contest_id ? `/results/${contest_id}` : null
-    
+    const editorialPath = contestBasePath ? `${contestBasePath}/problem/${problem_id}/editorial` : null
+    const solutionPath = contestBasePath ? `${contestBasePath}/problem/${problem_id}/solution` : null
+
     const linkStyle = {
         textDecoration: 'none',
         color: 'inherit',
@@ -81,7 +104,53 @@ export default function ContestNavigationBar() {
                             სია
                         </Button>
                     )}
-                    
+                    {/* Editorial/Solution links - only shown on a problem page, greyed out when
+                        there is nothing to show (not visible, or the task isn't in upsolving mode) */}
+                    {isProblemPage && (
+                        <Button
+                            component={NavLink}
+                            to={editorialPath}
+                            disabled={!editorialAvailable}
+                            sx={{
+                                color: '#452c54',
+                                textTransform: 'none',
+                                fontSize: '14px',
+                                marginLeft: '8px',
+                                '&:hover': {
+                                    backgroundColor: 'rgba(69, 44, 84, 0.08)'
+                                },
+                                '&.active': {
+                                    fontWeight: 'bold',
+                                    textDecoration: 'underline'
+                                }
+                            }}
+                        >
+                            {getMessage('ka', 'editorial')}
+                        </Button>
+                    )}
+                    {isProblemPage && (
+                        <Button
+                            component={NavLink}
+                            to={solutionPath}
+                            disabled={solutionLanguages.length === 0}
+                            sx={{
+                                color: '#452c54',
+                                textTransform: 'none',
+                                fontSize: '14px',
+                                marginLeft: '8px',
+                                '&:hover': {
+                                    backgroundColor: 'rgba(69, 44, 84, 0.08)'
+                                },
+                                '&.active': {
+                                    fontWeight: 'bold',
+                                    textDecoration: 'underline'
+                                }
+                            }}
+                        >
+                            {getMessage('ka', 'solution')}
+                        </Button>
+                    )}
+
                     {/* My Submissions link */}
                     <Button
                         component={NavLink}

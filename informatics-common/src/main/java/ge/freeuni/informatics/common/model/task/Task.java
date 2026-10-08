@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 @Entity
 public class Task {
@@ -28,6 +29,41 @@ public class Task {
     @MapKeyColumn(name = "language")
     @Column(name = "statement", length = 100000)
     Map<Language, String> statements;
+
+    @ElementCollection
+    @CollectionTable(name = "task_editorials", joinColumns = @JoinColumn(name = "task_id"))
+    @MapKeyColumn(name = "language")
+    @Column(name = "editorial", length = 100000)
+    Map<Language, String> editorials;
+
+    /**
+     * Keyed by a free-form language name (e.g. "CPP", "JAVA", "PYTHON", or a custom name a
+     * teacher typed in) rather than {@link Language}, which is the statement's natural language.
+     */
+    @ElementCollection
+    @CollectionTable(name = "task_solutions", joinColumns = @JoinColumn(name = "task_id"))
+    @MapKeyColumn(name = "language")
+    @Column(name = "code", length = 100000)
+    Map<String, String> solutions;
+
+    /**
+     * Teacher-controlled toggle. Even when true, a contestant only ever sees the editorial once
+     * the task is in upsolving mode - never during a live contest.
+     */
+    @Column(name = "editorial_visible")
+    Boolean editorialVisible = Boolean.FALSE;
+
+    /** @see #editorialVisible */
+    @Column(name = "solution_visible")
+    Boolean solutionVisible = Boolean.FALSE;
+
+    @ManyToMany
+    @JoinTable(
+            name = "task_tags",
+            joinColumns = @JoinColumn(name = "task_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    Set<Tag> tags;
 
     String configAddress;
 
@@ -121,6 +157,56 @@ public class Task {
 
     public void setStatements(Map<Language, String> statements) {
         this.statements = statements;
+    }
+
+    public Map<Language, String> getEditorials() {
+        return editorials;
+    }
+
+    public void setEditorials(Map<Language, String> editorials) {
+        this.editorials = editorials;
+    }
+
+    public Map<String, String> getSolutions() {
+        return solutions;
+    }
+
+    public void setSolutions(Map<String, String> solutions) {
+        this.solutions = solutions;
+    }
+
+    /** Defaults to false, so a task saved before the column existed stays hidden. */
+    public boolean isEditorialVisible() {
+        return editorialVisible != null && editorialVisible;
+    }
+
+    public Boolean getEditorialVisible() {
+        return editorialVisible;
+    }
+
+    public void setEditorialVisible(Boolean editorialVisible) {
+        this.editorialVisible = editorialVisible;
+    }
+
+    /** Defaults to false, so a task saved before the column existed stays hidden. */
+    public boolean isSolutionVisible() {
+        return solutionVisible != null && solutionVisible;
+    }
+
+    public Boolean getSolutionVisible() {
+        return solutionVisible;
+    }
+
+    public void setSolutionVisible(Boolean solutionVisible) {
+        this.solutionVisible = solutionVisible;
+    }
+
+    public Set<Tag> getTags() {
+        return tags;
+    }
+
+    public void setTags(Set<Tag> tags) {
+        this.tags = tags;
     }
 
     public String getConfigAddress() {

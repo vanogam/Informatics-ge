@@ -355,7 +355,12 @@ public class PermissionAcceptanceTest extends BaseAcceptanceTest {
                 || "/api/task/{id}".equals(path)
                 || "/api/task/{taskId}/statement/{language}".equals(path)
                 || "/api/task/{taskId}/attachment/{fileName}".equals(path)
-                || "/api/task/{taskId}/attachments".equals(path);
+                || "/api/task/{taskId}/attachments".equals(path)
+                || "/api/task/{taskId}/editorial/{language}".equals(path)
+                || "/api/task/{taskId}/materials".equals(path)
+                || "/api/task/{taskId}/solution/languages".equals(path)
+                || "/api/task/{taskId}/solution/{language}".equals(path)
+                || "/api/task/{taskId}/tags".equals(path);
     }
 
     private boolean isAnonymousAccessible(String path, String method) {
@@ -613,6 +618,7 @@ public class PermissionAcceptanceTest extends BaseAcceptanceTest {
         path = path.replace("{filename}", "file.png");
         path = path.replace("{language}", "KA");
         path = path.replace("{testKey}", "1");
+        path = path.replace("{tag}", "sample-tag");
         path = path.replace("{kind}", "GRADER");
         path = path.replace("{fileName}", "grader.cpp");
         path = path.replace("{key}", "custom-test-key");

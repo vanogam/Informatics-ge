@@ -90,7 +90,9 @@ class TaskControllerTest {
                 "test*.out",
                 new HashMap<>(),
                 new ArrayList<>(),
-                1
+                1,
+                null,
+                null
         );
     }
 
@@ -99,7 +101,7 @@ class TaskControllerTest {
         List<TaskInfo> taskInfos = new ArrayList<>();
         taskInfos.add(new TaskInfo(testTaskDTO, 0.0f));
 
-        when(taskManager.getUpsolvingTasks(eq(1L), any(), any())).thenReturn(taskInfos);
+        when(taskManager.getUpsolvingTasks(eq(1L), any(), any(), any())).thenReturn(taskInfos);
 
         mockMvc.perform(get("/api/room/1/tasks")
                         .param("offset", "0")
@@ -108,23 +110,23 @@ class TaskControllerTest {
                 .andExpect(jsonPath("$.tasks").isArray())
                 .andExpect(jsonPath("$.tasks[0].task.code").value("TASK001"));
 
-        verify(taskManager).getUpsolvingTasks(1L, 0, 10);
+        verify(taskManager).getUpsolvingTasks(eq(1L), eq(0), eq(10), any());
     }
 
     @Test
     void testGetTasks_WithNullPaging() throws Exception {
         List<TaskInfo> taskInfos = new ArrayList<>();
-        when(taskManager.getUpsolvingTasks(eq(1L), any(), any())).thenReturn(taskInfos);
+        when(taskManager.getUpsolvingTasks(eq(1L), any(), any(), any())).thenReturn(taskInfos);
 
         mockMvc.perform(get("/api/room/1/tasks"))
                 .andExpect(status().isOk());
 
-        verify(taskManager).getUpsolvingTasks(eq(1L), any(), any());
+        verify(taskManager).getUpsolvingTasks(eq(1L), any(), any(), any());
     }
 
     @Test
     void testGetTasks_Error() throws Exception {
-        when(taskManager.getUpsolvingTasks(eq(1L), any(), any()))
+        when(taskManager.getUpsolvingTasks(eq(1L), any(), any(), any()))
                 .thenThrow(InformaticsServerException.PERMISSION_DENIED);
 
         mockMvc.perform(get("/api/room/1/tasks")

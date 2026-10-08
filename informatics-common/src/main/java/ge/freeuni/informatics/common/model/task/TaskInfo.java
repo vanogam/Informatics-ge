@@ -2,6 +2,8 @@ package ge.freeuni.informatics.common.model.task;
 
 import ge.freeuni.informatics.common.dto.TaskDTO;
 
+import java.util.List;
+
 public class TaskInfo {
 
     private TaskDTO task;
@@ -11,6 +13,12 @@ public class TaskInfo {
     private Float maxScore;
 
     private String contestName;
+
+    /**
+     * Empty - not null - whenever tags aren't shown for this viewer (a live contest the viewer
+     * isn't staff on), so the frontend never has to distinguish "no tags" from "can't see them".
+     */
+    private List<String> tags = List.of();
 
     public TaskInfo(TaskDTO task, Float score) {
         this.task = task;
@@ -66,5 +74,13 @@ public class TaskInfo {
 
     public void setContestName(String contestName) {
         this.contestName = contestName;
+    }
+
+    public List<String> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<String> tags) {
+        this.tags = tags == null ? List.of() : tags;
     }
 }

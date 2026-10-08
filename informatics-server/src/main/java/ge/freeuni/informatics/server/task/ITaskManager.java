@@ -3,6 +3,7 @@ package ge.freeuni.informatics.server.task;
 import ge.freeuni.informatics.common.Language;
 import ge.freeuni.informatics.common.dto.AddTestcasesResult;
 import ge.freeuni.informatics.common.dto.TaskDTO;
+import ge.freeuni.informatics.common.dto.TaskMaterialsDTO;
 import ge.freeuni.informatics.common.dto.TestcaseDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.task.Statement;
@@ -21,13 +22,14 @@ public interface ITaskManager {
 
     TaskDTO addTask(long contestId, TaskDTO task) throws InformaticsServerException;
 
-    List<TaskInfo> getUpsolvingTasks(long roomId, Integer offset, Integer limit) throws InformaticsServerException;
+    /** @param tag exact (case-insensitive) match against one of the task's tags; null/blank matches every task. */
+    List<TaskInfo> getUpsolvingTasks(long roomId, Integer offset, Integer limit, String tag) throws InformaticsServerException;
 
     /**
-     * The total number of tasks {@link #getUpsolvingTasks} would page through for this room,
-     * ignoring offset/limit.
+     * The total number of tasks {@link #getUpsolvingTasks} would page through for this room and
+     * tag filter, ignoring offset/limit.
      */
-    long getUpsolvingTasksCount(long roomId) throws InformaticsServerException;
+    long getUpsolvingTasksCount(long roomId, String tag) throws InformaticsServerException;
 
     Map<String, String> fillTaskNames(Long contestId) throws InformaticsServerException;
 
@@ -59,6 +61,37 @@ public interface ITaskManager {
     List<TestcaseDTO> getPublicTestcases(long taskId) throws InformaticsServerException;
 
     void addStatement(long taskId, String statement, Language language) throws InformaticsServerException;
+
+    /** Null when no editorial exists for that language, or it isn't visible to the current viewer. */
+    String getEditorial(long taskId, Language language) throws InformaticsServerException;
+
+    void addEditorial(long taskId, String editorial, Language language) throws InformaticsServerException;
+
+    void setEditorialVisible(long taskId, boolean visible) throws InformaticsServerException;
+
+    /** Only the languages that have non-blank code and are visible to the current viewer. */
+    List<String> getSolutionLanguages(long taskId) throws InformaticsServerException;
+
+    /** Null when no solution exists for that language, or it isn't visible to the current viewer. */
+    String getSolution(long taskId, String language) throws InformaticsServerException;
+
+    void addSolution(long taskId, String code, String language) throws InformaticsServerException;
+
+    void removeSolution(long taskId, String language) throws InformaticsServerException;
+
+    void setSolutionVisible(long taskId, boolean visible) throws InformaticsServerException;
+
+    TaskMaterialsDTO getMaterialsAvailability(long taskId) throws InformaticsServerException;
+
+    /** Empty when tags aren't visible to the current viewer (a live contest, if they're not staff). */
+    List<String> getTags(long taskId) throws InformaticsServerException;
+
+    void addTag(long taskId, String tagName) throws InformaticsServerException;
+
+    void removeTag(long taskId, String tagName) throws InformaticsServerException;
+
+    /** Every tag that exists, for a teacher's add-tag autocomplete. Not scoped to any one task. */
+    List<String> getAllTagNames();
 
     AddTestcasesResult addTestcase(long taskId, byte[] inputContent, byte[] outputContent, String inputName, String outputName) throws InformaticsServerException;
 

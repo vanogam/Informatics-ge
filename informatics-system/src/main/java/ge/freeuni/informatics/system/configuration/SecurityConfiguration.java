@@ -45,6 +45,15 @@ public class SecurityConfiguration {
             "/api/custom-test",
             "/api/custom-test/*",
             "/api/task/*/statement/*",
+            "/api/task/*/editorial/*",
+            "/api/task/*/solution/*",
+            "/api/task/*/materials",
+            "/api/task/*/tags",
+            "/api/task/*/tags/*",
+            "/api/tags",
+            "/api/task/*/attachments",
+            "/api/task/*/attachment/*",
+            "/api/task/*",
             "/error",
     };
 

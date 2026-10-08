@@ -8,12 +8,18 @@ import {
 	TableRow,
 	TableContainer,
 	Paper,
+	Autocomplete,
+	TextField,
+	Box,
+	Stack,
 } from '@mui/material'
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useContext } from 'react'
 import { AxiosContext } from '../utils/axiosInstance'
+import { AuthContext } from '../store/authentication'
 import { getScoreRowBackground, getScoreRowHoverBackground } from '../styles/scoreColors'
 import ContestNavigationBar from '../Components/ContestNavigationBar'
+import TaskTags from '../Components/TaskTags'
 import getMessage from '../Components/lang'
 import { usePagination } from '../utils/usePagination'
 import PaginationControls from '../Components/PaginationControls'
@@ -43,7 +49,8 @@ function handleContestResponse(response, setProblems){
 			name: taskName,
 			contestId: contestId,
 			contestName: contestName,
-			score: score
+			score: score,
+			tags: task.tags || []
 		}
 		curTasks.push(taskItem)
 	}
@@ -54,16 +61,29 @@ const hoverTransparency = 0.3
 
 export default function Archive(){
 	const axiosInstance = useContext(AxiosContext)
+	const authContext = useContext(AuthContext)
+	const isStaff = (authContext.role || '').includes('ADMIN') || (authContext.role || '').includes('TEACHER')
 	const navigate = useNavigate()
 	const [problems , setProblems] = useState([])
+	const [tagFilter, setTagFilter] = useState('')
+	const [allTags, setAllTags] = useState([])
 	const pagination = usePagination()
-	const {offset, pageSize, setTotalCount} = pagination
+	const {offset, pageSize, setTotalCount, resetPage} = pagination
+
+	useEffect(() => {
+		axiosInstance.get('/tags')
+			.then((response) => setAllTags(response.data.tags || []))
+			.catch(_ => {})
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [axiosInstance])
+
 	useEffect(() => {
 		axiosInstance
 			.get('/room/1/tasks', {
 				params:{
 					offset: offset,
-					limit: pageSize
+					limit: pageSize,
+					tag: tagFilter || undefined
 				}
 			})
 			.then((response) => {
@@ -76,7 +96,11 @@ export default function Archive(){
 				setTotalCount(0)
 			})
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [axiosInstance, offset, pageSize])
+	}, [axiosInstance, offset, pageSize, tagFilter])
+
+	const setRowTags = (taskId) => (newTags) => {
+		setProblems((prev) => prev.map((p) => (p.id === taskId ? {...p, tags: newTags} : p)))
+	}
 
     return (
        <main>
@@ -98,11 +122,24 @@ export default function Archive(){
 				ამ გვერდზე შეგიძლიათ იხილოთ დაარქივებული ამოცანები
 			</Typography>
 			<Container maxWidth="lg">
+			<Box sx={{ marginBottom: '1rem', maxWidth: '20rem' }}>
+				<Autocomplete
+					options={allTags}
+					value={tagFilter || null}
+					onChange={(_, value) => {
+						setTagFilter(value || '')
+						resetPage()
+					}}
+					renderInput={(params) => (
+						<TextField {...params} label={getMessage('ka', 'filterByTag')} size="small"/>
+					)}
+				/>
+			</Box>
 			<TableContainer component={Paper} sx={{ marginInline: 'auto' }}>
 				<Table sx={{ marginX: 'auto' }}>
 					<TableHead>
 						<TableRow>
-							<TableCell>{getMessage('ka', 'name')}</TableCell>
+							<TableCell sx={{width: '60%'}}>{getMessage('ka', 'name')}</TableCell>
 							<TableCell>{getMessage('ka', 'contest')}</TableCell>
 							<TableCell>{getMessage('ka', 'score')}</TableCell>
 						</TableRow>
@@ -137,7 +174,18 @@ export default function Archive(){
 											}
 										}}
 									>
-										<TableCell>{problem.name}</TableCell>
+										<TableCell>
+											<Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap" sx={{width: '100%'}}>
+												<span>{problem.name}</span>
+												<TaskTags
+													taskId={problem.id}
+													tags={problem.tags}
+													setTags={setRowTags(problem.id)}
+													editable={isStaff}
+													allTags={allTags}
+												/>
+											</Stack>
+										</TableCell>
 										<TableCell>{problem.contestName}</TableCell>
 										<TableCell>{problem.score !== null && problem.score !== undefined && problem.score.toFixed(1)}</TableCell>
 									</TableRow>

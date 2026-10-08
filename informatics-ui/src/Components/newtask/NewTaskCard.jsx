@@ -5,6 +5,8 @@ import getMessage from '../lang'
 import {toast} from 'react-toastify'
 import {useNavigate, useParams} from 'react-router-dom'
 import StatementEditor from "./StatementEditor";
+import EditorialEditor from "./EditorialEditor";
+import SolutionEditor from "./SolutionEditor";
 import TestcasesEditor from "./TestcasesEditor";
 import GradersEditor from "./GradersEditor";
 
@@ -31,6 +33,9 @@ export default function NewTaskCard() {
     const [outputTemplate, setOutputTemplate] = useState('');
     const [kaStatement, setKaStatement] = useState({});
     const [initStatement, setInitStatement] = useState({});
+    const [kaEditorial, setKaEditorial] = useState('');
+    const [editorialVisible, setEditorialVisible] = useState(false);
+    const [solutionVisible, setSolutionVisible] = useState(false);
     const [testcases, setTestcases] = useState([]);
     const [order, setOrder] = useState(0);
 
@@ -54,6 +59,7 @@ export default function NewTaskCard() {
             loadTask()
         }
         loadStatement()
+        loadEditorial()
     }, [])
 
     useEffect(() => {
@@ -93,6 +99,8 @@ export default function NewTaskCard() {
             setOutputTemplate(task.outputTemplate);
             setTestcases(task.testcases);
             setOrder(task.order);
+            setEditorialVisible(task.editorialVisible === true);
+            setSolutionVisible(task.solutionVisible === true);
         })
             .catch(_ => {})
     }
@@ -181,6 +189,28 @@ export default function NewTaskCard() {
         })
     }
 
+    const loadEditorial = () => {
+        axiosInstance.get(`/task/${taskId}/editorial/KA`)
+            .then(response => {
+                if (response.status === 200) {
+                    setKaEditorial(response.data.editorial || "");
+                }
+            })
+            .catch(_ => {});
+    }
+
+    const submitEditorial = (markdown) => {
+        axiosInstance.post(`/task/${taskId}/editorial`, {
+            editorial: markdown,
+            language: 'KA'
+        }).then(response => {
+            if (response.status === 200) {
+                toast.success(getMessage('ka', 'editorialSaved'));
+                loadEditorial()
+            }
+        })
+    }
+
     const changePublic = (testKey, status) => {
         axiosInstance.put(`/task/${taskId}/testcases/${testKey}/public`, {
             status: status
@@ -211,6 +241,17 @@ export default function NewTaskCard() {
                                      setStatement={setKaStatement}
                                      loadStatement={loadStatement}
                                      saveStatement={submitStatement}
+                    />
+                    <EditorialEditor taskId={taskId}
+                                      editorial={kaEditorial}
+                                      setEditorial={setKaEditorial}
+                                      saveEditorial={submitEditorial}
+                                      visible={editorialVisible}
+                                      setVisible={setEditorialVisible}
+                    />
+                    <SolutionEditor taskId={taskId}
+                                     visible={solutionVisible}
+                                     setVisible={setSolutionVisible}
                     />
                     <TextField
                         label={getMessage('ka', 'title')}

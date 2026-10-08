@@ -33,6 +33,8 @@ import {Paper} from "@mui/material";
 import ContestNavigationBar from "../Components/ContestNavigationBar";
 import markdownComponents from "../utils/markdownComponents";
 import {toast} from "react-toastify";
+import TaskTags from "../Components/TaskTags";
+import {AuthContext} from "../store/authentication";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
@@ -56,6 +58,8 @@ const highlightWithLineNumbers = (input, grammar, language) =>
 
 export default function Problem() {
     const axiosInstance = useContext(AxiosContext);
+    const authContext = useContext(AuthContext);
+    const isStaff = (authContext.role || '').includes('ADMIN') || (authContext.role || '').includes('TEACHER');
 
     function submitProblem(code, contest_id, task_id) {
         const body = {
@@ -121,6 +125,8 @@ export default function Problem() {
     const [language, setLanguage] = useState("CPP")
     const [statement, setStatement] = useState("")
     const [taskOrder, setTaskOrder] = useState(null)
+    const [tags, setTags] = useState([])
+    const [allTags, setAllTags] = useState([])
     const [attachments, setAttachments] = useState([])
     const [limits, setLimits] = useState(null)
     // Which submission kinds this task takes. Code-only until the task says otherwise, which is
@@ -197,7 +203,24 @@ export default function Problem() {
             })
             .catch(_ => {})
 
+        axiosInstance.get(`/task/${problem_id}/tags`)
+            .then((response) => {
+                setTags(response.data.tags || [])
+            })
+            .catch(_ => {})
+
     }, [problem_id])
+
+    useEffect(() => {
+        if (!isStaff) {
+            return
+        }
+        axiosInstance.get(`/tags`)
+            .then((response) => {
+                setAllTags(response.data.tags || [])
+            })
+            .catch(_ => {})
+    }, [isStaff])
 
     // Fetched through axios rather than linked directly: the download is session
     // authenticated and the API may sit on a different host than the UI.
@@ -259,6 +282,9 @@ export default function Problem() {
                 <div className="markdown-body">
                     {statementTitleText && renderMarkdown(statementTitleText)}
                 </div>
+                <Box sx={{marginTop: '4px', marginBottom: '4px'}}>
+                    <TaskTags taskId={problem_id} tags={tags} setTags={setTags} editable={isStaff} allTags={allTags}/>
+                </Box>
                 {limits && (limits.timeLimitMillis != null || limits.memoryLimitMB != null) && (
                     <Stack direction="row"
                            gap="1.5rem"

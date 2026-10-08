@@ -5,18 +5,22 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ge.freeuni.informatics.common.Language;
 import ge.freeuni.informatics.common.dto.AddTestcasesResult;
 import ge.freeuni.informatics.common.dto.TaskDTO;
+import ge.freeuni.informatics.common.dto.TaskMaterialsDTO;
 import ge.freeuni.informatics.common.dto.TestcaseDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.contest.Contest;
+import ge.freeuni.informatics.common.model.contest.ContestStatus;
 import ge.freeuni.informatics.common.model.contest.ContestantResult;
 import ge.freeuni.informatics.common.model.contest.TaskResult;
 import ge.freeuni.informatics.common.model.contestroom.ContestRoom;
 import ge.freeuni.informatics.common.model.task.Statement;
+import ge.freeuni.informatics.common.model.task.Tag;
 import ge.freeuni.informatics.common.model.task.Task;
 import ge.freeuni.informatics.common.model.task.TestKeys;
 import ge.freeuni.informatics.common.model.task.TaskInfo;
 import ge.freeuni.informatics.common.model.task.Testcase;
 import ge.freeuni.informatics.repository.contest.ContestJpaRepository;
+import ge.freeuni.informatics.repository.task.TagRepository;
 import ge.freeuni.informatics.repository.task.TaskRepository;
 import ge.freeuni.informatics.repository.task.TestcaseRepository;
 import ge.freeuni.informatics.server.annotation.MemberContestRestricted;
@@ -70,6 +74,9 @@ public class TaskManager implements ITaskManager {
 
     @Autowired
     TestcaseRepository testcaseRepository;
+
+    @Autowired
+    TagRepository tagRepository;
 
     @Value("${ge.freeuni.informatics.Task.statementDirectoryAddress}")
     String statementsDirectoryAddress;
@@ -136,20 +143,33 @@ public class TaskManager implements ITaskManager {
                     }
                 }
                 Float maxScore = computeMaxScore(task);
-                result.add(new TaskInfo(taskDTO, score, maxScore, contestName));
+                // Every task reaching this point already belongs to a contest findUpsolvingContests
+                // filtered to upsolving=true, so tags are always shown here - no further gating.
+                TaskInfo info = new TaskInfo(taskDTO, score, maxScore, contestName);
+                info.setTags(sortedTagNames(task.getTags()));
+                result.add(info);
             }
         }
         return result;
     }
 
     @Override
-    public List<TaskInfo> getUpsolvingTasks(long roomId, Integer offset, Integer limit) throws InformaticsServerException {
-        return ArrayUtils.getPage(buildUpsolvingTasks(roomId), offset, limit);
+    public List<TaskInfo> getUpsolvingTasks(long roomId, Integer offset, Integer limit, String tag) throws InformaticsServerException {
+        return ArrayUtils.getPage(filterByTag(buildUpsolvingTasks(roomId), tag), offset, limit);
     }
 
     @Override
-    public long getUpsolvingTasksCount(long roomId) throws InformaticsServerException {
-        return buildUpsolvingTasks(roomId).size();
+    public long getUpsolvingTasksCount(long roomId, String tag) throws InformaticsServerException {
+        return filterByTag(buildUpsolvingTasks(roomId), tag).size();
+    }
+
+    private static List<TaskInfo> filterByTag(List<TaskInfo> tasks, String tag) {
+        if (tag == null || tag.isBlank()) {
+            return tasks;
+        }
+        return tasks.stream()
+                .filter(info -> info.getTags().stream().anyMatch(t -> t.equalsIgnoreCase(tag)))
+                .toList();
     }
 
     @Override
@@ -186,6 +206,9 @@ public class TaskManager implements ITaskManager {
                 .filter(task -> task.getContest() != null)
                 .sorted(Comparator.comparing(task -> task.getOrder() != null ? task.getOrder() : 0))
                 .toList();
+        // One check for the whole contest: every task in it shares the same contest, so the
+        // live-vs-upsolving gate (and the staff bypass) comes out the same for every one of them.
+        boolean showTags = isUpsolvingModeActive(contest) || isTeacherOrAdmin(currentUserId, room);
         for (Task task : sortedTasks) {
             TaskDTO taskDTO = TaskDTO.toDTO(task);
             ContestantResult contestantResult = contest.getStandings()
@@ -194,11 +217,14 @@ public class TaskManager implements ITaskManager {
                     .findFirst()
                     .orElse(null);
             Float maxScore = computeMaxScore(task);
+            TaskInfo info;
             if (contestantResult == null || contestantResult.getTaskResults() == null || !contestantResult.getTaskResults().containsKey(task.getCode())) {
-                result.add(new TaskInfo(taskDTO, null, maxScore));
+                info = new TaskInfo(taskDTO, null, maxScore);
             } else {
-                result.add(new TaskInfo(taskDTO, contestantResult.getTaskResults().get(task.getCode()).getScore(), maxScore));
+                info = new TaskInfo(taskDTO, contestantResult.getTaskResults().get(task.getCode()).getScore(), maxScore);
             }
+            info.setTags(showTags ? sortedTagNames(task.getTags()) : List.of());
+            result.add(info);
         }
         return result;
     }
@@ -228,7 +254,12 @@ public class TaskManager implements ITaskManager {
     @Override
     public List<TaskInfo> getAllTasks(String title, int offset, int limit) {
         return taskRepository.searchTasks(title, offset, limit).stream()
-                .map(task -> new TaskInfo(TaskDTO.toDTO(task), null, task.getContest().getName()))
+                .map(task -> {
+                    TaskInfo info = new TaskInfo(TaskDTO.toDTO(task), null, task.getContest().getName());
+                    // Admin-only listing - always show tags, no live-contest gate to apply.
+                    info.setTags(sortedTagNames(task.getTags()));
+                    return info;
+                })
                 .toList();
     }
 
@@ -268,6 +299,11 @@ public class TaskManager implements ITaskManager {
             }
             task.setTestCases(existingTask.getTestcases());
             task.setStatements(existingTask.getStatements());
+            task.setEditorials(existingTask.getEditorials());
+            task.setSolutions(existingTask.getSolutions());
+            task.setEditorialVisible(existingTask.getEditorialVisible());
+            task.setSolutionVisible(existingTask.getSolutionVisible());
+            task.setTags(existingTask.getTags());
             if (task.getOrder() == null) {
                 task.setOrder(existingTask.getOrder());
             }
@@ -349,6 +385,205 @@ public class TaskManager implements ITaskManager {
         Task task = taskRepository.getReferenceById(taskId);
         task.getStatements().put(language, statement);
         taskRepository.save(task);
+    }
+
+    /**
+     * Editorial/solution are only ever shown to a contestant once the task's contest is in
+     * upsolving mode - the same condition {@code findUpsolvingContests} uses to decide whether a
+     * task belongs in a room's upsolving list: the contest has ended and upsolving is switched on
+     * for it. They stay hidden for the entire LIVE (and FUTURE) lifetime of the contest.
+     */
+    private boolean isUpsolvingModeActive(Contest contest) {
+        return contest.getStatus() == ContestStatus.PAST && contest.isUpsolving();
+    }
+
+    private boolean isTeacherOrAdmin(long userId, ContestRoom room) {
+        return userManager.isAdmin(userId) || room.isTeacher(userId);
+    }
+
+    /**
+     * A teacher of the task's room, or an admin, can always read/preview the editorial, solution
+     * and tags - regardless of the visibility checkbox or whether the contest is live - so they
+     * can write and proofread this content ahead of time.
+     */
+    private boolean canBypassUpsolvingGate(Task task) throws InformaticsServerException {
+        long userId = userManager.getAuthenticatedUserIdOrAnonymous();
+        ContestRoom room = roomManager.getRoom(task.getContest().getRoomId());
+        return isTeacherOrAdmin(userId, room);
+    }
+
+    private boolean materialsVisibleToViewer(Task task, boolean visibilityFlag) throws InformaticsServerException {
+        if (visibilityFlag && isUpsolvingModeActive(task.getContest())) {
+            return true;
+        }
+        return canBypassUpsolvingGate(task);
+    }
+
+    /** Tags have no visibility checkbox of their own - just the same live-vs-upsolving gate. */
+    private boolean tagsVisibleToViewer(Task task) throws InformaticsServerException {
+        return isUpsolvingModeActive(task.getContest()) || canBypassUpsolvingGate(task);
+    }
+
+    private List<String> sortedTagNames(Set<Tag> tags) {
+        if (tags == null) {
+            return List.of();
+        }
+        return tags.stream().map(Tag::getName).sorted(String.CASE_INSENSITIVE_ORDER).toList();
+    }
+
+    @Override
+    @MemberTaskRestricted
+    public List<String> getTags(long taskId) throws InformaticsServerException {
+        Task task = taskRepository.getReferenceById(taskId);
+        if (!tagsVisibleToViewer(task)) {
+            return List.of();
+        }
+        return sortedTagNames(task.getTags());
+    }
+
+    @Override
+    @TeacherTaskRestricted
+    public void addTag(long taskId, String tagName) throws InformaticsServerException {
+        String name = tagName == null ? "" : tagName.trim();
+        if (name.isEmpty()) {
+            throw new InformaticsServerException("invalidTagName");
+        }
+        Task task = taskRepository.getReferenceById(taskId);
+        Tag tag = tagRepository.findFirstByNameIgnoreCase(name).orElseGet(() -> {
+            Tag newTag = new Tag();
+            newTag.setName(name);
+            return tagRepository.save(newTag);
+        });
+        if (task.getTags() == null) {
+            task.setTags(new HashSet<>());
+        }
+        task.getTags().add(tag);
+        taskRepository.save(task);
+    }
+
+    @Override
+    @TeacherTaskRestricted
+    public void removeTag(long taskId, String tagName) throws InformaticsServerException {
+        Task task = taskRepository.getReferenceById(taskId);
+        if (task.getTags() != null) {
+            task.getTags().removeIf(tag -> tag.getName().equalsIgnoreCase(tagName));
+            taskRepository.save(task);
+        }
+    }
+
+    @Override
+    public List<String> getAllTagNames() {
+        return tagRepository.findAll().stream().map(Tag::getName).sorted(String.CASE_INSENSITIVE_ORDER).toList();
+    }
+
+    @Override
+    @MemberTaskRestricted
+    public String getEditorial(long taskId, Language language) throws InformaticsServerException {
+        Task task = taskRepository.getReferenceById(taskId);
+        if (!materialsVisibleToViewer(task, task.isEditorialVisible())) {
+            return null;
+        }
+        return task.getEditorials() == null ? null : task.getEditorials().get(language);
+    }
+
+    @Override
+    @TeacherTaskRestricted
+    public void addEditorial(long taskId, String editorial, Language language) throws InformaticsServerException {
+        Task task = taskRepository.getReferenceById(taskId);
+        if (task.getEditorials() == null) {
+            task.setEditorials(new HashMap<>());
+        }
+        task.getEditorials().put(language, editorial);
+        taskRepository.save(task);
+    }
+
+    @Override
+    @TeacherTaskRestricted
+    public void setEditorialVisible(long taskId, boolean visible) throws InformaticsServerException {
+        Task task = taskRepository.getReferenceById(taskId);
+        task.setEditorialVisible(visible);
+        taskRepository.save(task);
+    }
+
+    /** Standard languages sort first and in this order; any custom language follows, alphabetically. */
+    private static final List<String> STANDARD_SOLUTION_LANGUAGES = List.of("CPP", "JAVA", "PYTHON");
+
+    private List<String> sortedSolutionLanguages(Map<String, String> solutions) {
+        return solutions.entrySet().stream()
+                .filter(e -> e.getValue() != null && !e.getValue().isBlank())
+                .map(Map.Entry::getKey)
+                .sorted(Comparator
+                        .comparing((String lang) -> {
+                            int index = STANDARD_SOLUTION_LANGUAGES.indexOf(lang);
+                            return index < 0 ? Integer.MAX_VALUE : index;
+                        })
+                        .thenComparing(Comparator.naturalOrder()))
+                .toList();
+    }
+
+    @Override
+    @MemberTaskRestricted
+    public List<String> getSolutionLanguages(long taskId) throws InformaticsServerException {
+        Task task = taskRepository.getReferenceById(taskId);
+        if (!materialsVisibleToViewer(task, task.isSolutionVisible()) || task.getSolutions() == null) {
+            return List.of();
+        }
+        return sortedSolutionLanguages(task.getSolutions());
+    }
+
+    @Override
+    @MemberTaskRestricted
+    public String getSolution(long taskId, String language) throws InformaticsServerException {
+        Task task = taskRepository.getReferenceById(taskId);
+        if (!materialsVisibleToViewer(task, task.isSolutionVisible())) {
+            return null;
+        }
+        return task.getSolutions() == null ? null : task.getSolutions().get(language);
+    }
+
+    @Override
+    @TeacherTaskRestricted
+    public void addSolution(long taskId, String code, String language) throws InformaticsServerException {
+        if (language == null || language.isBlank()) {
+            throw new InformaticsServerException("invalidSolutionLanguage");
+        }
+        Task task = taskRepository.getReferenceById(taskId);
+        if (task.getSolutions() == null) {
+            task.setSolutions(new HashMap<>());
+        }
+        task.getSolutions().put(language.trim(), code);
+        taskRepository.save(task);
+    }
+
+    @Override
+    @TeacherTaskRestricted
+    public void removeSolution(long taskId, String language) throws InformaticsServerException {
+        Task task = taskRepository.getReferenceById(taskId);
+        if (task.getSolutions() != null) {
+            task.getSolutions().remove(language);
+            taskRepository.save(task);
+        }
+    }
+
+    @Override
+    @TeacherTaskRestricted
+    public void setSolutionVisible(long taskId, boolean visible) throws InformaticsServerException {
+        Task task = taskRepository.getReferenceById(taskId);
+        task.setSolutionVisible(visible);
+        taskRepository.save(task);
+    }
+
+    @Override
+    @MemberTaskRestricted
+    public TaskMaterialsDTO getMaterialsAvailability(long taskId) throws InformaticsServerException {
+        Task task = taskRepository.getReferenceById(taskId);
+        boolean editorialAvailable = materialsVisibleToViewer(task, task.isEditorialVisible())
+                && task.getEditorials() != null
+                && task.getEditorials().values().stream().anyMatch(text -> text != null && !text.isBlank());
+        List<String> solutionLanguages = (!materialsVisibleToViewer(task, task.isSolutionVisible()) || task.getSolutions() == null)
+                ? List.of()
+                : sortedSolutionLanguages(task.getSolutions());
+        return new TaskMaterialsDTO(editorialAvailable, solutionLanguages);
     }
 
     @Override

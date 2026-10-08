@@ -11,7 +11,8 @@ import {
     Modal,
     Box,
     TableContainer,
-    Paper
+    Paper,
+    Stack
 } from '@mui/material'
 import {NavLink} from "react-router-dom";
 import {useState, useEffect, useContext} from 'react';
@@ -19,6 +20,7 @@ import {AuthContext} from '../store/authentication'
 import ContestRegisterPopUp from '../Components/ContestRegisterPopUp'
 import {AxiosContext} from '../utils/axiosInstance'
 import ContestNavigationBar from '../Components/ContestNavigationBar'
+import TaskTags from '../Components/TaskTags'
 
 function handleContestResponse(response, setProblems) {
     var curTasks = []
@@ -40,7 +42,8 @@ function handleContestResponse(response, setProblems) {
             name: taskName,
             order: taskOrder,
             category: taskOrder || 0,
-            score: score
+            score: score,
+            tags: task.tags || []
         }
         curTasks.push(taskItem)
     }
@@ -55,7 +58,9 @@ export default function Contest() {
     const {contest_id} = useParams()
     const [problems, setProblems] = useState([])
     const [registered, setIsRegistered] = useState(false)
+    const [allTags, setAllTags] = useState([])
     const axiosInstance = useContext(AxiosContext)
+    const isStaff = (role || '').includes('ADMIN') || (role || '').includes('TEACHER')
 
     useEffect(() => {
         axiosInstance
@@ -78,6 +83,20 @@ export default function Contest() {
             })
             .catch((error) => console.log(error))
     }, [])
+
+    useEffect(() => {
+        if (!isStaff) {
+            return
+        }
+        axiosInstance.get('/tags')
+            .then((response) => setAllTags(response.data.tags || []))
+            .catch(_ => {})
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isStaff])
+
+    const setRowTags = (taskId) => (newTags) => {
+        setProblems((prev) => prev.map((p) => (p.id === taskId ? {...p, tags: newTags} : p)))
+    }
 
     return (
         <main>
@@ -166,9 +185,20 @@ export default function Contest() {
                                         {problem.order || problem.category}
                                     </TableCell>
 
-                                    <TableCell><NavLink style={{color: 'black', textDecorationLine: 'none'}}
-                                                        to={`${problem.id}`}
-                                                        exact={"true"}>{problem.name} </NavLink></TableCell>
+                                    <TableCell>
+                                        <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap" sx={{width: '100%'}}>
+                                            <NavLink style={{color: 'black', textDecorationLine: 'none'}}
+                                                     to={`${problem.id}`}
+                                                     exact={"true"}>{problem.name} </NavLink>
+                                            <TaskTags
+                                                taskId={problem.id}
+                                                tags={problem.tags}
+                                                setTags={setRowTags(problem.id)}
+                                                editable={isStaff}
+                                                allTags={allTags}
+                                            />
+                                        </Stack>
+                                    </TableCell>
                                     {(isLoggedIn && (role === 'ADMIN' || registered === true)) &&
                                         (
                                             <TableCell>{problem.score}</TableCell>

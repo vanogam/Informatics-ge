@@ -8,6 +8,7 @@ import ge.freeuni.informatics.repository.customtest.CustomTestRunRepository;
 import ge.freeuni.informatics.repository.task.TaskRepository;
 import ge.freeuni.informatics.judgeintegration.IJudgeIntegration;
 import ge.freeuni.informatics.server.files.FileManager;
+import ge.freeuni.informatics.server.task.TaskVersionMarker;
 import ge.freeuni.informatics.server.user.IUserManager;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -35,17 +36,20 @@ public class CustomTestService {
     private String testsDirectoryAddress;
 
     private final FileManager fileManager;
+    private final TaskVersionMarker taskVersionMarker;
 
     public CustomTestService(TaskRepository taskRepository,
                              CustomTestRunRepository runRepository,
                              IUserManager userManager,
                              IJudgeIntegration judgeIntegration,
-                             FileManager fileManager) {
+                             FileManager fileManager,
+                             TaskVersionMarker taskVersionMarker) {
         this.taskRepository = taskRepository;
         this.runRepository = runRepository;
         this.userManager = userManager;
         this.judgeIntegration = judgeIntegration;
         this.fileManager = fileManager;
+        this.taskVersionMarker = taskVersionMarker;
     }
 
     private Task getCustomTask() throws InformaticsServerException {
@@ -117,13 +121,12 @@ public class CustomTestService {
             if (!Files.exists(outputPath)) {
                 Files.writeString(outputPath, "", StandardCharsets.UTF_8);
             }
-
-            // Update lastUpdate file so worker re-uploads task directory when needed
-            Path lastUpdatePath = taskRootDir.resolve("lastUpdate");
-            Files.writeString(lastUpdatePath, String.valueOf(System.currentTimeMillis()), StandardCharsets.UTF_8);
         } catch (Exception e) {
             throw InformaticsServerException.UNEXPECTED_ERROR;
         }
+
+        // Bump the marker so the worker re-uploads the task directory when needed
+        taskVersionMarker.touchLastUpdate(taskId);
 
         // Send compilation task to worker via judge integration
         judgeIntegration.addCustomTest(task, run, language);

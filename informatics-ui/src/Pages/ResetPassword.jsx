@@ -1,4 +1,4 @@
-import { useState, useRef, useContext } from 'react'
+import { useState, useRef, useContext, useEffect } from 'react'
 import Box from '@mui/material/Box'
 import InputLabel from '@mui/material/InputLabel'
 import InputAdornment from '@mui/material/InputAdornment'
@@ -15,6 +15,7 @@ import {
 	AccountCircle,
 } from '@mui/icons-material'
 import { AxiosContext, getAxiosInstance } from '../utils/axiosInstance'
+import getMessage from '../Components/lang'
 
 export default function ResetPassword() {
 	const axiosInstance = useContext(AxiosContext)
@@ -22,27 +23,24 @@ export default function ResetPassword() {
 	const [success, setSuccess] = useState('')
 	const authProvider = useContext(AuthContext)
 	let navigate = useNavigate()
-	if (authProvider.isLoggedIn) {
-		return navigate('/')
-	}
+	useEffect(() => {
+		if (authProvider.isLoggedIn) {
+			navigate('/')
+		}
+	}, [authProvider.isLoggedIn, navigate])
 	const handleReset = () => {
 		const body = {
 			username: username.current.value,
 		}
 		axiosInstance
-			.post(`/recover/request`, body)
-			.then((response) => {
-				if (response.data.status === 'SUCCESS') {
-					setSuccess('True')
-					toast.success('Recovery Link Sent')
-				} else if (response.data.status === 'FAIL') {
-					setSuccess('False')
-					toast.error('Recovery Link Error')
-				}
+			.post(`/recover/request`, body, { ignoreErrors: true })
+			.then(() => {
+				setSuccess('True')
+				toast.success(getMessage('ka', 'recoveryLinkSent'))
 			})
 			.catch((error) => {
-				console.log(error)
-				toast.error('Recovery Link: Unknown Error')
+				setSuccess('False')
+				toast.error(getMessage('ka', error.response?.data?.message) || getMessage('ka', 'recoveryRequestFailed'))
 			})
 	}
 	return (
@@ -60,7 +58,7 @@ export default function ResetPassword() {
 		>
 			<Box>
 				<Box sx={{marginLeft:"20px"}}>
-					<InputLabel>შეიყვანეთ მომხმარებლის სახელი:</InputLabel>
+					<InputLabel>{getMessage('ka', 'enterUsernameLabel')}</InputLabel>
 					<TextField sx ={{width:"90%", marginLeft:"20px"}}
 						InputProps={{
 							startAdornment: (
@@ -85,7 +83,7 @@ export default function ResetPassword() {
 					onClick={() => handleReset()}
 					variant="contained"
 				>
-					პაროლის აღდგენა
+					{getMessage('ka', 'recoverPassword')}
 				</Button>
 				{success === 'True' && (
 					<Box
@@ -100,7 +98,7 @@ export default function ResetPassword() {
 							component="div"
 							sx={{ color: 'green', fontSize: '0.8rem' }}
 						>
-							ლინკი გადმოგზავნილია ელ-ფოსტაზე{' '}
+							{getMessage('ka', 'recoveryLinkSent')}{' '}
 						</Typography>{' '}
 					</Box>
 				)}
@@ -117,7 +115,7 @@ export default function ResetPassword() {
 							component="div"
 							sx={{ color: 'red', fontSize: '0.8rem' }}
 						>
-							მომხმარებელი არ მოიძებნა{' '}
+							{getMessage('ka', 'invalidUsername')}{' '}
 						</Typography>{' '}
 					</Box>
 				)}

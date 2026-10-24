@@ -76,6 +76,9 @@ public class TaskManager implements ITaskManager {
     TestcaseRepository testcaseRepository;
 
     @Autowired
+    TaskVersionMarker taskVersionMarker;
+
+    @Autowired
     TagRepository tagRepository;
 
     @Value("${ge.freeuni.informatics.Task.statementDirectoryAddress}")
@@ -738,6 +741,7 @@ public class TaskManager implements ITaskManager {
                 Files.delete(Path.of(testcase.getInputFileAddress()));
                 Files.delete(Path.of(testcase.getOutputFileAddress()));
                 testcaseRepository.delete(testcase);
+                taskVersionMarker.touchLastUpdate(taskId);
                 return;
             }
 
@@ -746,6 +750,7 @@ public class TaskManager implements ITaskManager {
             task.getTestcases().remove(index);
             testcaseRepository.delete(testcase);
             taskRepository.save(task);
+            taskVersionMarker.touchLastUpdate(taskId);
         } catch (IOException e) {
             log.error("Unexpected exception: ", e);
             throw InformaticsServerException.UNEXPECTED_ERROR;
@@ -793,6 +798,7 @@ public class TaskManager implements ITaskManager {
             throw InformaticsServerException.UNEXPECTED_ERROR;
         }
         testcaseRepository.save(newTestcase);
+        taskVersionMarker.touchLastUpdate(task.getId());
     }
 
     private void deleteTestcaseIfExists(Task task, String testKey) throws InformaticsServerException {

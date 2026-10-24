@@ -5,6 +5,7 @@ import ge.freeuni.informatics.common.model.task.TaskFile;
 import ge.freeuni.informatics.common.model.task.TaskFileKind;
 import ge.freeuni.informatics.repository.task.TaskFileRepository;
 import ge.freeuni.informatics.server.task.TaskFileManager;
+import ge.freeuni.informatics.server.task.TaskVersionMarker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -22,6 +23,7 @@ import java.util.zip.ZipOutputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /** Grader and manager sources may be uploaded one by one, or as a zip. */
@@ -39,6 +41,18 @@ public class TaskFileUploadTest {
         Field dir = TaskFileManager.class.getDeclaredField("taskDirectoryAddress");
         dir.setAccessible(true);
         dir.set(manager, root.toString() + "/:taskId");
+
+        TaskVersionMarker marker = new TaskVersionMarker();
+        Field markerLog = TaskVersionMarker.class.getDeclaredField("log");
+        markerLog.setAccessible(true);
+        markerLog.set(marker, mock(Logger.class));
+        Field markerDir = TaskVersionMarker.class.getDeclaredField("taskDirectoryAddress");
+        markerDir.setAccessible(true);
+        markerDir.set(marker, root.toString() + "/:taskId");
+        Field taskVersionMarker = TaskFileManager.class.getDeclaredField("taskVersionMarker");
+        taskVersionMarker.setAccessible(true);
+        taskVersionMarker.set(manager, marker);
+
         when(taskFileRepository.save(any())).thenAnswer(i -> i.getArgument(0));
     }
 

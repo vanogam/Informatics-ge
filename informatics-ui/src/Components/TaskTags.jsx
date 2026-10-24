@@ -11,7 +11,7 @@ import getMessage from './lang'
  * (upsolving-only, never during a live contest) and the write permission are both enforced
  * server-side - this component only renders whatever tags/editable it's handed.
  */
-export default function TaskTags({taskId, tags, setTags, editable, allTags}) {
+export default function TaskTags({taskId, tags, setTags, editable, allTags, onTagClick}) {
     const axiosInstance = useContext(AxiosContext)
     const [inputValue, setInputValue] = useState('')
 
@@ -47,16 +47,18 @@ export default function TaskTags({taskId, tags, setTags, editable, allTags}) {
     return (
         <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap" justifyContent="flex-end"
                sx={{marginLeft: 'auto'}}
-               onClick={(e) => editable && e.stopPropagation()}>
+               onClick={(e) => (editable || onTagClick) && e.stopPropagation()}>
             {tags.map((tag) => (
                 <Chip
                     key={tag}
                     label={tag}
                     size="small"
                     onDelete={editable ? () => removeTag(tag) : undefined}
+                    onClick={onTagClick ? () => onTagClick(tag) : undefined}
                     sx={{
                         backgroundColor: '#616161',
                         color: '#fff',
+                        cursor: onTagClick ? 'pointer' : undefined,
                         '& .MuiChip-deleteIcon': {color: 'rgba(255, 255, 255, 0.7)'},
                         '& .MuiChip-deleteIcon:hover': {color: '#fff'},
                     }}

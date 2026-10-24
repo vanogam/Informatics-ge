@@ -6,6 +6,7 @@ import ge.freeuni.informatics.repository.contest.ContestJpaRepository;
 import ge.freeuni.informatics.repository.task.TaskRepository;
 import ge.freeuni.informatics.repository.task.TestcaseRepository;
 import ge.freeuni.informatics.server.task.TaskManager;
+import ge.freeuni.informatics.server.task.TaskVersionMarker;
 import ge.freeuni.informatics.utils.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,7 @@ import java.util.Objects;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class TestcaseModifyTest {
@@ -61,6 +63,7 @@ public class TestcaseModifyTest {
         MockitoAnnotations.openMocks(this);
         setUpTestDirField();
         setUpTempDirField();
+        setUpTaskVersionMarker();
 
         when(taskRepository.save(any())).thenAnswer((ob) -> ob.getArgument(0));
         when(testcaseRepository.save(any())).thenAnswer((ob) -> {
@@ -86,6 +89,22 @@ public class TestcaseModifyTest {
         fileRoot.mkdirs();
         FileUtils.cleanDirectory(fileRoot);
         testsDirField.set(taskManager, fileRoot.getPath());
+    }
+
+    private void setUpTaskVersionMarker() throws IOException, IllegalAccessException, NoSuchFieldException {
+        TaskVersionMarker marker = new TaskVersionMarker();
+        Field markerLog = TaskVersionMarker.class.getDeclaredField("log");
+        markerLog.setAccessible(true);
+        markerLog.set(marker, mock(Logger.class));
+        File fileRoot = new File(getClass().getClassLoader().getResource("").getFile() + "/taskversionroot");
+        fileRoot.mkdirs();
+        FileUtils.cleanDirectory(fileRoot);
+        Field markerDir = TaskVersionMarker.class.getDeclaredField("taskDirectoryAddress");
+        markerDir.setAccessible(true);
+        markerDir.set(marker, fileRoot.getPath() + "/:taskId");
+        Field taskVersionMarkerField = TaskManager.class.getDeclaredField("taskVersionMarker");
+        taskVersionMarkerField.setAccessible(true);
+        taskVersionMarkerField.set(taskManager, marker);
     }
 
     @Test

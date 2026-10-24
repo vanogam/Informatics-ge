@@ -44,9 +44,13 @@ public class PermissionAspect {
 
     @Before("@annotation(teacherTaskRestricted) && args(taskId,..)")
     public void teacherRestricted(TeacherTaskRestricted teacherTaskRestricted, Long taskId) throws InformaticsServerException {
-        Long userId = userManager.getAuthenticatedUser().id();
         Task task = taskRepository.getReferenceById(taskId);
         Contest contest = task.getContest();
+        if (contest == null) {
+            // No contest means no room to restrict access by (e.g. the shared custom-test task).
+            return;
+        }
+        Long userId = userManager.getAuthenticatedUser().id();
         ContestRoom room = roomJpaRepository.getReferenceById(contest.getRoomId());
 
         if (!room.isOpen() && !isTeacherOrAdmin(userId, room)) {
@@ -80,6 +84,10 @@ public class PermissionAspect {
     public void memberRestricted(MemberTaskRestricted memberTaskRestricted, Long taskId) throws InformaticsServerException {
         var task = taskRepository.getReferenceById(taskId);
         var contest = task.getContest();
+        if (contest == null) {
+            // No contest means no room to restrict access by (e.g. the shared custom-test task).
+            return;
+        }
         var room = roomJpaRepository.getReferenceById(contest.getRoomId());
 
         if (!room.isOpen()) {

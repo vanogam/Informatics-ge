@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
@@ -54,6 +53,9 @@ public class TaskFileManager implements ITaskFileManager {
     @Autowired
     TaskFileRepository taskFileRepository;
 
+    @Autowired
+    TaskVersionMarker taskVersionMarker;
+
     @Value("${ge.freeuni.informatics.Task.taskDirectoryAddress}")
     String taskDirectoryAddress;
 
@@ -71,7 +73,7 @@ public class TaskFileManager implements ITaskFileManager {
             result.getSuccess().add(entry.getKey());
         }
         if (!result.getSuccess().isEmpty()) {
-            touchLastUpdate(taskId);
+            taskVersionMarker.touchLastUpdate(taskId);
         }
         return result;
     }
@@ -121,7 +123,7 @@ public class TaskFileManager implements ITaskFileManager {
             throw InformaticsServerException.UNEXPECTED_ERROR;
         }
         taskFileRepository.delete(taskFile);
-        touchLastUpdate(taskId);
+        taskVersionMarker.touchLastUpdate(taskId);
     }
 
     @Override
@@ -294,22 +296,6 @@ public class TaskFileManager implements ITaskFileManager {
 
     private String taskRoot(long taskId) {
         return taskDirectoryAddress.replace(":taskId", String.valueOf(taskId));
-    }
-
-    /**
-     * Bumps the marker the worker uses to decide whether its cached copy of the task is stale.
-     * Without this a worker keeps compiling submissions against the previous grader.
-     */
-    private void touchLastUpdate(long taskId) throws InformaticsServerException {
-        Path root = Paths.get(taskRoot(taskId));
-        try {
-            Files.createDirectories(root);
-            Files.writeString(root.resolve("lastUpdate"),
-                    String.valueOf(System.currentTimeMillis()), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            log.error("Could not update lastUpdate marker for task {}", taskId, e);
-            throw InformaticsServerException.UNEXPECTED_ERROR;
-        }
     }
 
     /**

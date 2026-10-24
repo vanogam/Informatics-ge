@@ -102,6 +102,11 @@ export default function Archive(){
 		setProblems((prev) => prev.map((p) => (p.id === taskId ? {...p, tags: newTags} : p)))
 	}
 
+	const handleTagClick = (tag) => {
+		setTagFilter(tag)
+		resetPage()
+	}
+
     return (
        <main>
 			<ContestNavigationBar />
@@ -183,6 +188,7 @@ export default function Archive(){
 													setTags={setRowTags(problem.id)}
 													editable={isStaff}
 													allTags={allTags}
+													onTagClick={handleTagClick}
 												/>
 											</Stack>
 										</TableCell>

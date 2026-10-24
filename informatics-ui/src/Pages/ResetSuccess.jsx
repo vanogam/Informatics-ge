@@ -5,7 +5,7 @@ import InputAdornment from '@mui/material/InputAdornment'
 import TextField from '@mui/material/TextField'
 import logo from '../assets/logo.png'
 import { Button } from '@mui/material'
-import { useState, useRef, useContext } from 'react'
+import { useState, useRef, useContext, useEffect } from 'react'
 import Typography from '@mui/material/Typography'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import CancelIcon from '@mui/icons-material/Cancel'
@@ -15,6 +15,7 @@ import { toast } from 'react-toastify'
 import { AuthContext } from '../store/authentication'
 import { useNavigate } from 'react-router-dom'
 import { AxiosContext, getAxiosInstance } from '../utils/axiosInstance'
+import getMessage from '../Components/lang'
 export default function ResetSuccess() {
 	let { token } = useParams()
 	const axiosInstance = useContext(AxiosContext)
@@ -24,25 +25,29 @@ export default function ResetSuccess() {
 	const [success, setSuccess] = useState('')
 	const authProvider = useContext(AuthContext)
 	let navigate = useNavigate()
-	if (authProvider.isLoggedIn) {
-		return navigate('/')
-	}
+	useEffect(() => {
+		if (authProvider.isLoggedIn) {
+			navigate('/')
+		}
+	}, [authProvider.isLoggedIn, navigate])
 	const handleReset = () => {
 		if (password.current.value !== confirmPassword.current.value) {
+			setSuccess('False')
+			toast.error(getMessage('ka', 'passwordMismatch'))
 			return
-			// setSuccess('True')
 		}
 
 		axiosInstance
 			.post(`/recover/update-password/${token}`, {
 				newPassword: password.current.value,
+			}, { ignoreErrors: true })
+			.then(() => {
+				setSuccess('True')
+				toast.success(getMessage('ka', 'passwordChanged'))
 			})
-			.then((response) => {
-				if (response.data.status === 'SUCCESS') {
-					toast.success("Password Changed Successfully")
-				}else{
-					toast.error("Error while changing password")
-				}
+			.catch((error) => {
+				setSuccess('False')
+				toast.error(getMessage('ka', error.response?.data?.message) || getMessage('ka', 'passwordResetFailed'))
 			})
 	}
 	return (
@@ -51,12 +56,10 @@ export default function ResetSuccess() {
 				<Box
 					sx={{ '& > :not(style)': { marginLeft: '25%', marginTop: '15%' } }}
 				>
-					<InputLabel>შეიყვანე ახალი პაროლი</InputLabel>
-					{/* <Typography gutterBottom variant="p" component="div">
-          შეიყვანე ელ-ფოსტა: </Typography> */}
+					<InputLabel>{getMessage('ka', 'enterNewPassword')}</InputLabel>
 					<Box>
 						<TextField
-							label="პაროლი"
+							label={getMessage('ka', 'password')}
 							type="password"
 							autoComplete="current-password"
 							inputRef={password}
@@ -72,7 +75,7 @@ export default function ResetSuccess() {
 					<Box>
 						<TextField
 							id="confirm-password"
-							label="გაიმეორე პაროლი"
+							label={getMessage('ka', 'confirmPassword')}
 							type="password"
 							autoComplete="current-password"
 							inputRef={confirmPassword}
@@ -96,7 +99,7 @@ export default function ResetSuccess() {
 					onClick={() => handleReset()}
 					variant="contained"
 				>
-					პაროლის აღდგენა
+					{getMessage('ka', 'recoverPassword')}
 				</Button>
 				{success === 'True' && (
 					<Box
@@ -111,7 +114,7 @@ export default function ResetSuccess() {
 							component="div"
 							sx={{ color: 'green' }}
 						>
-							პაროლი შეიცვალა{' '}
+							{getMessage('ka', 'passwordChanged')}{' '}
 						</Typography>{' '}
 					</Box>
 				)}
@@ -128,7 +131,7 @@ export default function ResetSuccess() {
 							component="div"
 							sx={{ color: 'red' }}
 						>
-							პაროლები არ ემთხვევა{' '}
+							{getMessage('ka', 'passwordResetFailed')}{' '}
 						</Typography>{' '}
 					</Box>
 				)}

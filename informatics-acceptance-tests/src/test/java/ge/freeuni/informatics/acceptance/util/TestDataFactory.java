@@ -281,6 +281,37 @@ public class TestDataFactory {
         return task;
     }
 
+    /**
+     * A task with no testcases of its own, for tests that upload real grader/manager/testcase
+     * files through the REST API and check what lands on disk.
+     */
+    @Transactional
+    public Task createTask(Contest contest, String code, String title) {
+        return createTask(contest, code, title, 0);
+    }
+
+    /**
+     * The special, contest-less task that backs the "run my code against sample input" feature.
+     * Mirrors the row the V1.8 migration seeds in real deployments; acceptance tests run with
+     * Flyway disabled, so it has to be inserted directly.
+     */
+    @Transactional
+    public Task createCustomTestTask() {
+        Task task = new Task();
+        task.setCode("_customTest");
+        task.setTitle("Custom test");
+        task.setTaskType(TaskType.BATCH);
+        task.setTaskScoreType(TaskScoreType.SUM);
+        task.setTaskScoreParameter("1.0");
+        task.setTimeLimitMillis(2000);
+        task.setMemoryLimitMB(256);
+        task.setCheckerType(CheckerType.TOKEN);
+        task.setInputTemplate("input*.txt");
+        task.setOutputTemplate("output*.txt");
+        task.setOrder(++taskCounter);
+        return taskRepository.save(task);
+    }
+
     @Transactional
     public void addStatement(Task task, Language language, String title, String content) {
         task = taskRepository.getReferenceById(task.getId());

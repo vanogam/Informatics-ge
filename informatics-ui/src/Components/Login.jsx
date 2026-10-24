@@ -9,7 +9,6 @@ import getMessage from "./lang";
 
 export default function Login() {
 	const [popUp, setPopUp] = useState(false)
-	const [credentialsError, setCredentialsError] = useState(false)
 	const [rememberMe, setRememberMe] = useState(false)
 	const username = useRef('')
 	const password = useRef('')
@@ -21,13 +20,11 @@ export default function Login() {
 			let role = res.data.role
 			setPopUp(false)
 			toast.success(getMessage('ka', 'loginSuccess'))
-			setCredentialsError(false)
 			authContext.login({ username: response.data.username, role: role })
 		})
 	}
 
-	function handlePassError() {
-		setCredentialsError(false)
+	function handleResetClick() {
 		setPopUp(false)
 	}
 
@@ -56,7 +53,7 @@ export default function Login() {
 				}}
 				onClick={() => setPopUp(true)}
 			>
-				შესვლა
+				{getMessage('ka', 'login')}
 			</Button>
 			<Modal open={popUp} onClose={() => setPopUp(false)}>
 				<Box
@@ -91,7 +88,7 @@ export default function Login() {
 					>
 						<TextField
 							id="username"
-							label="მომხმარებელი"
+							label={getMessage('ka', 'username')}
 							type="username"
 							autoComplete="current-nickname"
 							inputRef={username}
@@ -101,7 +98,7 @@ export default function Login() {
 
 						<TextField
 							id="password"
-							label="პაროლი"
+							label={getMessage('ka', 'password')}
 							type="password"
 							autoComplete="current-password"
 							inputRef={password}
@@ -117,7 +114,7 @@ export default function Login() {
 									size="small"
 								/>
 							}
-							label="დამახსოვრება"
+							label={getMessage('ka', 'rememberMe')}
 							sx={{ m: 0, alignSelf: 'flex-start', userSelect: 'none' }}
 						/>
 
@@ -133,19 +130,17 @@ export default function Login() {
 								'&:hover': { backgroundColor: '#2d253c' },
 							}}
 						>
-							შესვლა
+							{getMessage('ka', 'login')}
 						</Button>
 
-						{credentialsError && (
-							<Button
-								sx={{ color: 'red', alignSelf: 'center' }}
-								component={NavLink}
-								onClick={handlePassError}
-								to="/reset"
-							>
-								მონაცემები არასწორია. დაგავიწყდა პაროლი?
-							</Button>
-						)}
+						<Button
+							sx={{ color: '#3c324e', alignSelf: 'center', textTransform: 'none' }}
+							component={NavLink}
+							onClick={handleResetClick}
+							to="/reset"
+						>
+							{getMessage('ka', 'forgotPassword')}
+						</Button>
 					</Box>
 				</Box>
 			</Modal>

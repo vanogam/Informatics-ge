@@ -7,6 +7,9 @@ ADMIN   | GET     /api/admin/plagiarism/runs/{runId}/comparisons          -> Pla
 ADMIN   | GET     /api/admin/submissions                                  -> AdminController#getAllSubmissions
 ADMIN   | POST    /api/admin/submissions/rejudge                          -> AdminController#rejudgeSubmissions
 ADMIN   | GET     /api/admin/tasks                                        -> AdminController#getAllTasks
+ADMIN   | GET     /api/admin/users                                        -> AdminController#getAllUsers
+ADMIN   | POST    /api/admin/users/{userId}/disable                       -> AdminController#disableUser
+ADMIN   | POST    /api/admin/users/{userId}/enable                        -> AdminController#enableUser
 ADMIN   | DELETE  /api/admin/workers                                      -> AdminController#stopAllWorkers
 ADMIN   | GET     /api/admin/workers                                      -> AdminController#getWorkers
 ADMIN   | POST    /api/admin/workers                                      -> AdminController#addWorkerInstances

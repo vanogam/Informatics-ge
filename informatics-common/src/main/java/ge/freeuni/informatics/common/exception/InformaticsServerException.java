@@ -22,6 +22,8 @@ public class InformaticsServerException extends Exception {
     public static final InformaticsServerException USER_NOT_FOUND = new InformaticsServerException("userNotFound", ExceptionType.NOT_FOUND);
     public static final InformaticsServerException INCORRECT_PASSWORD = new InformaticsServerException("incorrectPassword", ExceptionType.VALIDATION_ERROR);
     public static final InformaticsServerException INVALID_USER_DETAILS = new InformaticsServerException("invalidUserDetails", ExceptionType.VALIDATION_ERROR);
+    public static final InformaticsServerException ACCOUNT_DISABLED = new InformaticsServerException("accountDisabled", ExceptionType.PERMISSION_DENIED);
+    public static final InformaticsServerException CANNOT_DISABLE_ADMIN = new InformaticsServerException("cannotDisableAdmin", ExceptionType.VALIDATION_ERROR);
 
     // Room related exceptions
     public static final InformaticsServerException ROOM_MISMATCH = new InformaticsServerException("roomMismatch", ExceptionType.VALIDATION_ERROR);

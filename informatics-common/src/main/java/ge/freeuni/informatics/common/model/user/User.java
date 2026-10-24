@@ -40,6 +40,9 @@ public class User {
     @Temporal(TemporalType.TIMESTAMP)
     private Date registrationTime;
 
+    @Column(name = "disabled", nullable = false)
+    private boolean disabled;
+
     @Version
     private Integer version;
 
@@ -129,6 +132,14 @@ public class User {
 
     public void setVersion(Integer version) {
         this.version = version;
+    }
+
+    public boolean isDisabled() {
+        return disabled;
+    }
+
+    public void setDisabled(boolean disabled) {
+        this.disabled = disabled;
     }
 
     @Override

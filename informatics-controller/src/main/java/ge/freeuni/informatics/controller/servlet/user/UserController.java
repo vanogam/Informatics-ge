@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
 import org.springframework.web.bind.annotation.*;
@@ -85,6 +86,12 @@ public class UserController {
         } catch (InformaticsServerException ex) {
             return ResponseEntity.badRequest().body(new LoginResponse(null, ex.getCode()));
         } catch (ServletException e) {
+            // request.login() rethrows any AuthenticationException as a ServletException wrapping
+            // it - DisabledException is the one case whose code must reach the frontend distinctly
+            // instead of folding into the generic "wrong credentials" message below.
+            if (e.getCause() instanceof DisabledException disabled) {
+                return ResponseEntity.badRequest().body(new LoginResponse(null, disabled.getMessage()));
+            }
             return ResponseEntity.badRequest().body(new LoginResponse(null, "incorrectCredentials"));
         }
     }

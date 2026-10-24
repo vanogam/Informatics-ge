@@ -166,5 +166,37 @@ public class AdminController {
         }
     }
 
+    /**
+     * Every user in the system, for the admin "users" page - searched by username/first/last name,
+     * the only user listing not scoped to one room or contest.
+     */
+    @GetMapping("/users")
+    @AdminRestricted
+    public ResponseEntity<UserListResponse> getAllUsers(@RequestParam(required = false) String search, PagingRequest request) {
+        String normalizedSearch = ServletUtils.blankToNull(search);
+        Integer offset = request.getOffset() == null ? 0 : request.getOffset();
+        Integer limit = request.getLimit() == null ? 20 : request.getLimit();
+        UserListResponse response = new UserListResponse();
+        response.setUsers(userManager.listUsers(normalizedSearch, offset, limit));
+        response.setTotalCount(userManager.countUsers(normalizedSearch));
+        return ResponseEntity.ok(response);
+    }
+
+    /** Disables a user's account, blocking further logins without touching their existing data. */
+    @PostMapping("/users/{userId}/disable")
+    @AdminRestricted
+    public ResponseEntity<InformaticsResponse> disableUser(@PathVariable Long userId) throws InformaticsServerException {
+        userManager.setUserDisabled(userId, true);
+        return ResponseEntity.ok(new InformaticsResponse(null));
+    }
+
+    /** Reverses {@link #disableUser}, letting the account log in again. */
+    @PostMapping("/users/{userId}/enable")
+    @AdminRestricted
+    public ResponseEntity<InformaticsResponse> enableUser(@PathVariable Long userId) throws InformaticsServerException {
+        userManager.setUserDisabled(userId, false);
+        return ResponseEntity.ok(new InformaticsResponse(null));
+    }
+
 }
 

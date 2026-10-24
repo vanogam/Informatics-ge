@@ -155,7 +155,7 @@ class UserManagerTest {
     }
 
     @Test
-    void testAuthenticate_Success() {
+    void testAuthenticate_Success() throws InformaticsServerException {
         String testSalt = "testsalt";
         String testPassword = "password123";
         
@@ -187,7 +187,7 @@ class UserManagerTest {
      * each one is what makes User rows contend, so a recent timestamp must skip the write.
      */
     @Test
-    void testAuthenticate_SkipsLastLoginWriteWhenRecent() {
+    void testAuthenticate_SkipsLastLoginWriteWhenRecent() throws InformaticsServerException {
         String testPassword = "password123";
         String testSalt = "salt";
         User worker = new User();
@@ -205,7 +205,7 @@ class UserManagerTest {
     }
 
     @Test
-    void testAuthenticate_SkipsWriteForAnUpToDateBcryptUser() {
+    void testAuthenticate_SkipsWriteForAnUpToDateBcryptUser() throws InformaticsServerException {
         String password = "password123";
         User user = new User();
         user.setId(5L);
@@ -221,7 +221,7 @@ class UserManagerTest {
     }
 
     @Test
-    void testAuthenticate_WritesWhenLastLoginIsStale() {
+    void testAuthenticate_WritesWhenLastLoginIsStale() throws InformaticsServerException {
         String password = "password123";
         User user = new User();
         user.setId(5L);
@@ -273,7 +273,7 @@ class UserManagerTest {
     }
 
     @Test
-    void testAuthenticate_UserNotFound() {
+    void testAuthenticate_UserNotFound() throws InformaticsServerException {
         when(userRepository.getFirstByUsername("nonexistent")).thenReturn(null);
 
         User result = userManager.authenticate("nonexistent", "password");
@@ -283,13 +283,87 @@ class UserManagerTest {
     }
 
     @Test
-    void testAuthenticate_WrongPassword() {
+    void testAuthenticate_WrongPassword() throws InformaticsServerException {
         when(userRepository.getFirstByUsername("testuser")).thenReturn(testUser);
 
         User result = userManager.authenticate("testuser", "wrongpassword");
 
         assertNull(result);
         verify(userRepository).getFirstByUsername("testuser");
+    }
+
+    /**
+     * A disabled account must be rejected only after the password is verified - otherwise the
+     * rejection itself would leak that the account exists and is disabled to anyone who tries it.
+     */
+    @Test
+    void testAuthenticate_DisabledAccountWithCorrectPassword() {
+        String testPassword = "password123";
+        User disabledUser = new User();
+        disabledUser.setId(1L);
+        disabledUser.setUsername("testuser");
+        disabledUser.setPasswordSalt("testsalt");
+        disabledUser.setPassword(UserUtils.getHash(testPassword, "testsalt"));
+        disabledUser.setDisabled(true);
+        when(userRepository.getFirstByUsername("testuser")).thenReturn(disabledUser);
+
+        // authenticate() hands the disabled user back rather than throwing - throwing a checked
+        // exception from this @Retryable method would feed Spring Retry's @Recover lookup (which
+        // only matches ObjectOptimisticLockingFailureException) and get replaced with an unrelated
+        // ExhaustedRetryException. The caller (InformaticsAuthenticationProvider) checks isDisabled().
+        User result = userManager.authenticate("testuser", testPassword);
+
+        assertNotNull(result);
+        assertTrue(result.isDisabled());
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void testAuthenticate_DisabledAccountWithWrongPasswordStillRejectedAsWrongPassword() {
+        testUser.setDisabled(true);
+        when(userRepository.getFirstByUsername("testuser")).thenReturn(testUser);
+
+        User result = userManager.authenticate("testuser", "wrongpassword");
+
+        assertNull(result, "a wrong password must look identical whether disabled or not");
+    }
+
+    @Test
+    void testSetUserDisabled_DisablesAStudent() throws InformaticsServerException {
+        when(userRepository.findById(1L)).thenReturn(java.util.Optional.of(testUser));
+
+        userManager.setUserDisabled(1L, true);
+
+        assertTrue(testUser.isDisabled());
+        verify(userRepository).save(testUser);
+    }
+
+    @Test
+    void testSetUserDisabled_ReEnablesADisabledUser() throws InformaticsServerException {
+        testUser.setDisabled(true);
+        when(userRepository.findById(1L)).thenReturn(java.util.Optional.of(testUser));
+
+        userManager.setUserDisabled(1L, false);
+
+        assertFalse(testUser.isDisabled());
+        verify(userRepository).save(testUser);
+    }
+
+    @Test
+    void testSetUserDisabled_RefusesToDisableAnAdmin() {
+        testUser.setRole("ADMIN");
+        when(userRepository.findById(1L)).thenReturn(java.util.Optional.of(testUser));
+
+        assertThrows(InformaticsServerException.class, () -> userManager.setUserDisabled(1L, true));
+
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void testSetUserDisabled_UnknownUser() {
+        when(userRepository.findById(99L)).thenReturn(java.util.Optional.empty());
+
+        assertThrows(InformaticsServerException.class, () -> userManager.setUserDisabled(99L, true));
     }
 
     @Test

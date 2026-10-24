@@ -1,10 +1,13 @@
 package ge.freeuni.informatics.server.user;
 
+import ge.freeuni.informatics.common.dto.AdminUserDTO;
 import ge.freeuni.informatics.common.dto.UserDTO;
 import ge.freeuni.informatics.common.dto.UserProfileDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
 import ge.freeuni.informatics.common.model.user.RecoverPassword;
 import ge.freeuni.informatics.common.model.user.User;
+
+import java.util.List;
 
 public interface IUserManager {
 
@@ -47,4 +50,17 @@ public interface IUserManager {
 
     /** Updates the authenticated user's email/first/last name. The username cannot be changed here. */
     void updateProfile(String email, String firstName, String lastName) throws InformaticsServerException;
+
+    /** Every user matching {@code search} against username/first/last name, for the admin users page. */
+    List<AdminUserDTO> listUsers(String search, int offset, int limit);
+
+    /** The total count {@link #listUsers} would page through for this search, ignoring offset/limit. */
+    long countUsers(String search);
+
+    /**
+     * Disables or re-enables a user's account. A disabled user can no longer log in, but nothing
+     * about their existing submissions, posts or standings is touched - see {@link #authenticate}.
+     * Refuses to disable an admin account, so an admin can never be locked out by mistake.
+     */
+    void setUserDisabled(Long userId, boolean disabled) throws InformaticsServerException;
 }

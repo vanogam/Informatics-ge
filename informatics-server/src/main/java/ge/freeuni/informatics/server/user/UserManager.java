@@ -1,5 +1,6 @@
 package ge.freeuni.informatics.server.user;
 
+import ge.freeuni.informatics.common.dto.AdminUserDTO;
 import ge.freeuni.informatics.common.dto.UserDTO;
 import ge.freeuni.informatics.common.dto.UserProfileDTO;
 import ge.freeuni.informatics.common.exception.InformaticsServerException;
@@ -29,6 +30,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 
 @Component
 public class UserManager implements IUserManager {
@@ -155,6 +157,15 @@ public class UserManager implements IUserManager {
 
         if (!authenticated) {
             return null;
+        }
+        // A disabled account is reported by the caller, not here: throwing a checked exception
+        // from a @Retryable method with only an ObjectOptimisticLockingFailureException @Recover
+        // handler makes Spring Retry's recovery lookup fail and replace it with an unrelated
+        // ExhaustedRetryException, since every exception thrown here - matched by retryFor or not
+        // - goes through that lookup once a @Recover method exists. The lastLogin write is still
+        // skipped for a disabled account - it was never a successful login.
+        if (user.isDisabled()) {
+            return user;
         }
         recordLogin(user, migrated);
         return user;
@@ -364,6 +375,28 @@ public class UserManager implements IUserManager {
         user.setEmail(email.trim());
         user.setFirstName(firstName.trim());
         user.setLastName(lastName.trim());
+        userRepository.save(user);
+    }
+
+    @Override
+    public List<AdminUserDTO> listUsers(String search, int offset, int limit) {
+        return userRepository.searchUsers(search, offset, limit).stream()
+                .map(AdminUserDTO::toDTO)
+                .toList();
+    }
+
+    @Override
+    public long countUsers(String search) {
+        return userRepository.countSearchUsers(search);
+    }
+
+    @Override
+    public void setUserDisabled(Long userId, boolean disabled) throws InformaticsServerException {
+        User user = userRepository.findById(userId).orElseThrow(() -> InformaticsServerException.USER_NOT_FOUND);
+        if (disabled && UserRole.hasRole(user.getRole(), UserRole.ADMIN)) {
+            throw InformaticsServerException.CANNOT_DISABLE_ADMIN;
+        }
+        user.setDisabled(disabled);
         userRepository.save(user);
     }
 }
